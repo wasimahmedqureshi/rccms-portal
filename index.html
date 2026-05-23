@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>RCCMS Pro | Interactive Reports</title>
-    <!-- PWA manifest -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e4a76">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
@@ -95,7 +94,7 @@
                 <div class="data-table">
                     <table id="sectionTable">
                         <thead><tr><th>Section</th><th>Number of Cases</th></tr></thead>
-                        <tbody><tr><td colspan="2">Loading...</td></tr>
+                        <tbody id="sectionTableBody"><tr><td colspan="2">Loading...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -104,7 +103,7 @@
                 <div class="data-table">
                     <table id="yearTable">
                         <thead><tr><th>Year</th><th>Filed</th><th>Disposed</th></tr></thead>
-                        <tbody><tr><td colspan="3">Loading...</td></tr>
+                        <tbody id="yearTableBody"><tr><td colspan="3">Loading...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -228,9 +227,13 @@
             } else secMap.set("Unspecified", (secMap.get("Unspecified")||0)+1);
         });
         let sortedSections = Array.from(secMap.entries()).sort((a,b)=>b[1]-a[1]);
-        let sectionHtml = sortedSections.map(([sec,count]) => `<td>${escapeHtml(sec)}</td><td>${count}</td>`).join('');
-        if(!sectionHtml) sectionHtml = '<tr><td colspan="2">No data</td></tr>';
-        document.getElementById("sectionTable").innerHTML = `<thead><tr><th>Section</th><th>Number of Cases</th></tr></thead><tbody>${sectionHtml}</tbody>`;
+        let sectionHtml = '';
+        if(sortedSections.length === 0){
+            sectionHtml = '<tr><td colspan="2">No data</td></tr>';
+        } else {
+            sectionHtml = sortedSections.map(([sec,count]) => `<tr><td>${escapeHtml(sec)}</td><td>${count}</td></tr>`).join('');
+        }
+        document.getElementById("sectionTableBody").innerHTML = sectionHtml;
 
         // Year-wise
         let yearMap = new Map();
@@ -249,12 +252,16 @@
             }
         });
         let years = Array.from(yearMap.keys()).sort();
-        let yearHtml = years.map(y => {
-            let data = yearMap.get(y);
-            return `<tr><td>${y}</td><td>${data.filed}</td><td>${data.disposed}</td></tr>`;
-        }).join('');
-        if(!yearHtml) yearHtml = '<tr><td colspan="3">No data</td></tr>';
-        document.getElementById("yearTable").innerHTML = `<thead><tr><th>Year</th><th>Filed</th><th>Disposed</th></tr></thead><tbody>${yearHtml}</tbody>`;
+        let yearHtml = '';
+        if(years.length === 0){
+            yearHtml = '<tr><td colspan="3">No data</td></tr>';
+        } else {
+            yearHtml = years.map(y => {
+                let data = yearMap.get(y);
+                return `<tr><td>${y}</td><td>${data.filed}</td><td>${data.disposed}</td></tr>`;
+            }).join('');
+        }
+        document.getElementById("yearTableBody").innerHTML = yearHtml;
     }
 
     function getAgeBucket(years){
@@ -465,7 +472,7 @@
         });
     }
 
-    // Import/Export functions (short, same as before)
+    // Import/Export functions (same as before)
     function importCasesExcel(file){
         let reader = new FileReader();
         reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); };
