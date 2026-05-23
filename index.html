@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <!-- Firebase SDKs (v9 compatibility) -->
+    <!-- Firebase SDKs (compat version) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <style>
@@ -79,7 +79,8 @@
         <div class="chart-card"><h3><i class="fas fa-calendar-alt"></i> Year-wise Filing & Disposal</h3><canvas id="yearChart" style="max-height:250px"></canvas></div>
     </div>
     <div class="data-table">
-        <table id="casesTable"><thead><tr><th>Case No</th><th>Section</th><th>Inst. Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Hearing Date</th><th>Disposal Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="casesTableBody"><tr><td colspan="10">Loading from Firebase...</td></tr></tbody></table>
+        <table id="casesTable"><thead><tr><th>Case No</th><th>Section</th><th>Inst. Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Hearing Date</th><th>Disposal Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="casesTableBody"><tr><td colspan="10">Loading from Firebase...</td></tr></tbody>
+        </table>
     </div>
     <div id="mprSection" style="display:none;"><div class="report-panel"><div style="display:flex; justify-content:space-between; flex-wrap:wrap;"><h3>Management Reports</h3><button id="closeMprBtn">✕ Close</button></div><div class="report-tabs"><div class="report-tab active" data-report="pending">Pending MPR (Ageing)</div><div class="report-tab" data-report="disposal">Disposal MPR (Age at Disposal)</div></div><div class="grid-2"><div><label>Start Date</label><input type="date" id="reportStartDate"></div><div><label>End Date</label><input type="date" id="reportEndDate"></div><div><label>Office Name</label><input type="text" id="officeNameInput" value="राजस्व मंडल, निवाई"></div><div><button id="refreshReportBtn" class="primary">Generate Report</button></div></div><div id="reportOutput"></div></div></div>
 </div>
@@ -90,11 +91,11 @@
 <div id="firebaseMessage" class="message-bar"></div>
 
 <script>
-    // ==================== YOUR FIREBASE CONFIGURATION (from RCCMS project) ====================
+    // ========== FIREBASE CONFIGURATION (Singapore region) ==========
     const firebaseConfig = {
         apiKey: "AIzaSy9VnIRajj7cJhD-sPBeYt8CYimE_vF7k",
         authDomain: "rccms-5614b.firebaseapp.com",
-        databaseURL: "https://rccms-5614b-default-rtdb.firebaseio.com/",  // Realtime Database URL
+        databaseURL: "https://rccms-5614b-default-rtdb.asia-southeast1.firebasedatabase.app/",
         projectId: "rccms-5614b",
         storageBucket: "rccms-5614b.firebasestorage.app",
         messagingSenderId: "1b76214105677",
@@ -103,9 +104,17 @@
     };
 
     // Initialize Firebase
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-    const casesRef = database.ref('rccms_cases');  // node where all cases will be stored
+    let database;
+    try {
+        firebase.initializeApp(firebaseConfig);
+        database = firebase.database();
+        console.log("✅ Firebase initialized successfully with Singapore DB");
+    } catch (error) {
+        console.error("❌ Firebase init error:", error);
+        alert("Firebase initialization failed. Check console.");
+    }
+
+    const casesRef = database.ref('rccms_cases');
 
     // Global variables
     let cases = [];
@@ -120,7 +129,11 @@
         msgDiv.textContent = msg;
         msgDiv.style.backgroundColor = isError ? '#b91c1c' : '#1e4a76';
         msgDiv.style.display = 'block';
-        setTimeout(() => { msgDiv.style.opacity = '0'; setTimeout(() => msgDiv.style.display = 'none', 500); }, 3000);
+        setTimeout(() => {
+            msgDiv.style.opacity = '0';
+            setTimeout(() => msgDiv.style.display = 'none', 500);
+        }, 3000);
+        console.log(msg);
     }
 
     function parseDateAny(dateVal) {
@@ -151,17 +164,17 @@
     function formatDate(isoStr) { if(!isoStr) return '-'; const d=new Date(isoStr); return d.toLocaleDateString('en-GB'); }
     function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m=> m==='&'?'&amp;': m==='<'?'&lt;':'&gt;'); }
 
-    // Save entire cases array to Firebase
+    // Save to Firebase
     function saveToFirebase() {
         if (isLoading) return;
         const casesObject = {};
         cases.forEach(c => { casesObject[c.id] = c; });
         casesRef.set(casesObject)
             .then(() => showMessage('✓ Data saved to Firebase'))
-            .catch(err => showMessage('Error: '+err.message, true));
+            .catch(err => showMessage('Error saving: '+err.message, true));
     }
 
-    // Real-time listener from Firebase
+    // Real-time listener
     casesRef.on('value', (snapshot) => {
         const data = snapshot.val();
         if (data) {
@@ -192,28 +205,35 @@
     function renderTable() {
         const tbody = document.getElementById("casesTableBody");
         if(!cases.length) { tbody.innerHTML="<tr><td colspan='10'>No cases. Import Excel or add new.</td></tr>"; return; }
-        tbody.innerHTML = cases.map(c => `<tr>
-            <td>${escapeHtml(c.caseNo)}</td>
-            <td>${escapeHtml(c.section||'')}</td>
-            <td>${formatDate(c.institutionDate)}</td>
-            <td>${escapeHtml(c.casePurpose||'')}</td>
-            <td>${escapeHtml(c.appellantName||'')}</td>
-            <td>${escapeHtml(c.respondentName||'')}</td>
-            <td>${c.hearingDate?formatDate(c.hearingDate):'-'}</td>
-            <td>${c.disposalDate?formatDate(c.disposalDate):'-'}</td>
-            <td>${c.disposed?'<span style="color:green;">✓ Disposed</span>':'<span style="color:#b45309;">Pending</span>'}</td>
-            <td class="case-row-actions"><i class="fas fa-trash-alt" onclick="deleteCase(${c.id})" style="color:#c2410c;"></i> ${!c.disposed?`<i class="fas fa-check-circle" onclick="quickDispose(${c.id})" style="margin-left:8px;"></i>`:''}</td>
-        </td>`).join('');
+        tbody.innerHTML = cases.map(c => `
+            <tr>
+                <td>${escapeHtml(c.caseNo)}</td>
+                <td>${escapeHtml(c.section||'')}</td>
+                <td>${formatDate(c.institutionDate)}</td>
+                <td>${escapeHtml(c.casePurpose||'')}</td>
+                <td>${escapeHtml(c.appellantName||'')}</td>
+                <td>${escapeHtml(c.respondentName||'')}</td>
+                <td>${c.hearingDate?formatDate(c.hearingDate):'-'}</td>
+                <td>${c.disposalDate?formatDate(c.disposalDate):'-'}</td>
+                <td>${c.disposed?'<span style="color:green;">✓ Disposed</span>':'<span style="color:#b45309;">Pending</span>'}</td>
+                <td class="case-row-actions"><i class="fas fa-trash-alt" onclick="deleteCase(${c.id})" style="color:#c2410c;"></i> ${!c.disposed?`<i class="fas fa-check-circle" onclick="quickDispose(${c.id})" style="margin-left:8px;"></i>`:''}</td>
+            </tr>
+        `).join('');
         const pendingCases = cases.filter(c=>!c.disposed);
         document.getElementById("caseNosList").innerHTML = pendingCases.map(c=>`<option value="${escapeHtml(c.caseNo)}">`).join('');
     }
 
-    window.deleteCase = function(id) { if(confirm("Delete case permanently?")){ cases = cases.filter(c=>c.id!==id); saveToFirebase(); } };
+    window.deleteCase = function(id) {
+        if(confirm("Delete case permanently?")){
+            cases = cases.filter(c=>c.id!==id);
+            saveToFirebase();
+        }
+    };
     window.quickDispose = function(id) {
         const c = cases.find(c=>c.id===id);
         if(c && !c.disposed){
             let d = prompt("Disposal Date (YYYY-MM-DD):", new Date().toISOString().slice(0,10));
-            if(d && d.match(/\d{4}-\d{2}-\d{2}/)){
+            if(d && d.match(/\\d{4}-\\d{2}-\\d{2}/)){
                 c.disposed = true;
                 c.disposalDate = d;
                 saveToFirebase();
@@ -256,7 +276,7 @@
         yearChart = new Chart(ctx2, { type:'line', data:{ labels:years, datasets:[{ label:'Filed', data:years.map(y=>yearMap.get(y)?.filed||0), borderColor:'#2c7da0', tension:0.2, fill:false }, { label:'Disposed', data:years.map(y=>yearMap.get(y)?.disposed||0), borderColor:'#e9a23b', tension:0.2, fill:false }] }, options:{ responsive:true, maintainAspectRatio:true } });
     }
 
-    // MPR Reports (Pending Ageing + Disposal Age at Disposal)
+    // MPR Reports (same as before, not changed)
     function computeAgeYears(inst, asOn){
         let i = new Date(inst), a = new Date(asOn);
         if(isNaN(i)||isNaN(a)) return 0;
@@ -315,7 +335,7 @@
         }
     }
 
-    // Excel Import/Export functions (same as previous robust version)
+    // Excel Import/Export functions
     function importCasesExcel(file){
         const reader=new FileReader();
         reader.onload=e=>{ const data=new Uint8Array(e.target.result); const workbook=XLSX.read(data,{type:'array'}); const sheet=workbook.Sheets[workbook.SheetNames[0]]; const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); };
@@ -377,23 +397,25 @@
     }
 
     // Event listeners
-    document.getElementById("addCaseBtn").onclick=()=>document.getElementById("caseModal").style.display="flex";
-    document.getElementById("closeModalBtn").onclick=()=>document.getElementById("caseModal").style.display="none";
-    document.getElementById("saveCaseBtn").onclick=()=>{ let cNo=document.getElementById("caseNo").value.trim(), inst=document.getElementById("instDate").value; if(!cNo||!inst){ alert("Case No & Institution Date required"); return; } cases.push({id:nextId++, caseNo:cNo, section:document.getElementById("section").value, institutionDate:inst, casePurpose:document.getElementById("casePurpose").value, appellantName:document.getElementById("appellant").value, respondentName:document.getElementById("respondent").value, hearingDate:document.getElementById("hearingDate").value||null, disposed:false, disposalDate:null}); saveToFirebase(); document.getElementById("caseModal").style.display="none"; };
-    document.getElementById("disposeBtn").onclick=()=>{ document.getElementById("disposalModal").style.display="flex"; document.getElementById("disposalDate").value=new Date().toISOString().slice(0,10); };
-    document.getElementById("closeDisposalModalBtn").onclick=()=>document.getElementById("disposalModal").style.display="none";
-    document.getElementById("confirmDisposalBtn").onclick=()=>{ let cNo=document.getElementById("disposalCaseNo").value.trim(), dDate=document.getElementById("disposalDate").value; if(!cNo||!dDate){ alert("Select case and disposal date"); return; } let found=cases.find(c=>c.caseNo===cNo && !c.disposed); if(!found){ alert("Case not found or already disposed"); return; } found.disposed=true; found.disposalDate=dDate; saveToFirebase(); document.getElementById("disposalModal").style.display="none"; };
-    document.getElementById("showMprBtn").onclick=()=>{ document.getElementById("mprSection").style.display="block"; refreshReport(); };
-    document.getElementById("closeMprBtn").onclick=()=>document.getElementById("mprSection").style.display="none";
-    document.getElementById("refreshReportBtn").onclick=refreshReport;
-    document.getElementById("exportBackupBtn").onclick=exportBackup;
-    document.getElementById("importBackupBtn").onclick=()=>{ let inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>{ if(e.target.files.length) restoreBackup(e.target.files[0]); }; inp.click(); };
-    document.getElementById("importCasesExcelBtn").onclick=()=>document.getElementById("casesExcelInput").click();
-    document.getElementById("casesExcelInput").onchange=e=>{ if(e.target.files.length) importCasesExcel(e.target.files[0]); e.target.value=''; };
-    document.getElementById("importDisposalExcelBtn").onclick=()=>document.getElementById("disposalExcelInput").click();
-    document.getElementById("disposalExcelInput").onchange=e=>{ if(e.target.files.length) importDisposalExcel(e.target.files[0]); e.target.value=''; };
-    document.getElementById("sampleDataBtn").onclick=loadSampleData;
-    document.querySelectorAll(".report-tab").forEach(t=>{ t.addEventListener("click",()=>{ document.querySelectorAll(".report-tab").forEach(tab=>tab.classList.remove("active")); t.classList.add("active"); currentReportType=t.dataset.report; refreshReport(); }); });
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById("addCaseBtn").onclick=()=>document.getElementById("caseModal").style.display="flex";
+        document.getElementById("closeModalBtn").onclick=()=>document.getElementById("caseModal").style.display="none";
+        document.getElementById("saveCaseBtn").onclick=()=>{ let cNo=document.getElementById("caseNo").value.trim(), inst=document.getElementById("instDate").value; if(!cNo||!inst){ alert("Case No & Institution Date required"); return; } cases.push({id:nextId++, caseNo:cNo, section:document.getElementById("section").value, institutionDate:inst, casePurpose:document.getElementById("casePurpose").value, appellantName:document.getElementById("appellant").value, respondentName:document.getElementById("respondent").value, hearingDate:document.getElementById("hearingDate").value||null, disposed:false, disposalDate:null}); saveToFirebase(); document.getElementById("caseModal").style.display="none"; };
+        document.getElementById("disposeBtn").onclick=()=>{ document.getElementById("disposalModal").style.display="flex"; document.getElementById("disposalDate").value=new Date().toISOString().slice(0,10); };
+        document.getElementById("closeDisposalModalBtn").onclick=()=>document.getElementById("disposalModal").style.display="none";
+        document.getElementById("confirmDisposalBtn").onclick=()=>{ let cNo=document.getElementById("disposalCaseNo").value.trim(), dDate=document.getElementById("disposalDate").value; if(!cNo||!dDate){ alert("Select case and disposal date"); return; } let found=cases.find(c=>c.caseNo===cNo && !c.disposed); if(!found){ alert("Case not found or already disposed"); return; } found.disposed=true; found.disposalDate=dDate; saveToFirebase(); document.getElementById("disposalModal").style.display="none"; };
+        document.getElementById("showMprBtn").onclick=()=>{ document.getElementById("mprSection").style.display="block"; refreshReport(); };
+        document.getElementById("closeMprBtn").onclick=()=>document.getElementById("mprSection").style.display="none";
+        document.getElementById("refreshReportBtn").onclick=refreshReport;
+        document.getElementById("exportBackupBtn").onclick=exportBackup;
+        document.getElementById("importBackupBtn").onclick=()=>{ let inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>{ if(e.target.files.length) restoreBackup(e.target.files[0]); }; inp.click(); };
+        document.getElementById("importCasesExcelBtn").onclick=()=>document.getElementById("casesExcelInput").click();
+        document.getElementById("casesExcelInput").onchange=e=>{ if(e.target.files.length) importCasesExcel(e.target.files[0]); e.target.value=''; };
+        document.getElementById("importDisposalExcelBtn").onclick=()=>document.getElementById("disposalExcelInput").click();
+        document.getElementById("disposalExcelInput").onchange=e=>{ if(e.target.files.length) importDisposalExcel(e.target.files[0]); e.target.value=''; };
+        document.getElementById("sampleDataBtn").onclick=loadSampleData;
+        document.querySelectorAll(".report-tab").forEach(t=>{ t.addEventListener("click",()=>{ document.querySelectorAll(".report-tab").forEach(tab=>tab.classList.remove("active")); t.classList.add("active"); currentReportType=t.dataset.report; refreshReport(); }); });
+    });
 
     const today=new Date(); const lastYear=new Date(); lastYear.setFullYear(today.getFullYear()-1);
     document.getElementById("reportStartDate").value=lastYear.toISOString().slice(0,10);
