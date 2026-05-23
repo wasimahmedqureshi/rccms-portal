@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>RCCMS Pro | Interactive Reports</title>
+    <title>RCCMS Pro | MPR Reports</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1e4a76">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
@@ -41,6 +41,9 @@
         .clickable { cursor: pointer; color: #1e4a76; font-weight: 600; text-decoration: underline; }
         .report-section { margin-top: 30px; }
         .report-output { background: white; border-radius: 32px; padding: 24px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
+        .report-output table { width: 100%; border-collapse: collapse; font-size: 0.8rem; overflow-x: auto; display: block; }
+        .report-output th, .report-output td { padding: 10px 8px; border: 1px solid #e2e8f0; text-align: center; }
+        .report-output th { background: #f1f5f9; font-weight: 700; }
         .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); align-items: center; justify-content: center; z-index: 2000; }
         .modal-content { background: white; max-width: 90%; width: 90%; max-height: 80%; border-radius: 48px; padding: 24px; overflow: auto; }
         .modal-content h3 { margin-bottom: 20px; }
@@ -51,6 +54,7 @@
         input, select { width: 100%; padding: 12px 16px; border: 1px solid #cfdee9; border-radius: 28px; font-size: 0.9rem; }
         .message-bar { position: fixed; bottom: 25px; right: 25px; background: #1e4a76; color: white; padding: 12px 24px; border-radius: 60px; font-size: 0.85rem; z-index: 2100; display: none; backdrop-filter: blur(8px); }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .export-btn { margin-top: 15px; text-align: right; }
         @media (max-width:700px){ .grid-2{ grid-template-columns:1fr; } button{ padding: 8px 14px; } .header h1{ font-size:1.3rem; } }
     </style>
 </head>
@@ -58,7 +62,7 @@
 
 <div class="container">
     <div class="header">
-        <h1><i class="fas fa-balance-scale"></i> RCCMS Interactive Reports</h1>
+        <h1><i class="fas fa-balance-scale"></i> RCCMS MPR Portal</h1>
         <div class="badge" id="userStatus"><i class="fas fa-user-lock"></i> Secured</div>
     </div>
 
@@ -94,7 +98,7 @@
                 <div class="data-table">
                     <table id="sectionTable">
                         <thead><tr><th>Section</th><th>Number of Cases</th></tr></thead>
-                        <tbody id="sectionTableBody"><tr><td colspan="2">Loading...</td></tr></tbody>
+                        <tbody id="sectionTableBody"><tr><td colspan="2">Loading...</tr><tr></tbody>
                     </table>
                 </div>
             </div>
@@ -103,7 +107,7 @@
                 <div class="data-table">
                     <table id="yearTable">
                         <thead><tr><th>Year</th><th>Filed</th><th>Disposed</th></tr></thead>
-                        <tbody id="yearTableBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+                        <tbody id="yearTableBody"><tr><td colspan="3">Loading...</tr><tr></tbody>
                     </table>
                 </div>
             </div>
@@ -155,7 +159,7 @@
 <div id="firebaseMessage" class="message-bar"></div>
 
 <script>
-    // ==================== FIREBASE CONFIGURATION ====================
+    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyD9VnIRajIj7cJhD-sPBeyT8CYimE_vF7k",
         authDomain: "rccms-5614b.firebaseapp.com",
@@ -229,7 +233,7 @@
         let sortedSections = Array.from(secMap.entries()).sort((a,b)=>b[1]-a[1]);
         let sectionHtml = '';
         if(sortedSections.length === 0){
-            sectionHtml = '<tr><td colspan="2">No data</td></tr>';
+            sectionHtml = '<tr><td colspan="2">No data</tr>';
         } else {
             sectionHtml = sortedSections.map(([sec,count]) => `<tr><td>${escapeHtml(sec)}</td><td>${count}</td></tr>`).join('');
         }
@@ -254,7 +258,7 @@
         let years = Array.from(yearMap.keys()).sort();
         let yearHtml = '';
         if(years.length === 0){
-            yearHtml = '<tr><td colspan="3">No data</td></tr>';
+            yearHtml = '<tr><td colspan="3">No data</tr>';
         } else {
             yearHtml = years.map(y => {
                 let data = yearMap.get(y);
@@ -264,6 +268,7 @@
         document.getElementById("yearTableBody").innerHTML = yearHtml;
     }
 
+    // Age bucket helpers
     function getAgeBucket(years){
         if(years < 0.5) return "Upto 6 Months";
         if(years < 1) return "6 Months To 1 year";
@@ -280,50 +285,233 @@
     function computeAgeYears(inst, asOn){ let i=new Date(inst), a=new Date(asOn); if(isNaN(i)||isNaN(a)) return 0; let y=a.getFullYear()-i.getFullYear(); if(a.getMonth()<i.getMonth()||(a.getMonth()===i.getMonth()&&a.getDate()<i.getDate())) y--; return Math.max(0,y); }
     function getDisposalAgeBucket(y){ if(y>=5) return "Over 5 Years"; if(y>=3) return "Over 3 Years"; if(y>=2) return "Over 2 Years"; if(y>=1) return "Over 1 Year"; return "Less Than 1 Year"; }
 
-    function generatePendingMPR(start,end,office){
-        const startDate = start, endDate = end;
-        const initialPending = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>=startDate) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>startDate) return true; return false; }).length;
-        const newRegistered = cases.filter(c=>{ let i=new Date(c.institutionDate); return i>=startDate && i<=endDate; }).length;
-        const totalDecided = cases.filter(c=>c.disposed && c.disposalDate && (new Date(c.disposalDate)>=startDate && new Date(c.disposalDate)<=endDate)).length;
+    // Pending MPR with all age buckets as columns
+    function renderPendingMPR() {
+        let startInput = document.getElementById('reportStartDate');
+        let endInput = document.getElementById('reportEndDate');
+        let officeInput = document.getElementById('officeNameInput');
+        let start, end, office;
+        if(startInput && endInput && officeInput){
+            start = new Date(startInput.value);
+            end = new Date(endInput.value);
+            office = officeInput.value || "RCCMS Office";
+        } else {
+            const today = new Date();
+            const lastYear = new Date(); lastYear.setFullYear(today.getFullYear()-1);
+            start = lastYear;
+            end = today;
+            office = "RCCMS Office";
+        }
+        if(isNaN(start)||isNaN(end)||start>end){ alert("Invalid date range"); return; }
+        
+        // Calculate MPR data
+        const initialPending = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>=start) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>start) return true; return false; }).length;
+        const newRegistered = cases.filter(c=>{ let i=new Date(c.institutionDate); return i>=start && i<=end; }).length;
+        const totalDecided = cases.filter(c=>c.disposed && c.disposalDate && (new Date(c.disposalDate)>=start && new Date(c.disposalDate)<=end)).length;
         const pendingAsOnEnd = initialPending + newRegistered - totalDecided;
-        const pendingOnEnd = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>endDate) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>endDate) return true; return false; });
-        const bucketMap = new Map();
-        pendingOnEnd.forEach(c => {
-            const age = computeAgeYears(c.institutionDate, endDate.toISOString().slice(0,10));
-            const bucket = getAgeBucket(age);
-            if(!bucketMap.has(bucket)) bucketMap.set(bucket, []);
-            bucketMap.get(bucket).push(c);
-        });
+        
+        // Get pending cases on end date
+        const pendingOnEnd = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>end) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>end) return true; return false; });
+        
+        // Age buckets for pending cases
         const bucketOrder = ["Upto 6 Months","6 Months To 1 year","1 To 2 Years","2 To 3 Years","3 To 5 Years","5 To 10 Years","10 To 20 Years","20 To 30 Years","30 To 40 Years","More Than 40 Years"];
-        const buckets = {};
-        bucketOrder.forEach(b => buckets[b] = bucketMap.get(b)?.length || 0);
-        return {office, initialPending, newRegistered, totalDecided, pendingAsOnEnd, buckets, bucketMap, startDate, endDate};
+        const bucketMap = new Map();
+        bucketOrder.forEach(b => bucketMap.set(b, []));
+        
+        pendingOnEnd.forEach(c => {
+            const age = computeAgeYears(c.institutionDate, end.toISOString().slice(0,10));
+            const bucket = getAgeBucket(age);
+            if(bucketMap.has(bucket)) bucketMap.get(bucket).push(c);
+        });
+        
+        // Build table row
+        let row = `<tr>
+            <td>1</td>
+            <td>${escapeHtml(office)}</td>
+            <td>${initialPending}</td>
+            <td>${newRegistered}</td>
+            <td>${totalDecided}</td>
+            <td>${pendingAsOnEnd}</td>`;
+        bucketOrder.forEach(b => {
+            const count = bucketMap.get(b).length;
+            row += `<td class="clickable" data-bucket="${b}">${count}</td>`;
+        });
+        row += `</tr>`;
+        
+        // Create full HTML with filters and export button
+        const html = `
+            <h4>📋 Pending MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
+            <div class="grid-2" style="margin: 15px 0;">
+                <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
+                <div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
+                <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
+                <div><button id="refreshPendingBtn" class="primary">Refresh Report</button></div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="min-width: 1200px;">
+                    <thead>
+                        <tr>
+                            <th>S.No.</th><th>Office Name</th><th>Initial Pending</th><th>New Registered</th><th>Total Decided</th><th>Pending As On End</th>
+                            <th>Upto 6 Months</th><th>6 Months To 1 year</th><th>1 To 2 Years</th><th>2 To 3 Years</th><th>3 To 5 Years</th><th>5 To 10 Years</th><th>10 To 20 Years</th><th>20 To 30 Years</th><th>30 To 40 Years</th><th>More Than 40 Years</th>
+                        </tr>
+                    </thead>
+                    <tbody>${row}</tbody>
+                </table>
+            </div>
+            <div class="export-btn"><button id="exportPendingExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
+        `;
+        document.getElementById("reportOutput").innerHTML = html;
+        document.getElementById("refreshPendingBtn").onclick = () => renderPendingMPR();
+        
+        // Click handlers for age bucket numbers
+        document.querySelectorAll('#reportOutput .clickable').forEach(el => {
+            el.addEventListener('click', () => {
+                const bucket = el.getAttribute('data-bucket');
+                const casesList = bucketMap.get(bucket) || [];
+                if(casesList.length === 0) { alert('No cases in this bucket'); return; }
+                showCaseList(`Pending Cases - ${bucket} (as on ${end.toISOString().slice(0,10)})`, casesList);
+            });
+        });
+        
+        // Export to Excel handler
+        document.getElementById("exportPendingExcel").onclick = () => {
+            const wsData = [
+                ['S.No.', 'Office Name', 'Initial Pending', 'New Registered', 'Total Decided', 'Pending As On End', ...bucketOrder]
+            ];
+            wsData.push([1, office, initialPending, newRegistered, totalDecided, pendingAsOnEnd, ...bucketOrder.map(b => bucketMap.get(b).length)]);
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Pending_MPR');
+            XLSX.writeFile(wb, `Pending_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`);
+        };
     }
 
-    function generateDisposalMPR(start,end,office){
+    // Disposal MPR with age buckets as columns
+    function renderDisposalMPR() {
+        let startInput = document.getElementById('reportStartDate');
+        let endInput = document.getElementById('reportEndDate');
+        let officeInput = document.getElementById('officeNameInput');
+        let start, end, office;
+        if(startInput && endInput && officeInput){
+            start = new Date(startInput.value);
+            end = new Date(endInput.value);
+            office = officeInput.value || "RCCMS Office";
+        } else {
+            const today = new Date();
+            const lastYear = new Date(); lastYear.setFullYear(today.getFullYear()-1);
+            start = lastYear;
+            end = today;
+            office = "RCCMS Office";
+        }
+        if(isNaN(start)||isNaN(end)||start>end){ alert("Invalid date range"); return; }
+        
         const disposals = cases.filter(c=>c.disposed && c.disposalDate && (new Date(c.disposalDate)>=start && new Date(c.disposalDate)<=end));
         const totalDisposal = disposals.length;
+        
+        const ageBucketOrder = ["Over 5 Years", "Over 3 Years", "Over 2 Years", "Over 1 Year", "Less Than 1 Year"];
         const ageBucketsMap = new Map();
-        const monthMap = new Map();
+        ageBucketOrder.forEach(b => ageBucketsMap.set(b, []));
+        
         disposals.forEach(c => {
             const age = computeAgeYears(c.institutionDate, c.disposalDate);
             const bucket = getDisposalAgeBucket(age);
-            if(!ageBucketsMap.has(bucket)) ageBucketsMap.set(bucket, []);
-            ageBucketsMap.get(bucket).push(c);
+            if(ageBucketsMap.has(bucket)) ageBucketsMap.get(bucket).push(c);
+        });
+        
+        // Month-wise breakdown (additional info)
+        const monthMap = new Map();
+        disposals.forEach(c => {
             const d = new Date(c.disposalDate);
             const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
             if(!monthMap.has(key)) monthMap.set(key, []);
             monthMap.get(key).push(c);
         });
-        const ageBuckets = {
-            "Over 5 Years": ageBucketsMap.get("Over 5 Years")?.length || 0,
-            "Over 3 Years": ageBucketsMap.get("Over 3 Years")?.length || 0,
-            "Over 2 Years": ageBucketsMap.get("Over 2 Years")?.length || 0,
-            "Over 1 Year": ageBucketsMap.get("Over 1 Year")?.length || 0,
-            "Less Than 1 Year": ageBucketsMap.get("Less Than 1 Year")?.length || 0
+        const monthWise = Array.from(monthMap.keys()).sort().map(m => ({ month: m, count: monthMap.get(m).length, cases: monthMap.get(m) }));
+        
+        let row = `<tr>
+            <td>1</td>
+            <td>${escapeHtml(office)}</td>
+            <td>${totalDisposal}</td>`;
+        ageBucketOrder.forEach(b => {
+            const count = ageBucketsMap.get(b).length;
+            row += `<td class="clickable-age" data-agebucket="${b}">${count}</td>`;
+        });
+        row += `</tr>`;
+        
+        let monthRows = '';
+        monthWise.forEach(m => {
+            monthRows += `<tr><td class="clickable-month" data-month="${m.month}">${m.month}</td><td class="clickable-month" data-month="${m.month}">${m.count}</td></tr>`;
+        });
+        
+        const html = `
+            <h4>📋 Disposal MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
+            <div class="grid-2" style="margin: 15px 0;">
+                <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
+                <div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
+                <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
+                <div><button id="refreshDisposalBtn" class="primary">Refresh Report</button></div>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="min-width: 800px;">
+                    <thead>
+                        <tr>
+                            <th>S.No.</th><th>Office Name</th><th>Total Disposal (Period)</th>
+                            <th>Over 5 Years</th><th>Over 3 Years</th><th>Over 2 Years</th><th>Over 1 Year</th><th>Less Than 1 Year</th>
+                        </tr>
+                    </thead>
+                    <tbody>${row}</tbody>
+                </table>
+            </div>
+            <div style="margin-top: 20px;">
+                <strong>📅 Month-wise Disposal Breakdown (click on count)</strong>
+                <div style="overflow-x: auto; margin-top: 10px;">
+                    <table style="min-width: 300px;">
+                        <thead><tr><th>Year-Month</th><th>Disposals</th></tr></thead>
+                        <tbody>${monthRows || '<tr><td colspan="2">No disposals</td></tr>'}</tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="export-btn"><button id="exportDisposalExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
+        `;
+        document.getElementById("reportOutput").innerHTML = html;
+        document.getElementById("refreshDisposalBtn").onclick = () => renderDisposalMPR();
+        
+        // Click handlers for age buckets
+        document.querySelectorAll('#reportOutput .clickable-age').forEach(el => {
+            el.addEventListener('click', () => {
+                const bucket = el.getAttribute('data-agebucket');
+                const casesList = ageBucketsMap.get(bucket) || [];
+                if(casesList.length === 0) { alert('No cases in this bucket'); return; }
+                showCaseList(`Disposed Cases - Age at Disposal: ${bucket} (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})`, casesList);
+            });
+        });
+        // Click handlers for months
+        document.querySelectorAll('#reportOutput .clickable-month').forEach(el => {
+            el.addEventListener('click', () => {
+                const month = el.getAttribute('data-month');
+                const monthObj = monthWise.find(m => m.month === month);
+                const casesList = monthObj ? monthObj.cases : [];
+                if(casesList.length === 0) { alert('No cases disposed in this month'); return; }
+                showCaseList(`Disposed Cases - ${month} (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})`, casesList);
+            });
+        });
+        
+        // Export to Excel handler
+        document.getElementById("exportDisposalExcel").onclick = () => {
+            const wsData = [
+                ['S.No.', 'Office Name', 'Total Disposal (Period)', ...ageBucketOrder]
+            ];
+            wsData.push([1, office, totalDisposal, ...ageBucketOrder.map(b => ageBucketsMap.get(b).length)]);
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            // Add month-wise sheet
+            const monthData = [['Year-Month', 'Disposals']];
+            monthWise.forEach(m => monthData.push([m.month, m.count]));
+            const wsMonth = XLSX.utils.aoa_to_sheet(monthData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Disposal_Summary');
+            XLSX.utils.book_append_sheet(wb, wsMonth, 'Month_Wise');
+            XLSX.writeFile(wb, `Disposal_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`);
         };
-        const monthWise = Array.from(monthMap.keys()).sort().map(ym => ({ month: ym, count: monthMap.get(ym).length, cases: monthMap.get(ym) }));
-        return {office, totalDisposal, ageBuckets, ageBucketsMap, monthWise, startDate:start.toISOString().slice(0,10), endDate:end.toISOString().slice(0,10)};
     }
 
     function showCaseList(title, caseArray) {
@@ -359,120 +547,7 @@
         };
     }
 
-    function renderPendingMPR(){
-        let startInput = document.getElementById('reportStartDate');
-        let endInput = document.getElementById('reportEndDate');
-        let officeInput = document.getElementById('officeNameInput');
-        let start, end, office;
-        if(startInput && endInput && officeInput){
-            start = new Date(startInput.value);
-            end = new Date(endInput.value);
-            office = officeInput.value || "RCCMS Office";
-        } else {
-            const today = new Date();
-            const lastYear = new Date(); lastYear.setFullYear(today.getFullYear()-1);
-            start = lastYear;
-            end = today;
-            office = "RCCMS Office";
-        }
-        if(isNaN(start)||isNaN(end)||start>end){ alert("Invalid date range"); return; }
-        const r = generatePendingMPR(start,end,office);
-        const bucketOrder = ["Upto 6 Months","6 Months To 1 year","1 To 2 Years","2 To 3 Years","3 To 5 Years","5 To 10 Years","10 To 20 Years","20 To 30 Years","30 To 40 Years","More Than 40 Years"];
-        let bucketRows = '';
-        bucketOrder.forEach(b => {
-            const count = r.buckets[b] || 0;
-            bucketRows += `<tr><td class="clickable" data-bucket="${b}">${b}</td><td class="clickable" data-bucket="${b}">${count}</td></tr>`;
-        });
-        const html = `
-            <h4>📋 Pending MPR (as on ${end.toISOString().slice(0,10)})</h4>
-            <div class="grid-2" style="margin: 15px 0;">
-                <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
-                <div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
-                <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
-                <div><button id="refreshPendingBtn" class="primary">Refresh Report</button></div>
-            </div>
-            <table style="width:100%; border-collapse:collapse; margin-top:15px;">
-                <thead><tr><th>Office</th><th>Initial Pending</th><th>New Registered</th><th>Total Decided</th><th>Pending As On End</th></tr></thead>
-                <tbody><tr><td>${escapeHtml(r.office)}</td><td>${r.initialPending}</td><td>${r.newRegistered}</td><td>${r.totalDecided}</td><td>${r.pendingAsOnEnd}</td></tr></tbody>
-            </table>
-            <div style="margin-top:20px;"><strong>Age-wise Pending Cases</strong><table style="width:100%; margin-top:8px;"><thead><tr><th>Age Slab</th><th>Count</th></tr></thead><tbody>${bucketRows}</tbody></table></div>
-        `;
-        document.getElementById("reportOutput").innerHTML = html;
-        document.getElementById("refreshPendingBtn").onclick = () => renderPendingMPR();
-        document.querySelectorAll('#reportOutput .clickable').forEach(el => {
-            el.addEventListener('click', () => {
-                const bucket = el.getAttribute('data-bucket');
-                const casesList = r.bucketMap.get(bucket) || [];
-                if(casesList.length === 0) { alert('No cases in this bucket'); return; }
-                showCaseList(`Pending Cases - ${bucket} (as on ${end.toISOString().slice(0,10)})`, casesList);
-            });
-        });
-    }
-
-    function renderDisposalMPR(){
-        let startInput = document.getElementById('reportStartDate');
-        let endInput = document.getElementById('reportEndDate');
-        let officeInput = document.getElementById('officeNameInput');
-        let start, end, office;
-        if(startInput && endInput && officeInput){
-            start = new Date(startInput.value);
-            end = new Date(endInput.value);
-            office = officeInput.value || "RCCMS Office";
-        } else {
-            const today = new Date();
-            const lastYear = new Date(); lastYear.setFullYear(today.getFullYear()-1);
-            start = lastYear;
-            end = today;
-            office = "RCCMS Office";
-        }
-        if(isNaN(start)||isNaN(end)||start>end){ alert("Invalid date range"); return; }
-        const r = generateDisposalMPR(start,end,office);
-        const ageBucketsList = ["Over 5 Years","Over 3 Years","Over 2 Years","Over 1 Year","Less Than 1 Year"];
-        let ageRows = '';
-        ageBucketsList.forEach(b => {
-            const cnt = r.ageBuckets[b];
-            ageRows += `<tr><td class="clickable-age" data-agebucket="${b}">${b}</td><td class="clickable-age" data-agebucket="${b}">${cnt}</td></tr>`;
-        });
-        let monthRows = '';
-        r.monthWise.forEach(m => {
-            monthRows += `<tr><td class="clickable-month" data-month="${m.month}">${m.month}</td><td class="clickable-month" data-month="${m.month}">${m.count}</td></tr>`;
-        });
-        const html = `
-            <h4>📋 Disposal MPR (Age at Disposal) - ${r.startDate} to ${r.endDate}</h4>
-            <div class="grid-2" style="margin: 15px 0;">
-                <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
-                <div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
-                <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
-                <div><button id="refreshDisposalBtn" class="primary">Refresh Report</button></div>
-            </div>
-            <table style="width:100%"><thead><tr><th>S.No.</th><th>Office Name</th><th>Total Disposal (Period)</th><th>Over 5 Years</th><th>Over 3 Years</th><th>Over 2 Years</th><th>Over 1 Year</th><th>Less Than 1 Year</th></tr></thead>
-            <tbody><tr><td>1</td><td>${escapeHtml(r.office)}</td><td>${r.totalDisposal}</td><td>${r.ageBuckets["Over 5 Years"]}</td><td>${r.ageBuckets["Over 3 Years"]}</td><td>${r.ageBuckets["Over 2 Years"]}</td><td>${r.ageBuckets["Over 1 Year"]}</td><td>${r.ageBuckets["Less Than 1 Year"]}</td></tr></tbody>
-            </table>
-            <div style="margin-top:20px;"><strong>Age-wise Disposal Breakdown (click on count)</strong><table style="width:100%; margin-top:8px;"><thead><tr><th>Age at Disposal</th><th>Count</th></tr></thead><tbody>${ageRows}</tbody></table></div>
-            <div style="margin-top:20px;"><strong>Month-wise Disposals (click on count)</strong><table style="width:100%; margin-top:8px;"><thead><tr><th>Year-Month</th><th>Count</th></tr></thead><tbody>${monthRows}</tbody></table></div>
-        `;
-        document.getElementById("reportOutput").innerHTML = html;
-        document.getElementById("refreshDisposalBtn").onclick = () => renderDisposalMPR();
-        document.querySelectorAll('#reportOutput .clickable-age').forEach(el => {
-            el.addEventListener('click', () => {
-                const bucket = el.getAttribute('data-agebucket');
-                const casesList = r.ageBucketsMap.get(bucket) || [];
-                if(casesList.length === 0) { alert('No cases in this bucket'); return; }
-                showCaseList(`Disposed Cases - Age at Disposal: ${bucket} (${r.startDate} to ${r.endDate})`, casesList);
-            });
-        });
-        document.querySelectorAll('#reportOutput .clickable-month').forEach(el => {
-            el.addEventListener('click', () => {
-                const month = el.getAttribute('data-month');
-                const monthObj = r.monthWise.find(m => m.month === month);
-                const casesList = monthObj ? monthObj.cases : [];
-                if(casesList.length === 0) { alert('No cases disposed in this month'); return; }
-                showCaseList(`Disposed Cases - ${month} (${r.startDate} to ${r.endDate})`, casesList);
-            });
-        });
-    }
-
-    // Import/Export functions (same as before)
+    // Import/Export functions (shortened for brevity - same as before)
     function importCasesExcel(file){
         let reader = new FileReader();
         reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); };
@@ -602,7 +677,6 @@
         updateDatalist();
     });
 
-    // Service Worker registration
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js')
             .then(reg => console.log('Service Worker registered', reg))
