@@ -6,6 +6,9 @@
   "display": "standalone",
   "theme_color": "#1e4a76",
   "background_color": "#0f2b3d",
+  "orientation": "portrait",
+  "id": "/",
+  "categories": ["business", "productivity"],
   "icons": [
     {
       "src": "icon-192.png",
