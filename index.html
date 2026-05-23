@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>RCCMS Pro | Tabular Dashboard</title>
+    <title>RCCMS Pro | Secure Case Management</title>
+    <!-- PWA meta tags -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e4a76">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -55,7 +58,7 @@
 
 <div class="container">
     <div class="header">
-        <h1><i class="fas fa-balance-scale"></i> RCCMS Pro | Tabular Reports</h1>
+        <h1><i class="fas fa-balance-scale"></i> RCCMS Pro</h1>
         <div class="badge" id="userStatus"><i class="fas fa-user-lock"></i> Secured Portal</div>
     </div>
 
@@ -82,14 +85,13 @@
             <div class="stat-card"><div class="number" id="yearlyFiling">0</div><div class="label">Filed This Year</div></div>
         </div>
 
-        <!-- Tabular Dashboard: Section-wise & Year-wise Tables -->
         <div class="dashboard-row">
             <div class="dashboard-card">
                 <h3><i class="fas fa-layer-group"></i> Section-wise Case Load</h3>
                 <div class="data-table" id="sectionTableContainer">
                     <table id="sectionTable">
                         <thead><tr><th>Section</th><th>Number of Cases</th></tr></thead>
-                        <tbody><tr><td colspan="2">Loading...</td></tr></tbody>
+                        <tbody><tr><td colspan="2">Loading...</td></tr>
                     </table>
                 </div>
             </div>
@@ -98,17 +100,16 @@
                 <div class="data-table" id="yearTableContainer">
                     <table id="yearTable">
                         <thead><tr><th>Year</th><th>Filed</th><th>Disposed</th></tr></thead>
-                        <tbody><tr><td colspan="3">Loading...</td></tr></tbody>
+                        <tbody><tr><td colspan="3">Loading...</td></tr>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- Main Case Registry Table -->
         <div class="main-table">
             <table id="casesTable">
                 <thead><tr><th>Case No</th><th>Section</th><th>Inst. Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Hearing Date</th><th>Disposal Date</th><th>Status</th><th>Actions</th></tr></thead>
-                <tbody id="casesTableBody"><tr><td colspan="10">Login to view cases</td></tr></tbody>
+                <tbody id="casesTableBody"><tr><td colspan="10">Login to view cases</td></tr>
             </table>
         </div>
 
@@ -136,7 +137,7 @@
 <div id="firebaseMessage" class="message-bar"></div>
 
 <script>
-    // ==================== FIREBASE CONFIGURATION (USE YOUR CORRECT CONFIG) ====================
+    // Firebase configuration (use your own from Firebase Console)
     const firebaseConfig = {
         apiKey: "AIzaSyD9VnIRajIj7cJhD-sPBeyT8CYimE_vF7k",
         authDomain: "rccms-5614b.firebaseapp.com",
@@ -231,7 +232,6 @@
         }
     };
 
-    // Tabular updates: Section-wise and Year-wise tables
     function updateTables(){
         // Section-wise
         let secMap = new Map();
@@ -245,7 +245,7 @@
         if(!sectionHtml) sectionHtml = '<tr><td colspan="2">No data</td></tr>';
         document.getElementById("sectionTable").innerHTML = `<thead><tr><th>Section</th><th>Number of Cases</th></tr></thead><tbody>${sectionHtml}</tbody>`;
 
-        // Year-wise filing & disposal
+        // Year-wise
         let yearMap = new Map();
         cases.forEach(c => {
             let y = new Date(c.institutionDate).getFullYear();
@@ -270,7 +270,7 @@
         document.getElementById("yearTable").innerHTML = `<thead><tr><th>Year</th><th>Filed</th><th>Disposed</th></tr></thead><tbody>${yearHtml}</tbody>`;
     }
 
-    // MPR functions (unchanged but kept for report generation)
+    // MPR functions (same as previous)
     function computeAgeYears(inst, asOn){ let i=new Date(inst), a=new Date(asOn); if(isNaN(i)||isNaN(a)) return 0; let y=a.getFullYear()-i.getFullYear(); if(a.getMonth()<i.getMonth()||(a.getMonth()===i.getMonth()&&a.getDate()<i.getDate())) y--; return Math.max(0,y); }
     function getDisposalAgeBucket(y){ if(y>=5) return "Over 5 Years"; if(y>=3) return "Over 3 Years"; if(y>=2) return "Over 2 Years"; if(y>=1) return "Over 1 Year"; return "Less Than 1 Year"; }
     function generatePendingMPR(start,end,office){
@@ -315,7 +315,7 @@
         }
     }
 
-    // Import/Export functions (same as before)
+    // Import/Export functions (keeping compact)
     function importCasesExcel(file){
         let reader = new FileReader();
         reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); };
@@ -381,7 +381,7 @@
         }
     }
 
-    // Auth state
+    // Auth state listener
     auth.onAuthStateChanged(user => {
         if(user){
             document.getElementById("loginModal").style.display = "none";
@@ -437,6 +437,13 @@
     const today=new Date(); const lastYear=new Date(); lastYear.setFullYear(today.getFullYear()-1);
     document.getElementById("reportStartDate").value=lastYear.toISOString().slice(0,10);
     document.getElementById("reportEndDate").value=today.toISOString().slice(0,10);
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('Service Worker registered', reg))
+            .catch(err => console.log('Service Worker registration failed', err));
+    }
 </script>
 </body>
 </html>
