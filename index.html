@@ -8,7 +8,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -115,16 +114,16 @@
 <div id="firebaseMessage" class="message-bar"></div>
 
 <script>
-    // ==================== 🔥 CORRECT FIREBASE CONFIGURATION (from your screenshot) ====================
+    // ==================== 🔥 CORRECT FIREBASE CONFIGURATION ====================
     const firebaseConfig = {
-        apiKey: "AIzaSyD9VnIRajIj7cJhD-sPBeYt8CYimE_vF7k",
+        apiKey: "AIzaSyD9VnIRajIj7cJhD-sPBeyT8CYimE_vF7k",
         authDomain: "rccms-5614b.firebaseapp.com",
-        databaseURL: "https://rccms-5614b-default-rtdb.asia-southeast1.firebasedatabase.app/",
+        databaseURL: "https://rccms-5614b-default-rtdb.asia-southeast1.firebasedatabase.app",
         projectId: "rccms-5614b",
         storageBucket: "rccms-5614b.firebasestorage.app",
-        messagingSenderId: "1876214105677",
+        messagingSenderId: "1076214105677",
         appId: "1:1076214105677:web:9d07574ea18f57e1203e04",
-        measurementId: "G-P1HP9THSN4"
+        measurementId: "G-P1HP9TH5N4"
     };
 
     // Initialize Firebase
@@ -181,7 +180,7 @@
     }
     function renderTable(){
         const tbody = document.getElementById("casesTableBody");
-        if(!cases.length){ tbody.innerHTML="<tr><td colspan='10'>No cases. Import Excel or add new. </td></tr>"; return; }
+        if(!cases.length){ tbody.innerHTML="<tr><td colspan='10'>No cases. Import Excel or add new. </td></table>"; return; }
         tbody.innerHTML = cases.map(c => `
             <tr>
                 <td>${escapeHtml(c.caseNo)}</td>
@@ -193,7 +192,7 @@
                 <td>${c.hearingDate?formatDate(c.hearingDate):'-'}</td>
                 <td>${c.disposalDate?formatDate(c.disposalDate):'-'}</td>
                 <td>${c.disposed?'✓ Disposed':'<span style="color:#b45309;">Pending</span>'}</td>
-                <td><i class="fas fa-trash-alt" onclick="deleteCase(${c.id})" style="cursor:pointer; color:#c2410c;"></i> ${!c.disposed?`<i class="fas fa-check-circle" onclick="quickDispose(${c.id})" style="cursor:pointer; margin-left:8px;"></i>`:''}</td>
+                <td class="case-row-actions"><i class="fas fa-trash-alt" onclick="deleteCase(${c.id})" style="cursor:pointer; color:#c2410c;"></i> ${!c.disposed?`<i class="fas fa-check-circle" onclick="quickDispose(${c.id})" style="cursor:pointer; margin-left:8px;"></i>`:''}</td>
             </tr>
         `).join('');
         const pending = cases.filter(c=>!c.disposed);
