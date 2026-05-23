@@ -1,11 +1,11 @@
 {
-  "name": "RCCMS Case Management",
+  "name": "RCCMS Reports Portal",
   "short_name": "RCCMS",
+  "description": "Case Management Reports",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#0f2b3d",
   "theme_color": "#1e4a76",
-  "description": "Revenue Case Management System",
+  "background_color": "#0f2b3d",
   "icons": [
     {
       "src": "icon-192.png",
