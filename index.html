@@ -88,7 +88,8 @@
             <div class="chart-card"><h3><i class="fas fa-chart-line"></i> Year-wise Filing vs Disposal</h3><canvas id="yearChart"></canvas></div>
         </div>
         <div class="data-table">
-            <table id="casesTable"><thead><tr><th>Case No</th><th>Section</th><th>Inst. Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Hearing Date</th><th>Disposal Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="casesTableBody"><tr><td colspan="10">Login to view cases</td></tr></tbody></table>
+            <table id="casesTable"><thead><tr><th>Case No</th><th>Section</th><th>Inst. Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Hearing Date</th><th>Disposal Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="casesTableBody"><tr><td colspan="10">Login to view cases</td></tr></tbody>
+            </table>
         </div>
         <div id="mprSection" style="display:none;"><div class="report-panel"><div style="display:flex; justify-content:space-between;"><h3>MPR Reports</h3><button id="closeMprBtn">✕ Close</button></div><div class="report-tabs"><div class="report-tab active" data-report="pending">Pending Ageing</div><div class="report-tab" data-report="disposal">Disposal Age at Disposal</div></div><div class="grid-2"><div><label>Start Date</label><input type="date" id="reportStartDate"></div><div><label>End Date</label><input type="date" id="reportEndDate"></div><div><label>Office Name</label><input type="text" id="officeNameInput" value="राजस्व मंडल, निवाई"></div><div><button id="refreshReportBtn" class="primary">Generate</button></div></div><div id="reportOutput"></div></div></div>
     </div>
@@ -105,23 +106,25 @@
     </div>
 </div>
 
-<!-- Other Modals (same as before) -->
+<!-- New Case Modal -->
 <div id="caseModal" class="modal"><div class="modal-content"><h3>Register New Case</h3><div class="form-group"><label>Case No *</label><input id="caseNo"></div><div class="form-group"><label>Section</label><input id="section"></div><div class="form-group"><label>Institution Date *</label><input type="date" id="instDate"></div><div class="form-group"><label>Purpose</label><input id="casePurpose"></div><div class="form-group"><label>Appellant</label><input id="appellant"></div><div class="form-group"><label>Respondent</label><input id="respondent"></div><div class="form-group"><label>Hearing Date</label><input type="date" id="hearingDate"></div><div style="display:flex; gap:12px;"><button id="saveCaseBtn" class="primary">Save</button><button id="closeModalBtn">Cancel</button></div></div></div>
+
+<!-- Disposal Modal -->
 <div id="disposalModal" class="modal"><div class="modal-content"><h3>Record Disposal</h3><div class="form-group"><label>Case No</label><input list="caseNosList" id="disposalCaseNo"><datalist id="caseNosList"></datalist></div><div class="form-group"><label>Disposal Date *</label><input type="date" id="disposalDate"></div><div style="display:flex; gap:12px;"><button id="confirmDisposalBtn" class="primary">Mark Disposed</button><button id="closeDisposalModalBtn">Cancel</button></div></div></div>
+
 <div id="firebaseMessage" class="message-bar"></div>
 
 <script>
-    // ==================== 🔥 FIREBASE CONFIGURATION ====================
-    // ⚠️ IMPORTANT: Replace apiKey with the one from YOUR Firebase project settings
-    // Go to Firebase Console → Project Settings → Your apps → Web app → Config
+    // ==================== 🔥 CORRECT FIREBASE CONFIGURATION (from your screenshot) ====================
     const firebaseConfig = {
-        apiKey: "AIzaSyD...",   // <--- PASTE YOUR CORRECT API KEY HERE
+        apiKey: "AIzaSyD9VnIRajIj7cJhD-sPBeYt8CYimE_vF7k",
         authDomain: "rccms-5614b.firebaseapp.com",
         databaseURL: "https://rccms-5614b-default-rtdb.asia-southeast1.firebasedatabase.app/",
         projectId: "rccms-5614b",
         storageBucket: "rccms-5614b.firebasestorage.app",
-        messagingSenderId: "1b76214105677",
-        appId: "1:1b76214105677:web:9d07574ea18f57e1203e04"
+        messagingSenderId: "1876214105677",
+        appId: "1:1076214105677:web:9d07574ea18f57e1203e04",
+        measurementId: "G-P1HP9THSN4"
     };
 
     // Initialize Firebase
@@ -179,13 +182,20 @@
     function renderTable(){
         const tbody = document.getElementById("casesTableBody");
         if(!cases.length){ tbody.innerHTML="<tr><td colspan='10'>No cases. Import Excel or add new. </td></tr>"; return; }
-        tbody.innerHTML = cases.map(c => `<tr>
-            <td>${escapeHtml(c.caseNo)}</td><td>${escapeHtml(c.section||'')}</td><td>${formatDate(c.institutionDate)}</td>
-            <td>${escapeHtml(c.casePurpose||'')}</td><td>${escapeHtml(c.appellantName||'')}</td><td>${escapeHtml(c.respondentName||'')}</td>
-            <td>${c.hearingDate?formatDate(c.hearingDate):'-'}</td><td>${c.disposalDate?formatDate(c.disposalDate):'-'}</td>
-            <td>${c.disposed?'✓ Disposed':'<span style="color:#b45309;">Pending</span>'}</td>
-            <td><i class="fas fa-trash-alt" onclick="deleteCase(${c.id})" style="cursor:pointer; color:#c2410c;"></i> ${!c.disposed?`<i class="fas fa-check-circle" onclick="quickDispose(${c.id})" style="cursor:pointer; margin-left:8px;"></i>`:''}</td>
-        </tr>`).join('');
+        tbody.innerHTML = cases.map(c => `
+            <tr>
+                <td>${escapeHtml(c.caseNo)}</td>
+                <td>${escapeHtml(c.section||'')}</td>
+                <td>${formatDate(c.institutionDate)}</td>
+                <td>${escapeHtml(c.casePurpose||'')}</td>
+                <td>${escapeHtml(c.appellantName||'')}</td>
+                <td>${escapeHtml(c.respondentName||'')}</td>
+                <td>${c.hearingDate?formatDate(c.hearingDate):'-'}</td>
+                <td>${c.disposalDate?formatDate(c.disposalDate):'-'}</td>
+                <td>${c.disposed?'✓ Disposed':'<span style="color:#b45309;">Pending</span>'}</td>
+                <td><i class="fas fa-trash-alt" onclick="deleteCase(${c.id})" style="cursor:pointer; color:#c2410c;"></i> ${!c.disposed?`<i class="fas fa-check-circle" onclick="quickDispose(${c.id})" style="cursor:pointer; margin-left:8px;"></i>`:''}</td>
+            </tr>
+        `).join('');
         const pending = cases.filter(c=>!c.disposed);
         document.getElementById("caseNosList").innerHTML = pending.map(c=>`<option value="${escapeHtml(c.caseNo)}">`).join('');
     }
@@ -233,7 +243,6 @@
         });
     }
 
-    // MPR functions (same as previous, omitted for brevity but fully functional)
     function computeAgeYears(inst, asOn){ let i=new Date(inst), a=new Date(asOn); if(isNaN(i)||isNaN(a)) return 0; let y=a.getFullYear()-i.getFullYear(); if(a.getMonth()<i.getMonth()||(a.getMonth()===i.getMonth()&&a.getDate()<i.getDate())) y--; return Math.max(0,y); }
     function getDisposalAgeBucket(y){ if(y>=5) return "Over 5 Years"; if(y>=3) return "Over 3 Years"; if(y>=2) return "Over 2 Years"; if(y>=1) return "Over 1 Year"; return "Less Than 1 Year"; }
     function generatePendingMPR(start,end,office){
@@ -278,7 +287,6 @@
         }
     }
 
-    // Import/Export functions (full implementation)
     function importCasesExcel(file){
         let reader = new FileReader();
         reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); };
@@ -376,7 +384,6 @@
     };
     document.getElementById("logoutBtn").onclick = () => auth.signOut();
 
-    // Attach other event listeners
     document.addEventListener("DOMContentLoaded", function(){
         document.getElementById("addCaseBtn").onclick=()=>document.getElementById("caseModal").style.display="flex";
         document.getElementById("closeModalBtn").onclick=()=>document.getElementById("caseModal").style.display="none";
