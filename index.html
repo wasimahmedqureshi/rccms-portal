@@ -8,190 +8,46 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <!-- Firebase SDKs (Compat) -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body {
-            background: linear-gradient(145deg, #eef2f9 0%, #e0e8f0 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
+        body { background: linear-gradient(145deg, #eef2f9 0%, #e0e8f0 100%); min-height: 100vh; padding: 20px; }
         .container { max-width: 1600px; margin: 0 auto; }
-        
-        /* Glassmorphism Header */
-        .header {
-            background: rgba(15, 43, 61, 0.85);
-            backdrop-filter: blur(12px);
-            border-radius: 42px;
-            padding: 20px 28px;
-            margin-bottom: 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-        }
-        .header h1 { font-size: 1.8rem; font-weight: 800; color: white; letter-spacing: -0.5px; }
-        .badge {
-            background: rgba(255,255,255,0.2);
-            backdrop-filter: blur(4px);
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: white;
-        }
-        
-        /* Toolbar */
-        .toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 28px;
-            background: rgba(255,255,255,0.7);
-            backdrop-filter: blur(8px);
-            padding: 16px 24px;
-            border-radius: 56px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
-            border: 1px solid rgba(255,255,255,0.6);
-        }
-        button {
-            background: white;
-            border: none;
-            padding: 10px 22px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: #1e2f3e;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        }
+        .header { background: rgba(15, 43, 61, 0.85); backdrop-filter: blur(12px); border-radius: 42px; padding: 20px 28px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); border: 1px solid rgba(255,255,255,0.2); }
+        .header h1 { font-size: 1.8rem; font-weight: 800; color: white; }
+        .badge { background: rgba(255,255,255,0.2); backdrop-filter: blur(4px); padding: 8px 20px; border-radius: 40px; font-size: 0.9rem; color: white; }
+        .toolbar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; background: rgba(255,255,255,0.7); backdrop-filter: blur(8px); padding: 16px 24px; border-radius: 56px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); border: 1px solid rgba(255,255,255,0.6); }
+        button { background: white; border: none; padding: 10px 22px; border-radius: 40px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px; color: #1e2f3e; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         button.primary { background: #1e4a76; color: white; box-shadow: 0 4px 12px rgba(30,74,118,0.3); }
         button.primary:hover { background: #0f3a5c; transform: translateY(-2px); }
-        button.outline { background: transparent; border: 1px solid #1e4a76; color: #1e4a76; }
         button.danger { background: #fff2f0; color: #c2410c; border: 1px solid #ffccc7; }
         button.danger:hover { background: #ffe4e0; transform: translateY(-2px); }
         button:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.1); }
-        
-        /* Stats Cards */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 24px;
-            margin-bottom: 36px;
-        }
-        .stat-card {
-            background: white;
-            border-radius: 32px;
-            padding: 24px;
-            box-shadow: 0 12px 28px rgba(0,0,0,0.05);
-            border: 1px solid rgba(0,0,0,0.05);
-            transition: transform 0.2s;
-        }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 36px; }
+        .stat-card { background: white; border-radius: 32px; padding: 24px; box-shadow: 0 12px 28px rgba(0,0,0,0.05); transition: transform 0.2s; }
         .stat-card:hover { transform: translateY(-5px); }
-        .stat-card .number { font-size: 2.5rem; font-weight: 800; color: #0f2b3d; line-height: 1.2; }
-        .stat-card .label { font-size: 0.85rem; color: #5c6f87; margin-top: 8px; letter-spacing: 0.3px; }
-        
-        /* Dashboard Charts */
-        .dashboard-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 28px;
-            margin-bottom: 40px;
-        }
-        .chart-card {
-            background: white;
-            border-radius: 36px;
-            padding: 24px;
-            flex: 1;
-            min-width: 280px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
-            transition: all 0.2s;
-        }
-        .chart-card h3 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            border-left: 5px solid #1e4a76;
-            padding-left: 16px;
-            color: #1e2f3e;
-        }
+        .stat-card .number { font-size: 2.5rem; font-weight: 800; color: #0f2b3d; }
+        .stat-card .label { font-size: 0.85rem; color: #5c6f87; margin-top: 8px; }
+        .dashboard-row { display: flex; flex-wrap: wrap; gap: 28px; margin-bottom: 40px; }
+        .chart-card { background: white; border-radius: 36px; padding: 24px; flex: 1; min-width: 280px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); }
+        .chart-card h3 { font-size: 1.25rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border-left: 5px solid #1e4a76; padding-left: 16px; }
         canvas { max-height: 260px; width: 100%; }
-        
-        /* Table */
-        .data-table {
-            background: white;
-            border-radius: 32px;
-            overflow-x: auto;
-            padding: 4px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.05);
-        }
+        .data-table { background: white; border-radius: 32px; overflow-x: auto; padding: 4px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
         table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         th, td { padding: 14px 12px; text-align: left; border-bottom: 1px solid #edf2f9; }
-        th { background: #f8fafd; font-weight: 700; color: #1f3a4b; }
-        
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(5px);
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-        .modal-content {
-            background: white;
-            max-width: 500px;
-            width: 90%;
-            border-radius: 48px;
-            padding: 32px;
-            box-shadow: 0 25px 45px rgba(0,0,0,0.2);
-        }
+        th { background: #f8fafd; font-weight: 700; }
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); align-items: center; justify-content: center; z-index: 2000; }
+        .modal-content { background: white; max-width: 500px; width: 90%; border-radius: 48px; padding: 32px; box-shadow: 0 25px 45px rgba(0,0,0,0.2); }
         .form-group { margin-bottom: 20px; }
-        label { font-weight: 600; display: block; margin-bottom: 8px; color: #1e2f3e; }
+        label { font-weight: 600; display: block; margin-bottom: 8px; }
         input { width: 100%; padding: 12px 16px; border: 1px solid #cfdee9; border-radius: 28px; font-size: 0.9rem; }
-        .message-bar {
-            position: fixed;
-            bottom: 25px;
-            right: 25px;
-            background: #1e4a76;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 60px;
-            font-size: 0.85rem;
-            z-index: 2100;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            display: none;
-            backdrop-filter: blur(8px);
-        }
-        .report-panel {
-            background: white;
-            border-radius: 36px;
-            padding: 28px;
-            margin-top: 30px;
-        }
+        .message-bar { position: fixed; bottom: 25px; right: 25px; background: #1e4a76; color: white; padding: 12px 24px; border-radius: 60px; font-size: 0.85rem; z-index: 2100; display: none; backdrop-filter: blur(8px); }
+        .report-panel { background: white; border-radius: 36px; padding: 28px; margin-top: 30px; }
         .report-tabs { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
-        .report-tab {
-            padding: 10px 28px;
-            border-radius: 40px;
-            background: #f0f4fa;
-            cursor: pointer;
-            font-weight: 600;
-        }
+        .report-tab { padding: 10px 28px; border-radius: 40px; background: #f0f4fa; cursor: pointer; font-weight: 600; }
         .report-tab.active { background: #1e4a76; color: white; }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width:700px){ .grid-2{ grid-template-columns:1fr; } button{ padding: 8px 14px; } .header h1{ font-size:1.3rem; } }
@@ -205,7 +61,6 @@
         <div class="badge" id="userStatus"><i class="fas fa-user-lock"></i> Secured Portal</div>
     </div>
 
-    <!-- Toolbar (initially hidden) -->
     <div class="toolbar" id="mainToolbar" style="display: none;">
         <button id="addCaseBtn" class="primary"><i class="fas fa-plus-circle"></i> New Case</button>
         <button id="disposeBtn" class="outline"><i class="fas fa-check-double"></i> Record Disposal</button>
@@ -221,7 +76,6 @@
         <input type="file" id="disposalExcelInput" style="display:none" accept=".xlsx,.xls,.csv">
     </div>
 
-    <!-- Dashboard & Stats (hidden until login) -->
     <div id="mainContent" style="display: none;">
         <div class="stats-grid">
             <div class="stat-card"><div class="number" id="totalCases">0</div><div class="label">Total Registered</div></div>
@@ -229,19 +83,13 @@
             <div class="stat-card"><div class="number" id="disposedCount">0</div><div class="label">Disposed</div></div>
             <div class="stat-card"><div class="number" id="yearlyFiling">0</div><div class="label">Filed This Year</div></div>
         </div>
-
         <div class="dashboard-row">
             <div class="chart-card"><h3><i class="fas fa-layer-group"></i> Section-wise Case Load</h3><canvas id="sectionChart"></canvas><div id="sectionSummary" style="margin-top:16px; font-size:0.75rem; text-align:center;"></div></div>
             <div class="chart-card"><h3><i class="fas fa-chart-line"></i> Year-wise Filing vs Disposal</h3><canvas id="yearChart"></canvas></div>
         </div>
-
         <div class="data-table">
-            <table id="casesTable">
-                <thead><tr><th>Case No</th><th>Section</th><th>Inst. Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Hearing Date</th><th>Disposal Date</th><th>Status</th><th>Actions</th></tr></thead>
-                <tbody id="casesTableBody"><tr><td colspan="10">Login to view cases</td></tr></tbody>
-            </table>
+            <table id="casesTable"><thead><tr><th>Case No</th><th>Section</th><th>Inst. Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Hearing Date</th><th>Disposal Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="casesTableBody"><tr><td colspan="10">Login to view cases</td></tr></tbody></table>
         </div>
-
         <div id="mprSection" style="display:none;"><div class="report-panel"><div style="display:flex; justify-content:space-between;"><h3>MPR Reports</h3><button id="closeMprBtn">✕ Close</button></div><div class="report-tabs"><div class="report-tab active" data-report="pending">Pending Ageing</div><div class="report-tab" data-report="disposal">Disposal Age at Disposal</div></div><div class="grid-2"><div><label>Start Date</label><input type="date" id="reportStartDate"></div><div><label>End Date</label><input type="date" id="reportEndDate"></div><div><label>Office Name</label><input type="text" id="officeNameInput" value="राजस्व मंडल, निवाई"></div><div><button id="refreshReportBtn" class="primary">Generate</button></div></div><div id="reportOutput"></div></div></div>
     </div>
 </div>
@@ -257,18 +105,17 @@
     </div>
 </div>
 
-<!-- New Case Modal -->
+<!-- Other Modals (same as before) -->
 <div id="caseModal" class="modal"><div class="modal-content"><h3>Register New Case</h3><div class="form-group"><label>Case No *</label><input id="caseNo"></div><div class="form-group"><label>Section</label><input id="section"></div><div class="form-group"><label>Institution Date *</label><input type="date" id="instDate"></div><div class="form-group"><label>Purpose</label><input id="casePurpose"></div><div class="form-group"><label>Appellant</label><input id="appellant"></div><div class="form-group"><label>Respondent</label><input id="respondent"></div><div class="form-group"><label>Hearing Date</label><input type="date" id="hearingDate"></div><div style="display:flex; gap:12px;"><button id="saveCaseBtn" class="primary">Save</button><button id="closeModalBtn">Cancel</button></div></div></div>
-
-<!-- Disposal Modal -->
 <div id="disposalModal" class="modal"><div class="modal-content"><h3>Record Disposal</h3><div class="form-group"><label>Case No</label><input list="caseNosList" id="disposalCaseNo"><datalist id="caseNosList"></datalist></div><div class="form-group"><label>Disposal Date *</label><input type="date" id="disposalDate"></div><div style="display:flex; gap:12px;"><button id="confirmDisposalBtn" class="primary">Mark Disposed</button><button id="closeDisposalModalBtn">Cancel</button></div></div></div>
-
 <div id="firebaseMessage" class="message-bar"></div>
 
 <script>
-    // Firebase Config (Singapore region)
+    // ==================== 🔥 FIREBASE CONFIGURATION ====================
+    // ⚠️ IMPORTANT: Replace apiKey with the one from YOUR Firebase project settings
+    // Go to Firebase Console → Project Settings → Your apps → Web app → Config
     const firebaseConfig = {
-        apiKey: "AIzaSy9VnIRajj7cJhD-sPBeYt8CYimE_vF7k",
+        apiKey: "AIzaSyD...",   // <--- PASTE YOUR CORRECT API KEY HERE
         authDomain: "rccms-5614b.firebaseapp.com",
         databaseURL: "https://rccms-5614b-default-rtdb.asia-southeast1.firebasedatabase.app/",
         projectId: "rccms-5614b",
@@ -277,18 +124,14 @@
         appId: "1:1b76214105677:web:9d07574ea18f57e1203e04"
     };
 
+    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const database = firebase.database();
     const casesRef = database.ref('rccms_cases');
 
-    let cases = [];
-    let nextId = 1;
-    let isLoading = true;
-    let sectionChart, yearChart;
-    let currentReportType = "pending";
+    let cases = [], nextId = 1, isLoading = true, sectionChart, yearChart, currentReportType = "pending";
 
-    // Helper functions
     function showMessage(msg, isError = false) {
         const div = document.getElementById('firebaseMessage');
         div.textContent = msg;
@@ -335,44 +178,30 @@
     }
     function renderTable(){
         const tbody = document.getElementById("casesTableBody");
-        if(!cases.length){ tbody.innerHTML="<tr><td colspan='10'>No cases. Import Excel or add new.</td></tr>"; return; }
-        tbody.innerHTML = cases.map(c => `
-            <tr>
-                <td>${escapeHtml(c.caseNo)}</td>
-                <td>${escapeHtml(c.section||'')}</td>
-                <td>${formatDate(c.institutionDate)}</td>
-                <td>${escapeHtml(c.casePurpose||'')}</td>
-                <td>${escapeHtml(c.appellantName||'')}</td>
-                <td>${escapeHtml(c.respondentName||'')}</td>
-                <td>${c.hearingDate?formatDate(c.hearingDate):'-'}</td>
-                <td>${c.disposalDate?formatDate(c.disposalDate):'-'}</td>
-                <td>${c.disposed?'✓ Disposed':'<span style="color:#b45309;">Pending</span>'}</td>
-                <td><i class="fas fa-trash-alt" onclick="deleteCase(${c.id})" style="cursor:pointer; color:#c2410c;"></i> ${!c.disposed?`<i class="fas fa-check-circle" onclick="quickDispose(${c.id})" style="cursor:pointer; margin-left:8px;"></i>`:''}</td>
-            </tr>
-        `).join('');
+        if(!cases.length){ tbody.innerHTML="<tr><td colspan='10'>No cases. Import Excel or add new. </td></tr>"; return; }
+        tbody.innerHTML = cases.map(c => `<tr>
+            <td>${escapeHtml(c.caseNo)}</td><td>${escapeHtml(c.section||'')}</td><td>${formatDate(c.institutionDate)}</td>
+            <td>${escapeHtml(c.casePurpose||'')}</td><td>${escapeHtml(c.appellantName||'')}</td><td>${escapeHtml(c.respondentName||'')}</td>
+            <td>${c.hearingDate?formatDate(c.hearingDate):'-'}</td><td>${c.disposalDate?formatDate(c.disposalDate):'-'}</td>
+            <td>${c.disposed?'✓ Disposed':'<span style="color:#b45309;">Pending</span>'}</td>
+            <td><i class="fas fa-trash-alt" onclick="deleteCase(${c.id})" style="cursor:pointer; color:#c2410c;"></i> ${!c.disposed?`<i class="fas fa-check-circle" onclick="quickDispose(${c.id})" style="cursor:pointer; margin-left:8px;"></i>`:''}</td>
+        </tr>`).join('');
         const pending = cases.filter(c=>!c.disposed);
         document.getElementById("caseNosList").innerHTML = pending.map(c=>`<option value="${escapeHtml(c.caseNo)}">`).join('');
     }
     window.deleteCase = function(id){
-        if(confirm("Delete this case?")){
-            cases = cases.filter(c=>c.id!==id);
-            saveToFirebase();
-        }
+        if(confirm("Delete this case?")){ cases = cases.filter(c=>c.id!==id); saveToFirebase(); }
     };
     window.quickDispose = function(id){
         let c = cases.find(c=>c.id===id);
         if(c && !c.disposed){
             let d = prompt("Disposal Date (YYYY-MM-DD):", new Date().toISOString().slice(0,10));
-            if(d && d.match(/\d{4}-\d{2}-\d{2}/)){
-                c.disposed = true;
-                c.disposalDate = d;
-                saveToFirebase();
-            } else alert("Invalid date");
+            if(d && d.match(/\d{4}-\d{2}-\d{2}/)){ c.disposed=true; c.disposalDate=d; saveToFirebase(); }
+            else alert("Invalid date");
         }
     };
 
     function updateCharts(){
-        // Section wise
         let secMap = new Map();
         cases.forEach(c => {
             if(c.section){
@@ -382,38 +211,29 @@
         let sorted = Array.from(secMap.entries()).sort((a,b)=>b[1]-a[1]).slice(0,10);
         if(sectionChart) sectionChart.destroy();
         sectionChart = new Chart(document.getElementById('sectionChart'), {
-            type:'bar',
-            data:{ labels:sorted.map(s=>s[0]), datasets:[{ label:'Number of Cases', data:sorted.map(s=>s[1]), backgroundColor:'#2c7da0', borderRadius:10 }] },
-            options:{ responsive:true, maintainAspectRatio:true, plugins:{ legend:{ position:'top' } } }
+            type:'bar', data:{ labels:sorted.map(s=>s[0]), datasets:[{ label:'Number of Cases', data:sorted.map(s=>s[1]), backgroundColor:'#2c7da0', borderRadius:10 }] },
+            options:{ responsive:true, maintainAspectRatio:true }
         });
         document.getElementById("sectionSummary").innerHTML = `📊 Total sections: ${secMap.size} &nbsp; | &nbsp; Top: ${sorted.slice(0,3).map(s=>s[0]).join(', ')}`;
         
-        // Year wise filing & disposal
         let yearMap = new Map();
         cases.forEach(c => {
             let y = new Date(c.institutionDate).getFullYear();
-            if(!isNaN(y)){
-                let cur = yearMap.get(y) || {filed:0, disposed:0};
-                cur.filed++;
-                yearMap.set(y, cur);
-            }
+            if(!isNaN(y)){ let cur = yearMap.get(y) || {filed:0, disposed:0}; cur.filed++; yearMap.set(y, cur); }
             if(c.disposed && c.disposalDate){
                 let dy = new Date(c.disposalDate).getFullYear();
-                let cur = yearMap.get(dy) || {filed:0, disposed:0};
-                cur.disposed++;
-                yearMap.set(dy, cur);
+                let cur = yearMap.get(dy) || {filed:0, disposed:0}; cur.disposed++; yearMap.set(dy, cur);
             }
         });
         let years = Array.from(yearMap.keys()).sort();
         if(yearChart) yearChart.destroy();
         yearChart = new Chart(document.getElementById('yearChart'), {
-            type:'line',
-            data:{ labels:years, datasets:[{ label:'Cases Filed', data:years.map(y=>yearMap.get(y)?.filed||0), borderColor:'#1e4a76', tension:0.2, fill:false, pointBackgroundColor:'#1e4a76' }, { label:'Disposed', data:years.map(y=>yearMap.get(y)?.disposed||0), borderColor:'#e9a23b', tension:0.2, fill:false, pointBackgroundColor:'#e9a23b' }] },
-            options:{ responsive:true, maintainAspectRatio:true }
+            type:'line', data:{ labels:years, datasets:[{ label:'Cases Filed', data:years.map(y=>yearMap.get(y)?.filed||0), borderColor:'#1e4a76', tension:0.2 }, { label:'Disposed', data:years.map(y=>yearMap.get(y)?.disposed||0), borderColor:'#e9a23b', tension:0.2 }] },
+            options:{ responsive:true }
         });
     }
 
-    // MPR functions (same as before, compact)
+    // MPR functions (same as previous, omitted for brevity but fully functional)
     function computeAgeYears(inst, asOn){ let i=new Date(inst), a=new Date(asOn); if(isNaN(i)||isNaN(a)) return 0; let y=a.getFullYear()-i.getFullYear(); if(a.getMonth()<i.getMonth()||(a.getMonth()===i.getMonth()&&a.getDate()<i.getDate())) y--; return Math.max(0,y); }
     function getDisposalAgeBucket(y){ if(y>=5) return "Over 5 Years"; if(y>=3) return "Over 3 Years"; if(y>=2) return "Over 2 Years"; if(y>=1) return "Over 1 Year"; return "Less Than 1 Year"; }
     function generatePendingMPR(start,end,office){
@@ -446,7 +266,8 @@
             let r = generatePendingMPR(start,end,office);
             let bucketRows = Object.entries(r.buckets).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('');
             out.innerHTML = `<h4>Pending MPR (as on ${end.toISOString().slice(0,10)})</h4>
-            <table style="width:100%"><tr><th>Office</th><th>Initial</th><th>New</th><th>Decided</th><th>Pending End</th></tr><tr><td>${escapeHtml(r.office)}</td><td>${r.initialPending}</td><td>${r.newRegistered}</td><td>${r.totalDecided}</td><td>${r.pendingAsOnEnd}</td></tr></table>
+            <table style="width:100%"><tr><th>Office</th><th>Initial</th><th>New</th><th>Decided</th><th>Pending End</th></tr>
+            <tr><td>${escapeHtml(r.office)}</td><td>${r.initialPending}</td><td>${r.newRegistered}</td><td>${r.totalDecided}</td><td>${r.pendingAsOnEnd}</td></tr></table>
             <div style="margin-top:20px;"><strong>Age-wise Pending</strong><table style="width:100%; margin-top:8px;">${bucketRows}</table></div>`;
         } else {
             let r = generateDisposalMPR(start,end,office);
@@ -457,7 +278,7 @@
         }
     }
 
-    // Import/Export (same robust code)
+    // Import/Export functions (full implementation)
     function importCasesExcel(file){
         let reader = new FileReader();
         reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); };
@@ -469,12 +290,8 @@
         let idxCase = headers.findIndex(h=>h.includes("case no")||h==="caseno");
         let idxInst = headers.findIndex(h=>h.includes("institution")||h.includes("inst date"));
         if(idxCase===-1||idxInst===-1) return alert("Need 'Case No' and 'Institution Date'");
-        let idxSec = headers.findIndex(h=>h.includes("section"));
-        let idxPurpose = headers.findIndex(h=>h.includes("purpose"));
-        let idxApp = headers.findIndex(h=>h.includes("appellant"));
-        let idxResp = headers.findIndex(h=>h.includes("respondent"));
-        let idxHear = headers.findIndex(h=>h.includes("hearing"));
-        let imported = 0;
+        let idxSec = headers.findIndex(h=>h.includes("section")), idxPurpose = headers.findIndex(h=>h.includes("purpose")), idxApp = headers.findIndex(h=>h.includes("appellant")), idxResp = headers.findIndex(h=>h.includes("respondent")), idxHear = headers.findIndex(h=>h.includes("hearing"));
+        let imported=0;
         for(let i=1;i<rows.length;i++){
             let row = rows[i];
             let caseNo = row[idxCase] ? String(row[idxCase]).trim() : "";
@@ -500,7 +317,7 @@
         let idxCase = headers.findIndex(h=>h.includes("case no")||h==="caseno");
         let idxDisp = headers.findIndex(h=>h.includes("disposal date")||h.includes("disposal"));
         if(idxCase===-1||idxDisp===-1) return alert("Need 'Case No' and 'Disposal Date'");
-        let updated = 0;
+        let updated=0;
         for(let i=1;i<rows.length;i++){
             let row = rows[i];
             let caseNo = row[idxCase] ? String(row[idxCase]).trim() : "";
@@ -534,13 +351,10 @@
             document.getElementById("mainToolbar").style.display = "flex";
             document.getElementById("mainContent").style.display = "block";
             document.getElementById("userStatus").innerHTML = `<i class="fas fa-user-check"></i> ${user.email}`;
-            // Load data
             casesRef.on('value', (snap) => {
                 let data = snap.val();
-                if(data){
-                    cases = Object.values(data);
-                    if(cases.length) nextId = Math.max(...cases.map(c=>c.id||0))+1;
-                } else { cases = []; nextId=1; }
+                if(data){ cases = Object.values(data); if(cases.length) nextId = Math.max(...cases.map(c=>c.id||0))+1; }
+                else { cases = []; nextId=1; }
                 isLoading = false;
                 renderAll();
                 showMessage("Data loaded from Firebase");
@@ -553,7 +367,6 @@
         }
     });
 
-    // Login
     document.getElementById("loginBtn").onclick = () => {
         let email = document.getElementById("loginEmail").value;
         let pwd = document.getElementById("loginPassword").value;
@@ -563,7 +376,7 @@
     };
     document.getElementById("logoutBtn").onclick = () => auth.signOut();
 
-    // Event listeners (after DOM ready)
+    // Attach other event listeners
     document.addEventListener("DOMContentLoaded", function(){
         document.getElementById("addCaseBtn").onclick=()=>document.getElementById("caseModal").style.display="flex";
         document.getElementById("closeModalBtn").onclick=()=>document.getElementById("caseModal").style.display="none";
