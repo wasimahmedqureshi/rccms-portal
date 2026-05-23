@@ -37,13 +37,12 @@
         .data-table th, .data-table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #edf2f9; }
         .data-table th { background: #f8fafd; font-weight: 700; }
         .report-section { margin-top: 30px; }
-        .report-buttons { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
         .report-output { background: white; border-radius: 32px; padding: 24px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
         .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); align-items: center; justify-content: center; z-index: 2000; }
         .modal-content { background: white; max-width: 500px; width: 90%; border-radius: 48px; padding: 32px; box-shadow: 0 25px 45px rgba(0,0,0,0.2); }
         .form-group { margin-bottom: 20px; }
         label { font-weight: 600; display: block; margin-bottom: 8px; }
-        input { width: 100%; padding: 12px 16px; border: 1px solid #cfdee9; border-radius: 28px; font-size: 0.9rem; }
+        input, select { width: 100%; padding: 12px 16px; border: 1px solid #cfdee9; border-radius: 28px; font-size: 0.9rem; }
         .message-bar { position: fixed; bottom: 25px; right: 25px; background: #1e4a76; color: white; padding: 12px 24px; border-radius: 60px; font-size: 0.85rem; z-index: 2100; display: none; backdrop-filter: blur(8px); }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
         @media (max-width:700px){ .grid-2{ grid-template-columns:1fr; } button{ padding: 8px 14px; } .header h1{ font-size:1.3rem; } }
@@ -64,6 +63,8 @@
         <button id="importDisposalExcelBtn" class="outline"><i class="fas fa-file-excel"></i> Import Disposal</button>
         <button id="exportBackupBtn"><i class="fas fa-download"></i> Backup JSON</button>
         <button id="importBackupBtn"><i class="fas fa-upload"></i> Restore</button>
+        <button id="pendingMprBtn" class="primary"><i class="fas fa-chart-line"></i> Pending MPR</button>
+        <button id="disposalMprBtn" class="primary"><i class="fas fa-chart-bar"></i> Disposal MPR</button>
         <button id="sampleDataBtn"><i class="fas fa-chart-simple"></i> Sample</button>
         <button id="deleteAllBtn" class="danger"><i class="fas fa-trash-alt"></i> Delete All Data</button>
         <button id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -102,14 +103,10 @@
             </div>
         </div>
 
-        <!-- MPR Reports Section (always visible, but reports open via buttons) -->
+        <!-- MPR Report Output Area -->
         <div class="report-section">
-            <div class="report-buttons">
-                <button id="showPendingMprBtn" class="primary"><i class="fas fa-chart-line"></i> Show Pending MPR</button>
-                <button id="showDisposalMprBtn" class="primary"><i class="fas fa-chart-bar"></i> Show Disposal MPR</button>
-            </div>
             <div id="reportOutput" class="report-output">
-                <p style="text-align:center; color:#5c6f87;">Click a button above to generate the report.</p>
+                <p style="text-align:center; color:#5c6f87;">Click Pending MPR or Disposal MPR to generate report.</p>
             </div>
         </div>
     </div>
@@ -126,10 +123,10 @@
     </div>
 </div>
 
-<!-- New Case Modal (hidden) -->
+<!-- New Case Modal -->
 <div id="caseModal" class="modal"><div class="modal-content"><h3>Register New Case</h3><div class="form-group"><label>Case No *</label><input id="caseNo"></div><div class="form-group"><label>Section</label><input id="section"></div><div class="form-group"><label>Institution Date *</label><input type="date" id="instDate"></div><div class="form-group"><label>Purpose</label><input id="casePurpose"></div><div class="form-group"><label>Appellant</label><input id="appellant"></div><div class="form-group"><label>Respondent</label><input id="respondent"></div><div class="form-group"><label>Hearing Date</label><input type="date" id="hearingDate"></div><div style="display:flex; gap:12px;"><button id="saveCaseBtn" class="primary">Save</button><button id="closeModalBtn">Cancel</button></div></div></div>
 
-<!-- Disposal Modal (hidden) -->
+<!-- Disposal Modal -->
 <div id="disposalModal" class="modal"><div class="modal-content"><h3>Record Disposal</h3><div class="form-group"><label>Case No</label><input list="caseNosList" id="disposalCaseNo"><datalist id="caseNosList"></datalist></div><div class="form-group"><label>Disposal Date *</label><input type="date" id="disposalDate"></div><div style="display:flex; gap:12px;"><button id="confirmDisposalBtn" class="primary">Mark Disposed</button><button id="closeDisposalModalBtn">Cancel</button></div></div></div>
 
 <div id="firebaseMessage" class="message-bar"></div>
@@ -154,7 +151,6 @@
 
     let cases = [], nextId = 1, isLoading = true;
 
-    // Helper functions
     function showMessage(msg, isError = false) {
         const div = document.getElementById('firebaseMessage');
         div.textContent = msg;
@@ -263,9 +259,21 @@
     }
 
     function renderPendingMPR(){
-        const start = new Date(document.getElementById("reportStartDate").value);
-        const end = new Date(document.getElementById("reportEndDate").value);
-        const office = document.getElementById("officeNameInput").value || "RCCMS Office";
+        const startInput = document.getElementById('reportStartDate');
+        const endInput = document.getElementById('reportEndDate');
+        const officeInput = document.getElementById('officeNameInput');
+        let start, end, office;
+        if(startInput && endInput && officeInput){
+            start = new Date(startInput.value);
+            end = new Date(endInput.value);
+            office = officeInput.value || "RCCMS Office";
+        } else {
+            const today = new Date();
+            const lastYear = new Date(); lastYear.setFullYear(today.getFullYear()-1);
+            start = lastYear;
+            end = today;
+            office = "RCCMS Office";
+        }
         if(isNaN(start)||isNaN(end)||start>end){ alert("Invalid date range"); return; }
         const r = generatePendingMPR(start,end,office);
         const bucketRows = Object.entries(r.buckets).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('');
@@ -284,13 +292,26 @@
             <div style="margin-top:20px;"><strong>Age-wise Pending Cases</strong><table style="width:100%; margin-top:8px;"><thead><tr><th>Age Slab</th><th>Count</th></tr></thead><tbody>${bucketRows}</tbody></table></div>
         `;
         document.getElementById("reportOutput").innerHTML = html;
-        document.getElementById("refreshPendingBtn").onclick = () => renderPendingMPR();
+        const refreshBtn = document.getElementById("refreshPendingBtn");
+        if(refreshBtn) refreshBtn.onclick = () => renderPendingMPR();
     }
 
     function renderDisposalMPR(){
-        const start = new Date(document.getElementById("reportStartDate").value);
-        const end = new Date(document.getElementById("reportEndDate").value);
-        const office = document.getElementById("officeNameInput").value || "RCCMS Office";
+        const startInput = document.getElementById('reportStartDate');
+        const endInput = document.getElementById('reportEndDate');
+        const officeInput = document.getElementById('officeNameInput');
+        let start, end, office;
+        if(startInput && endInput && officeInput){
+            start = new Date(startInput.value);
+            end = new Date(endInput.value);
+            office = officeInput.value || "RCCMS Office";
+        } else {
+            const today = new Date();
+            const lastYear = new Date(); lastYear.setFullYear(today.getFullYear()-1);
+            start = lastYear;
+            end = today;
+            office = "RCCMS Office";
+        }
         if(isNaN(start)||isNaN(end)||start>end){ alert("Invalid date range"); return; }
         const r = generateDisposalMPR(start,end,office);
         const html = `
@@ -306,10 +327,11 @@
             <div style="margin-top:15px;"><strong>Month-wise Disposals:</strong><ul>${r.monthWise.map(m=>`<li>${m}</li>`).join('')}</ul></div>
         `;
         document.getElementById("reportOutput").innerHTML = html;
-        document.getElementById("refreshDisposalBtn").onclick = () => renderDisposalMPR();
+        const refreshBtn = document.getElementById("refreshDisposalBtn");
+        if(refreshBtn) refreshBtn.onclick = () => renderDisposalMPR();
     }
 
-    // Data import/export functions (short but fully functional)
+    // Import/Export functions (same as before)
     function importCasesExcel(file){
         let reader = new FileReader();
         reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); };
@@ -409,47 +431,21 @@
     };
     document.getElementById("logoutBtn").onclick = () => auth.signOut();
 
-    // Buttons and modals
+    // Event listeners after DOM ready
     document.addEventListener("DOMContentLoaded", function(){
         // MPR buttons
-        document.getElementById("showPendingMprBtn").onclick = () => {
-            const today = new Date();
-            const lastYear = new Date(); lastYear.setFullYear(today.getFullYear()-1);
-            document.getElementById("reportStartDate").value = lastYear.toISOString().slice(0,10);
-            document.getElementById("reportEndDate").value = today.toISOString().slice(0,10);
-            if(!document.getElementById("officeNameInput")){
-                const inp = document.createElement("input");
-                inp.type = "hidden";
-                inp.id = "officeNameInput";
-                inp.value = "RCCMS Office";
-                document.body.appendChild(inp);
-            }
-            renderPendingMPR();
-        };
-        document.getElementById("showDisposalMprBtn").onclick = () => {
-            const today = new Date();
-            const lastYear = new Date(); lastYear.setFullYear(today.getFullYear()-1);
-            document.getElementById("reportStartDate").value = lastYear.toISOString().slice(0,10);
-            document.getElementById("reportEndDate").value = today.toISOString().slice(0,10);
-            if(!document.getElementById("officeNameInput")){
-                const inp = document.createElement("input");
-                inp.type = "hidden";
-                inp.id = "officeNameInput";
-                inp.value = "RCCMS Office";
-                document.body.appendChild(inp);
-            }
-            renderDisposalMPR();
-        };
+        document.getElementById("pendingMprBtn").onclick = () => renderPendingMPR();
+        document.getElementById("disposalMprBtn").onclick = () => renderDisposalMPR();
 
-        // New Case Modal
+        // New Case
         document.getElementById("addCaseBtn").onclick=()=>document.getElementById("caseModal").style.display="flex";
         document.getElementById("closeModalBtn").onclick=()=>document.getElementById("caseModal").style.display="none";
         document.getElementById("saveCaseBtn").onclick=()=>{ let cNo=document.getElementById("caseNo").value.trim(), inst=document.getElementById("instDate").value; if(!cNo||!inst){ alert("Case No & Date required"); return; } cases.push({id:nextId++, caseNo:cNo, section:document.getElementById("section").value, institutionDate:inst, casePurpose:document.getElementById("casePurpose").value, appellantName:document.getElementById("appellant").value, respondentName:document.getElementById("respondent").value, hearingDate:document.getElementById("hearingDate").value||null, disposed:false, disposalDate:null}); saveToFirebase(); document.getElementById("caseModal").style.display="none"; };
-        // Disposal Modal
+        // Disposal
         document.getElementById("disposeBtn").onclick=()=>{ document.getElementById("disposalModal").style.display="flex"; document.getElementById("disposalDate").value=new Date().toISOString().slice(0,10); };
         document.getElementById("closeDisposalModalBtn").onclick=()=>document.getElementById("disposalModal").style.display="none";
         document.getElementById("confirmDisposalBtn").onclick=()=>{ let cNo=document.getElementById("disposalCaseNo").value.trim(), dDate=document.getElementById("disposalDate").value; if(!cNo||!dDate){ alert("Select case and date"); return; } let found=cases.find(c=>c.caseNo===cNo && !c.disposed); if(found){ found.disposed=true; found.disposalDate=dDate; saveToFirebase(); } else alert("Not found or already disposed"); document.getElementById("disposalModal").style.display="none"; };
-        // Import/Export buttons
+        // Import/Export
         document.getElementById("exportBackupBtn").onclick=exportBackup;
         document.getElementById("importBackupBtn").onclick=()=>{ let inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>{ if(e.target.files.length) restoreBackup(e.target.files[0]); }; inp.click(); };
         document.getElementById("importCasesExcelBtn").onclick=()=>document.getElementById("casesExcelInput").click();
@@ -458,6 +454,19 @@
         document.getElementById("disposalExcelInput").onchange=e=>{ if(e.target.files.length) importDisposalExcel(e.target.files[0]); e.target.value=''; };
         document.getElementById("sampleDataBtn").onclick=loadSampleData;
         document.getElementById("deleteAllBtn").onclick=deleteAllData;
+
+        // Ensure datalist for case numbers is updated when cases change
+        const updateDatalist = () => {
+            const pending = cases.filter(c=>!c.disposed);
+            document.getElementById("caseNosList").innerHTML = pending.map(c=>`<option value="${escapeHtml(c.caseNo)}">`).join('');
+        };
+        // Override saveToFirebase to also update datalist
+        const originalSave = saveToFirebase;
+        window.saveToFirebase = function(){
+            originalSave();
+            updateDatalist();
+        };
+        updateDatalist();
     });
 </script>
 </body>
