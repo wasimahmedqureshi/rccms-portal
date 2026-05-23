@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>RCCMS Pro | Reports Dashboard</title>
+    <title>RCCMS Pro | Interactive Reports</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -36,10 +36,14 @@
         .data-table table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         .data-table th, .data-table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid #edf2f9; }
         .data-table th { background: #f8fafd; font-weight: 700; }
+        .clickable { cursor: pointer; color: #1e4a76; font-weight: 600; text-decoration: underline; }
         .report-section { margin-top: 30px; }
         .report-output { background: white; border-radius: 32px; padding: 24px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
         .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(5px); align-items: center; justify-content: center; z-index: 2000; }
-        .modal-content { background: white; max-width: 500px; width: 90%; border-radius: 48px; padding: 32px; box-shadow: 0 25px 45px rgba(0,0,0,0.2); }
+        .modal-content { background: white; max-width: 90%; width: 90%; max-height: 80%; border-radius: 48px; padding: 24px; overflow: auto; }
+        .modal-content h3 { margin-bottom: 20px; }
+        .modal-content table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+        .modal-content th, .modal-content td { padding: 8px; border: 1px solid #ddd; text-align: left; }
         .form-group { margin-bottom: 20px; }
         label { font-weight: 600; display: block; margin-bottom: 8px; }
         input, select { width: 100%; padding: 12px 16px; border: 1px solid #cfdee9; border-radius: 28px; font-size: 0.9rem; }
@@ -52,7 +56,7 @@
 
 <div class="container">
     <div class="header">
-        <h1><i class="fas fa-balance-scale"></i> RCCMS Reports Portal</h1>
+        <h1><i class="fas fa-balance-scale"></i> RCCMS Interactive Reports</h1>
         <div class="badge" id="userStatus"><i class="fas fa-user-lock"></i> Secured</div>
     </div>
 
@@ -88,7 +92,7 @@
                 <div class="data-table">
                     <table id="sectionTable">
                         <thead><tr><th>Section</th><th>Number of Cases</th></tr></thead>
-                        <tbody><tr><td colspan="2">Loading...</td></tr>
+                        <tbody><tr><td colspan="2">Loading...</tr></tr>
                     </table>
                 </div>
             </div>
@@ -97,7 +101,7 @@
                 <div class="data-table">
                     <table id="yearTable">
                         <thead><tr><th>Year</th><th>Filed</th><th>Disposed</th></tr></thead>
-                        <tbody><tr><td colspan="3">Loading...</td></tr>
+                        <tbody><tr><td colspan="3">Loading...</tr></tr>
                     </table>
                 </div>
             </div>
@@ -123,8 +127,25 @@
     </div>
 </div>
 
+<!-- Modal for listing details -->
+<div id="listModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Case List</h3>
+        <div style="overflow-x:auto;">
+            <table id="modalTable">
+                <thead><tr><th>Case No</th><th>Section</th><th>Institution Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Disposal Date</th><th>Status</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div style="margin-top:20px; display:flex; gap:12px; justify-content:flex-end;">
+            <button id="exportModalCsvBtn" class="primary">Export to CSV</button>
+            <button id="closeModalBtn" class="outline">Close</button>
+        </div>
+    </div>
+</div>
+
 <!-- New Case Modal -->
-<div id="caseModal" class="modal"><div class="modal-content"><h3>Register New Case</h3><div class="form-group"><label>Case No *</label><input id="caseNo"></div><div class="form-group"><label>Section</label><input id="section"></div><div class="form-group"><label>Institution Date *</label><input type="date" id="instDate"></div><div class="form-group"><label>Purpose</label><input id="casePurpose"></div><div class="form-group"><label>Appellant</label><input id="appellant"></div><div class="form-group"><label>Respondent</label><input id="respondent"></div><div class="form-group"><label>Hearing Date</label><input type="date" id="hearingDate"></div><div style="display:flex; gap:12px;"><button id="saveCaseBtn" class="primary">Save</button><button id="closeModalBtn">Cancel</button></div></div></div>
+<div id="caseModal" class="modal"><div class="modal-content"><h3>Register New Case</h3><div class="form-group"><label>Case No *</label><input id="caseNo"></div><div class="form-group"><label>Section</label><input id="section"></div><div class="form-group"><label>Institution Date *</label><input type="date" id="instDate"></div><div class="form-group"><label>Purpose</label><input id="casePurpose"></div><div class="form-group"><label>Appellant</label><input id="appellant"></div><div class="form-group"><label>Respondent</label><input id="respondent"></div><div class="form-group"><label>Hearing Date</label><input type="date" id="hearingDate"></div><div style="display:flex; gap:12px;"><button id="saveCaseBtn" class="primary">Save</button><button id="closeCaseModalBtn">Cancel</button></div></div></div>
 
 <!-- Disposal Modal -->
 <div id="disposalModal" class="modal"><div class="modal-content"><h3>Record Disposal</h3><div class="form-group"><label>Case No</label><input list="caseNosList" id="disposalCaseNo"><datalist id="caseNosList"></datalist></div><div class="form-group"><label>Disposal Date *</label><input type="date" id="disposalDate"></div><div style="display:flex; gap:12px;"><button id="confirmDisposalBtn" class="primary">Mark Disposed</button><button id="closeDisposalModalBtn">Cancel</button></div></div></div>
@@ -132,7 +153,7 @@
 <div id="firebaseMessage" class="message-bar"></div>
 
 <script>
-    // ==================== FIREBASE CONFIGURATION ====================
+    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyD9VnIRajIj7cJhD-sPBeyT8CYimE_vF7k",
         authDomain: "rccms-5614b.firebaseapp.com",
@@ -151,6 +172,7 @@
 
     let cases = [], nextId = 1, isLoading = true;
 
+    // Helper functions
     function showMessage(msg, isError = false) {
         const div = document.getElementById('firebaseMessage');
         div.textContent = msg;
@@ -205,7 +227,7 @@
         });
         let sortedSections = Array.from(secMap.entries()).sort((a,b)=>b[1]-a[1]);
         let sectionHtml = sortedSections.map(([sec,count]) => `<tr><td>${escapeHtml(sec)}</td><td>${count}</td></tr>`).join('');
-        if(!sectionHtml) sectionHtml = '<tr><td colspan="2">No data</td></tr>';
+        if(!sectionHtml) sectionHtml = '</tr><td colspan="2">No data</tr>';
         document.getElementById("sectionTable").innerHTML = `<thead><tr><th>Section</th><th>Number of Cases</th></tr></thead><tbody>${sectionHtml}</tbody>`;
 
         // Year-wise
@@ -229,33 +251,111 @@
             let data = yearMap.get(y);
             return `<tr><td>${y}</td><td>${data.filed}</td><td>${data.disposed}</td></tr>`;
         }).join('');
-        if(!yearHtml) yearHtml = '<tr><td colspan="3">No data</td></tr>';
+        if(!yearHtml) yearHtml = '<tr><td colspan="3">No data</tr>';
         document.getElementById("yearTable").innerHTML = `<thead><tr><th>Year</th><th>Filed</th><th>Disposed</th></tr></thead><tbody>${yearHtml}</tbody>`;
     }
 
-    // MPR core functions
+    // Age bucket helper
+    function getAgeBucket(years){
+        if(years < 0.5) return "Upto 6 Months";
+        if(years < 1) return "6 Months To 1 year";
+        if(years < 2) return "1 To 2 Years";
+        if(years < 3) return "2 To 3 Years";
+        if(years < 5) return "3 To 5 Years";
+        if(years < 10) return "5 To 10 Years";
+        if(years < 20) return "10 To 20 Years";
+        if(years < 30) return "20 To 30 Years";
+        if(years < 40) return "30 To 40 Years";
+        return "More Than 40 Years";
+    }
+
+    // Core MPR functions with clickable counts
     function computeAgeYears(inst, asOn){ let i=new Date(inst), a=new Date(asOn); if(isNaN(i)||isNaN(a)) return 0; let y=a.getFullYear()-i.getFullYear(); if(a.getMonth()<i.getMonth()||(a.getMonth()===i.getMonth()&&a.getDate()<i.getDate())) y--; return Math.max(0,y); }
     function getDisposalAgeBucket(y){ if(y>=5) return "Over 5 Years"; if(y>=3) return "Over 3 Years"; if(y>=2) return "Over 2 Years"; if(y>=1) return "Over 1 Year"; return "Less Than 1 Year"; }
-    
+
     function generatePendingMPR(start,end,office){
-        let initial = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>=start) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>start) return true; return false; }).length;
-        let reg = cases.filter(c=>{ let i=new Date(c.institutionDate); return i>=start && i<=end; }).length;
-        let decided = cases.filter(c=>c.disposed && c.disposalDate && (new Date(c.disposalDate)>=start && new Date(c.disposalDate)<=end)).length;
-        let pendingEnd = initial+reg-decided;
-        let pendingOnEnd = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>end) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>end) return true; return false; });
-        let buckets = {"Upto 6 Months":0,"6 Months To 1 year":0,"1 To 2 Years":0,"2 To 3 Years":0,"3 To 5 Years":0,"5 To 10 Years":0,"10 To 20 Years":0,"20 To 30 Years":0,"30 To 40 Years":0,"More Than 40 Years":0};
-        pendingOnEnd.forEach(c=>{ let a=computeAgeYears(c.institutionDate, end.toISOString().slice(0,10)); if(a<0.5) buckets["Upto 6 Months"]++; else if(a<1) buckets["6 Months To 1 year"]++; else if(a<2) buckets["1 To 2 Years"]++; else if(a<3) buckets["2 To 3 Years"]++; else if(a<5) buckets["3 To 5 Years"]++; else if(a<10) buckets["5 To 10 Years"]++; else if(a<20) buckets["10 To 20 Years"]++; else if(a<30) buckets["20 To 30 Years"]++; else if(a<40) buckets["30 To 40 Years"]++; else buckets["More Than 40 Years"]++; });
-        return {office,initialPending:initial,newRegistered:reg,totalDecided:decided,pendingAsOnEnd:pendingEnd,buckets};
+        const startDate = start, endDate = end;
+        const initialPending = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>=startDate) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>startDate) return true; return false; }).length;
+        const newRegistered = cases.filter(c=>{ let i=new Date(c.institutionDate); return i>=startDate && i<=endDate; }).length;
+        const totalDecided = cases.filter(c=>c.disposed && c.disposalDate && (new Date(c.disposalDate)>=startDate && new Date(c.disposalDate)<=endDate)).length;
+        const pendingAsOnEnd = initialPending + newRegistered - totalDecided;
+        const pendingOnEnd = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>endDate) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>endDate) return true; return false; });
+        
+        // Group pending cases by age bucket
+        const bucketMap = new Map(); // key: bucket name, value: array of case objects
+        pendingOnEnd.forEach(c => {
+            const age = computeAgeYears(c.institutionDate, endDate.toISOString().slice(0,10));
+            const bucket = getAgeBucket(age);
+            if(!bucketMap.has(bucket)) bucketMap.set(bucket, []);
+            bucketMap.get(bucket).push(c);
+        });
+        const bucketOrder = ["Upto 6 Months","6 Months To 1 year","1 To 2 Years","2 To 3 Years","3 To 5 Years","5 To 10 Years","10 To 20 Years","20 To 30 Years","30 To 40 Years","More Than 40 Years"];
+        const buckets = {};
+        bucketOrder.forEach(b => buckets[b] = bucketMap.get(b)?.length || 0);
+        
+        return {office, initialPending, newRegistered, totalDecided, pendingAsOnEnd, buckets, bucketMap, pendingOnEnd, startDate, endDate};
     }
+
     function generateDisposalMPR(start,end,office){
-        let disposals = cases.filter(c=>c.disposed && c.disposalDate && (new Date(c.disposalDate)>=start && new Date(c.disposalDate)<=end));
-        let total = disposals.length;
-        let ageBuckets = {"Over 5 Years":0,"Over 3 Years":0,"Over 2 Years":0,"Over 1 Year":0,"Less Than 1 Year":0};
-        disposals.forEach(c=>{ let a=computeAgeYears(c.institutionDate, c.disposalDate); ageBuckets[getDisposalAgeBucket(a)]++; });
-        let monthMap = new Map();
-        disposals.forEach(c=>{ let d=new Date(c.disposalDate); let key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; monthMap.set(key,(monthMap.get(key)||0)+1); });
-        let monthWise = Array.from(monthMap.entries()).sort().map(([ym,cnt])=>`${ym} : ${cnt}`);
-        return {office,totalDisposal:total,ageBuckets,monthWise,startDate:start.toISOString().slice(0,10),endDate:end.toISOString().slice(0,10)};
+        const disposals = cases.filter(c=>c.disposed && c.disposalDate && (new Date(c.disposalDate)>=start && new Date(c.disposalDate)<=end));
+        const totalDisposal = disposals.length;
+        const ageBucketsMap = new Map(); // key: age bucket, value: array of cases
+        const monthMap = new Map(); // key: "YYYY-MM", value: array of cases
+        disposals.forEach(c => {
+            const age = computeAgeYears(c.institutionDate, c.disposalDate);
+            const bucket = getDisposalAgeBucket(age);
+            if(!ageBucketsMap.has(bucket)) ageBucketsMap.set(bucket, []);
+            ageBucketsMap.get(bucket).push(c);
+            const d = new Date(c.disposalDate);
+            const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+            if(!monthMap.has(key)) monthMap.set(key, []);
+            monthMap.get(key).push(c);
+        });
+        const ageBuckets = {
+            "Over 5 Years": ageBucketsMap.get("Over 5 Years")?.length || 0,
+            "Over 3 Years": ageBucketsMap.get("Over 3 Years")?.length || 0,
+            "Over 2 Years": ageBucketsMap.get("Over 2 Years")?.length || 0,
+            "Over 1 Year": ageBucketsMap.get("Over 1 Year")?.length || 0,
+            "Less Than 1 Year": ageBucketsMap.get("Less Than 1 Year")?.length || 0
+        };
+        const monthWise = Array.from(monthMap.keys()).sort().map(ym => ({ month: ym, count: monthMap.get(ym).length, cases: monthMap.get(ym) }));
+        return {office, totalDisposal, ageBuckets, ageBucketsMap, monthWise, startDate:start.toISOString().slice(0,10), endDate:end.toISOString().slice(0,10)};
+    }
+
+    // Modal display function
+    function showCaseList(title, caseArray) {
+        const modal = document.getElementById('listModal');
+        document.getElementById('modalTitle').innerText = title;
+        const tbody = document.querySelector('#modalTable tbody');
+        tbody.innerHTML = '';
+        caseArray.forEach(c => {
+            const row = tbody.insertRow();
+            row.insertCell(0).innerText = c.caseNo;
+            row.insertCell(1).innerText = c.section || '';
+            row.insertCell(2).innerText = formatDate(c.institutionDate);
+            row.insertCell(3).innerText = c.casePurpose || '';
+            row.insertCell(4).innerText = c.appellantName || '';
+            row.insertCell(5).innerText = c.respondentName || '';
+            row.insertCell(6).innerText = c.disposalDate ? formatDate(c.disposalDate) : '-';
+            row.insertCell(7).innerText = c.disposed ? 'Disposed' : 'Pending';
+        });
+        modal.style.display = 'flex';
+        // Export CSV
+        const exportBtn = document.getElementById('exportModalCsvBtn');
+        exportBtn.onclick = () => {
+            const rows = [['Case No','Section','Institution Date','Purpose','Appellant','Respondent','Disposal Date','Status']];
+            caseArray.forEach(c => {
+                rows.push([
+                    c.caseNo, c.section || '', formatDate(c.institutionDate), c.casePurpose || '',
+                    c.appellantName || '', c.respondentName || '', c.disposalDate ? formatDate(c.disposalDate) : '-',
+                    c.disposed ? 'Disposed' : 'Pending'
+                ]);
+            });
+            const ws = XLSX.utils.aoa_to_sheet(rows);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Cases');
+            XLSX.writeFile(wb, `${title.replace(/\s/g,'_')}.xlsx`);
+        };
     }
 
     function renderPendingMPR(){
@@ -276,7 +376,12 @@
         }
         if(isNaN(start)||isNaN(end)||start>end){ alert("Invalid date range"); return; }
         const r = generatePendingMPR(start,end,office);
-        const bucketRows = Object.entries(r.buckets).map(([k,v])=>`<tr><td>${k}</td><td>${v}</td></tr>`).join('');
+        const bucketOrder = ["Upto 6 Months","6 Months To 1 year","1 To 2 Years","2 To 3 Years","3 To 5 Years","5 To 10 Years","10 To 20 Years","20 To 30 Years","30 To 40 Years","More Than 40 Years"];
+        let bucketRows = '';
+        bucketOrder.forEach(b => {
+            const count = r.buckets[b] || 0;
+            bucketRows += `<tr><td class="clickable" data-bucket="${b}">${b}</td><td class="clickable" data-bucket="${b}">${count}</td></tr>`;
+        });
         const html = `
             <h4>📋 Pending MPR (as on ${end.toISOString().slice(0,10)})</h4>
             <div class="grid-2" style="margin: 15px 0;">
@@ -289,11 +394,19 @@
                 <thead><tr><th>Office</th><th>Initial Pending</th><th>New Registered</th><th>Total Decided</th><th>Pending As On End</th></tr></thead>
                 <tbody><tr><td>${escapeHtml(r.office)}</td><td>${r.initialPending}</td><td>${r.newRegistered}</td><td>${r.totalDecided}</td><td>${r.pendingAsOnEnd}</td></tr></tbody>
             </table>
-            <div style="margin-top:20px;"><strong>Age-wise Pending Cases</strong><table style="width:100%; margin-top:8px;"><thead><tr><th>Age Slab</th><th>Count</th></tr></thead><tbody>${bucketRows}</tbody></table></div>
+            <div style="margin-top:20px;"><strong>Age-wise Pending Cases</strong><table style="width:100%; margin-top:8px;"><thead><tr><th>Age Slab</th><th>Count</th></tr></thead><tbody>${bucketRows}</tbody></td></div>
         `;
         document.getElementById("reportOutput").innerHTML = html;
-        const refreshBtn = document.getElementById("refreshPendingBtn");
-        if(refreshBtn) refreshBtn.onclick = () => renderPendingMPR();
+        document.getElementById("refreshPendingBtn").onclick = () => renderPendingMPR();
+        // Attach click handlers for age buckets
+        document.querySelectorAll('#reportOutput .clickable').forEach(el => {
+            el.addEventListener('click', () => {
+                const bucket = el.getAttribute('data-bucket');
+                const casesList = r.bucketMap.get(bucket) || [];
+                if(casesList.length === 0) { alert('No cases in this bucket'); return; }
+                showCaseList(`Pending Cases - ${bucket} (as on ${end.toISOString().slice(0,10)})`, casesList);
+            });
+        });
     }
 
     function renderDisposalMPR(){
@@ -314,6 +427,16 @@
         }
         if(isNaN(start)||isNaN(end)||start>end){ alert("Invalid date range"); return; }
         const r = generateDisposalMPR(start,end,office);
+        const ageBucketsList = ["Over 5 Years","Over 3 Years","Over 2 Years","Over 1 Year","Less Than 1 Year"];
+        let ageRows = '';
+        ageBucketsList.forEach(b => {
+            const cnt = r.ageBuckets[b];
+            ageRows += `<tr><td class="clickable-age" data-agebucket="${b}">${b}</td><td class="clickable-age" data-agebucket="${b}">${cnt}</td></tr>`;
+        });
+        let monthRows = '';
+        r.monthWise.forEach(m => {
+            monthRows += `<tr><td class="clickable-month" data-month="${m.month}">${m.month}</td><td class="clickable-month" data-month="${m.month}">${m.count}</td></tr>`;
+        });
         const html = `
             <h4>📋 Disposal MPR (Age at Disposal) - ${r.startDate} to ${r.endDate}</h4>
             <div class="grid-2" style="margin: 15px 0;">
@@ -324,11 +447,30 @@
             </div>
             <table style="width:100%"><thead><tr><th>S.No.</th><th>Office Name</th><th>Total Disposal (Period)</th><th>Over 5 Years</th><th>Over 3 Years</th><th>Over 2 Years</th><th>Over 1 Year</th><th>Less Than 1 Year</th></tr></thead>
             <tbody><tr><td>1</td><td>${escapeHtml(r.office)}</td><td>${r.totalDisposal}</td><td>${r.ageBuckets["Over 5 Years"]}</td><td>${r.ageBuckets["Over 3 Years"]}</td><td>${r.ageBuckets["Over 2 Years"]}</td><td>${r.ageBuckets["Over 1 Year"]}</td><td>${r.ageBuckets["Less Than 1 Year"]}</td></tr></tbody></table>
-            <div style="margin-top:15px;"><strong>Month-wise Disposals:</strong><ul>${r.monthWise.map(m=>`<li>${m}</li>`).join('')}</ul></div>
+            <div style="margin-top:20px;"><strong>Age-wise Disposal Breakdown (click on count)</strong><table style="width:100%; margin-top:8px;"><thead><tr><th>Age at Disposal</th><th>Count</th></tr></thead><tbody>${ageRows}</tbody></table></div>
+            <div style="margin-top:20px;"><strong>Month-wise Disposals (click on count)</strong><table style="width:100%; margin-top:8px;"><thead><tr><th>Year-Month</th><th>Count</th></tr></thead><tbody>${monthRows}</tbody></table></div>
         `;
         document.getElementById("reportOutput").innerHTML = html;
-        const refreshBtn = document.getElementById("refreshDisposalBtn");
-        if(refreshBtn) refreshBtn.onclick = () => renderDisposalMPR();
+        document.getElementById("refreshDisposalBtn").onclick = () => renderDisposalMPR();
+        // Age bucket clicks
+        document.querySelectorAll('#reportOutput .clickable-age').forEach(el => {
+            el.addEventListener('click', () => {
+                const bucket = el.getAttribute('data-agebucket');
+                const casesList = r.ageBucketsMap.get(bucket) || [];
+                if(casesList.length === 0) { alert('No cases in this bucket'); return; }
+                showCaseList(`Disposed Cases - Age at Disposal: ${bucket} (${r.startDate} to ${r.endDate})`, casesList);
+            });
+        });
+        // Month clicks
+        document.querySelectorAll('#reportOutput .clickable-month').forEach(el => {
+            el.addEventListener('click', () => {
+                const month = el.getAttribute('data-month');
+                const monthObj = r.monthWise.find(m => m.month === month);
+                const casesList = monthObj ? monthObj.cases : [];
+                if(casesList.length === 0) { alert('No cases disposed in this month'); return; }
+                showCaseList(`Disposed Cases - ${month} (${r.startDate} to ${r.endDate})`, casesList);
+            });
+        });
     }
 
     // Import/Export functions (same as before)
@@ -431,7 +573,7 @@
     };
     document.getElementById("logoutBtn").onclick = () => auth.signOut();
 
-    // Event listeners after DOM ready
+    // Event listeners
     document.addEventListener("DOMContentLoaded", function(){
         // MPR buttons
         document.getElementById("pendingMprBtn").onclick = () => renderPendingMPR();
@@ -439,7 +581,7 @@
 
         // New Case
         document.getElementById("addCaseBtn").onclick=()=>document.getElementById("caseModal").style.display="flex";
-        document.getElementById("closeModalBtn").onclick=()=>document.getElementById("caseModal").style.display="none";
+        document.getElementById("closeCaseModalBtn").onclick=()=>document.getElementById("caseModal").style.display="none";
         document.getElementById("saveCaseBtn").onclick=()=>{ let cNo=document.getElementById("caseNo").value.trim(), inst=document.getElementById("instDate").value; if(!cNo||!inst){ alert("Case No & Date required"); return; } cases.push({id:nextId++, caseNo:cNo, section:document.getElementById("section").value, institutionDate:inst, casePurpose:document.getElementById("casePurpose").value, appellantName:document.getElementById("appellant").value, respondentName:document.getElementById("respondent").value, hearingDate:document.getElementById("hearingDate").value||null, disposed:false, disposalDate:null}); saveToFirebase(); document.getElementById("caseModal").style.display="none"; };
         // Disposal
         document.getElementById("disposeBtn").onclick=()=>{ document.getElementById("disposalModal").style.display="flex"; document.getElementById("disposalDate").value=new Date().toISOString().slice(0,10); };
@@ -455,12 +597,15 @@
         document.getElementById("sampleDataBtn").onclick=loadSampleData;
         document.getElementById("deleteAllBtn").onclick=deleteAllData;
 
-        // Ensure datalist for case numbers is updated when cases change
+        // Close modal
+        document.getElementById("closeModalBtn").onclick = () => document.getElementById("listModal").style.display = "none";
+        window.onclick = (event) => { if(event.target === document.getElementById("listModal")) document.getElementById("listModal").style.display = "none"; };
+
+        // Update datalist
         const updateDatalist = () => {
             const pending = cases.filter(c=>!c.disposed);
             document.getElementById("caseNosList").innerHTML = pending.map(c=>`<option value="${escapeHtml(c.caseNo)}">`).join('');
         };
-        // Override saveToFirebase to also update datalist
         const originalSave = saveToFirebase;
         window.saveToFirebase = function(){
             originalSave();
