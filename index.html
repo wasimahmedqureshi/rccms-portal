@@ -12,12 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: radial-gradient(circle at 10% 20%, #0a0f1a 0%, #03060c 100%);
             font-family: 'DM Sans', sans-serif;
@@ -25,18 +20,11 @@
             padding: 24px 20px;
             min-height: 100vh;
         }
-
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #1e293b; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
 
-        /* Gold Gradients */
-        .gold-gradient {
-            background: linear-gradient(135deg, #d4af37 0%, #f5e7a3 50%, #b8860b 100%);
-        }
-
-        /* Glassmorphism */
+        .gold-gradient { background: linear-gradient(135deg, #d4af37 0%, #f5e7a3 50%, #b8860b 100%); }
         .glass {
             background: rgba(15, 25, 45, 0.55);
             backdrop-filter: blur(12px);
@@ -44,11 +32,7 @@
             border-radius: 32px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
-
-        .container {
-            max-width: 1600px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1600px; margin: 0 auto; }
 
         /* Header */
         .header {
@@ -63,7 +47,6 @@
             flex-wrap: wrap;
             gap: 15px;
             border-bottom: 2px solid #d4af37;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
         }
         .header h1 {
             font-family: 'Playfair Display', serif;
@@ -81,8 +64,6 @@
             font-size: 0.85rem;
             border-left: 2px solid #d4af37;
         }
-
-        /* Toolbar */
         .toolbar {
             display: flex;
             flex-wrap: wrap;
@@ -102,12 +83,11 @@
             font-weight: 600;
             font-size: 0.85rem;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 8px;
             color: #f0f3fa;
-            font-family: 'DM Sans', sans-serif;
         }
         button.primary {
             background: linear-gradient(95deg, #1e2a3a, #0f1722);
@@ -117,17 +97,9 @@
         button.primary:hover {
             background: #d4af37;
             color: #0a0f1a;
-            border-color: #d4af37;
             transform: translateY(-2px);
         }
-        button.danger:hover {
-            background: #b91c1c;
-            color: white;
-        }
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(212, 175, 55, 0.2);
-        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(212,175,55,0.2); }
 
         /* Stats Cards */
         .stats-grid {
@@ -145,10 +117,7 @@
             transition: transform 0.2s, border-color 0.2s;
             cursor: pointer;
         }
-        .stat-card:hover {
-            transform: translateY(-4px);
-            border-color: #d4af37;
-        }
+        .stat-card:hover { transform: translateY(-4px); border-color: #d4af37; }
         .stat-card .number {
             font-size: 2.8rem;
             font-weight: 800;
@@ -158,14 +127,9 @@
             background-clip: text;
             color: transparent;
         }
-        .stat-card .label {
-            font-size: 0.9rem;
-            color: #a0b3d9;
-            margin-top: 8px;
-            letter-spacing: 0.5px;
-        }
+        .stat-card .label { font-size: 0.9rem; color: #a0b3d9; margin-top: 8px; }
 
-        /* Dashboard Row */
+        /* Dashboard Tables */
         .dashboard-row {
             display: flex;
             flex-wrap: wrap;
@@ -180,7 +144,6 @@
             flex: 1;
             min-width: 280px;
             border: 1px solid rgba(212, 175, 55, 0.25);
-            transition: box-shadow 0.3s;
         }
         .dashboard-card h3 {
             font-family: 'Playfair Display', serif;
@@ -194,39 +157,14 @@
             padding-left: 16px;
             color: #f5e7a3;
         }
-        .data-table {
-            overflow-x: auto;
-        }
-        .data-table table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.85rem;
-        }
-        .data-table th, .data-table td {
-            padding: 12px 10px;
-            text-align: left;
-            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
-        }
-        .data-table th {
-            color: #d4af37;
-            font-weight: 600;
-        }
-        /* Progress bar inside section table */
-        .progress-bar-container {
-            width: 100%;
-            background: #1e2a3a;
-            border-radius: 20px;
-            overflow: hidden;
-            height: 6px;
-        }
-        .progress-bar {
-            height: 6px;
-            background: linear-gradient(90deg, #d4af37, #f5e7a3);
-            width: 0%;
-            border-radius: 20px;
-        }
+        .data-table { overflow-x: auto; }
+        .data-table table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .data-table th, .data-table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid rgba(212, 175, 55, 0.2); }
+        .data-table th { color: #d4af37; font-weight: 600; }
+        .progress-bar-container { width: 100%; background: #1e2a3a; border-radius: 20px; overflow: hidden; height: 6px; }
+        .progress-bar { height: 6px; background: linear-gradient(90deg, #d4af37, #f5e7a3); width: 0%; border-radius: 20px; }
 
-        /* Search Bar */
+        /* Search */
         .search-section {
             background: rgba(10, 20, 35, 0.6);
             backdrop-filter: blur(8px);
@@ -249,12 +187,9 @@
             font-size: 1rem;
             color: white;
         }
-        .search-section input:focus {
-            outline: none;
-            border-color: #d4af37;
-        }
+        .search-section input:focus { outline: none; border-color: #d4af37; }
 
-        /* MPR Report Output */
+        /* MPR Reports */
         .report-output {
             background: rgba(10, 20, 35, 0.6);
             backdrop-filter: blur(12px);
@@ -262,26 +197,10 @@
             padding: 24px;
             border: 1px solid rgba(212, 175, 55, 0.25);
         }
-        .report-output table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.8rem;
-        }
-        .report-output th, .report-output td {
-            padding: 10px 8px;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            text-align: center;
-        }
-        .report-output th {
-            background: rgba(0,0,0,0.4);
-            color: #d4af37;
-        }
-        .clickable {
-            cursor: pointer;
-            color: #d4af37;
-            font-weight: 600;
-            text-decoration: underline;
-        }
+        .report-output table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        .report-output th, .report-output td { padding: 10px 8px; border: 1px solid rgba(212, 175, 55, 0.3); text-align: center; }
+        .report-output th { background: rgba(0,0,0,0.4); color: #d4af37; }
+        .clickable { cursor: pointer; color: #d4af37; font-weight: 600; text-decoration: underline; }
 
         /* Modals */
         .modal {
@@ -296,10 +215,7 @@
             z-index: 2000;
             animation: fadeIn 0.2s ease;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .modal-content {
             background: rgba(10, 20, 35, 0.95);
             backdrop-filter: blur(16px);
@@ -312,19 +228,10 @@
             border: 1px solid #d4af37;
             animation: scaleIn 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
-        @keyframes scaleIn {
-            from { transform: scale(0.9); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-        .modal-content h3 {
-            font-family: 'Playfair Display', serif;
-            color: #d4af37;
-            border-left: 4px solid #d4af37;
-            padding-left: 16px;
-            margin-bottom: 20px;
-        }
+        @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-content h3 { font-family: 'Playfair Display', serif; color: #d4af37; border-left: 4px solid #d4af37; padding-left: 16px; margin-bottom: 20px; }
 
-        /* Toast Notifications */
+        /* Toast */
         .toast {
             position: fixed;
             bottom: 25px;
@@ -337,14 +244,9 @@
             font-size: 0.85rem;
             z-index: 2100;
             border-left: 4px solid #d4af37;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
             animation: slideInRight 0.3s ease;
-            font-weight: 500;
         }
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
         /* Sync Indicator */
         .sync-indicator {
@@ -356,27 +258,14 @@
             border-radius: 40px;
             font-size: 0.75rem;
         }
-        .sync-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: #22c55e;
-            box-shadow: 0 0 6px #22c55e;
-        }
-        .sync-dot.connected { background: #22c55e; }
+        .sync-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .sync-dot.connected { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
         .sync-dot.disconnected { background: #ef4444; }
         .sync-dot.connecting { background: #eab308; }
 
-        /* Responsive */
-        @media (max-width: 700px) {
-            body { padding: 16px; }
-            .stats-grid { gap: 16px; }
-            .stat-card .number { font-size: 2rem; }
-            button { padding: 6px 14px; font-size: 0.75rem; }
-            .header h1 { font-size: 1.4rem; }
-        }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width:700px){ .grid-2{ grid-template-columns:1fr; } button{ padding: 6px 14px; } .header h1{ font-size:1.4rem; } }
 
-        /* Form inputs inside modals */
         .form-group { margin-bottom: 20px; }
         label { font-weight: 600; display: block; margin-bottom: 8px; color: #d4af37; }
         input, select {
@@ -388,8 +277,6 @@
             font-size: 0.9rem;
             color: white;
         }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media (max-width:700px){ .grid-2 { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -398,10 +285,7 @@
     <div class="header">
         <h1><i class="fas fa-gavel"></i> RCCMS | Judicial Dashboard</h1>
         <div style="display: flex; gap: 12px; align-items: center;">
-            <div class="sync-indicator">
-                <span class="sync-dot" id="syncDot"></span>
-                <span id="syncText">Connecting...</span>
-            </div>
+            <div class="sync-indicator"><span class="sync-dot" id="syncDot"></span><span id="syncText">Connecting...</span></div>
             <div class="badge" id="userStatus"><i class="fas fa-user-lock"></i> Secured</div>
         </div>
     </div>
@@ -423,35 +307,20 @@
     </div>
 
     <div id="mainContent" style="display: none;">
-        <!-- Search -->
         <div class="search-section">
             <i class="fas fa-search" style="color: #d4af37; font-size: 1.3rem;"></i>
-            <input type="text" id="searchCaseNo" placeholder="Enter Case Number (e.g., 2025/99 or partial)" style="flex: 2;">
+            <input type="text" id="searchCaseNo" placeholder="Enter Case Number (e.g., 2025/99 or partial)">
             <button id="searchBtn" class="primary"><i class="fas fa-search"></i> Search</button>
             <button id="clearSearchBtn">Clear</button>
         </div>
 
-        <!-- Stats Cards -->
         <div class="stats-grid">
-            <div class="stat-card" data-stat="total">
-                <div class="number" id="totalCases">0</div>
-                <div class="label">Total Registered</div>
-            </div>
-            <div class="stat-card" data-stat="pending">
-                <div class="number" id="pendingCount">0</div>
-                <div class="label">Pending Cases</div>
-            </div>
-            <div class="stat-card" data-stat="disposed">
-                <div class="number" id="disposedCount">0</div>
-                <div class="label">Disposed</div>
-            </div>
-            <div class="stat-card" data-stat="yearly">
-                <div class="number" id="yearlyFiling">0</div>
-                <div class="label">Filed This Year</div>
-            </div>
+            <div class="stat-card" data-stat="total"><div class="number" id="totalCases">0</div><div class="label">Total Registered</div></div>
+            <div class="stat-card" data-stat="pending"><div class="number" id="pendingCount">0</div><div class="label">Pending Cases</div></div>
+            <div class="stat-card" data-stat="disposed"><div class="number" id="disposedCount">0</div><div class="label">Disposed</div></div>
+            <div class="stat-card" data-stat="yearly"><div class="number" id="yearlyFiling">0</div><div class="label">Filed This Year</div></div>
         </div>
 
-        <!-- Section-wise & Year-wise Tables -->
         <div class="dashboard-row">
             <div class="dashboard-card">
                 <h3><i class="fas fa-layer-group"></i> Section-wise Case Load</h3>
@@ -467,13 +336,12 @@
                 <div class="data-table">
                     <table id="yearTable">
                         <thead><tr><th>Year</th><th>Filed</th><th>Disposed</th><th>Clearance %</th></tr></thead>
-                        <tbody id="yearTableBody"><tr><td colspan="4">Loading...</td></tr></tbody>
+                        <tbody id="yearTableBody"><tr><td colspan="4">Loading...–</td></tr></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- MPR Output -->
         <div class="report-section" style="margin-top: 30px;">
             <div id="reportOutput" class="report-output">
                 <p style="text-align:center; color:#a0b3d9;">Click Pending MPR or Disposal MPR to generate report.</p>
@@ -514,7 +382,7 @@
 <div id="disposalModal" class="modal"><div class="modal-content"><h3>Record Disposal</h3><div class="form-group"><label>Case No</label><input list="caseNosList" id="disposalCaseNo"><datalist id="caseNosList"></datalist></div><div class="form-group"><label>Disposal Date *</label><input type="date" id="disposalDate"></div><div style="display:flex; gap:12px;"><button id="confirmDisposalBtn" class="primary">Mark Disposed</button><button id="closeDisposalModalBtn">Cancel</button></div></div></div>
 
 <script>
-    // Firebase Config (same as before)
+    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyD9VnIRajIj7cJhD-sPBeyT8CYimE_vF7k",
         authDomain: "rccms-5614b.firebaseapp.com",
@@ -532,66 +400,58 @@
     const casesRef = database.ref('rccms_cases');
 
     let cases = [], nextId = 1, isLoading = true;
-    let pendingSync = false;
 
-    // Toast notifications
-    function showToast(msg, type = "info") {
+    function showToast(msg, isError = false) {
         const toast = document.createElement('div');
         toast.className = 'toast';
-        toast.innerHTML = `<i class="fas ${type === 'error' ? 'fa-exclamation-triangle' : 'fa-info-circle'}" style="margin-right: 8px;"></i> ${msg}`;
+        toast.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-info-circle'}" style="margin-right:8px;"></i> ${msg}`;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3500);
     }
 
-    // Update sync indicator
-    function updateSyncIndicator(status, message) {
+    function updateSyncIndicator(status, msg) {
         const dot = document.getElementById('syncDot');
         const text = document.getElementById('syncText');
-        if(status === 'connected') {
-            dot.className = 'sync-dot connected';
-            text.innerText = message || 'Live';
-        } else if(status === 'disconnected') {
-            dot.className = 'sync-dot disconnected';
-            text.innerText = message || 'Offline';
-        } else {
-            dot.className = 'sync-dot connecting';
-            text.innerText = message || 'Connecting...';
-        }
+        if(status === 'connected') { dot.className = 'sync-dot connected'; text.innerText = msg || 'Live'; }
+        else if(status === 'disconnected') { dot.className = 'sync-dot disconnected'; text.innerText = msg || 'Offline'; }
+        else { dot.className = 'sync-dot connecting'; text.innerText = msg || 'Connecting...'; }
     }
 
-    // Animated counter
     function animateCounter(element, target) {
-        let current = 0;
-        const step = Math.ceil(target / 50);
-        const interval = setInterval(() => {
-            current += step;
-            if(current >= target) {
-                element.innerText = target;
-                clearInterval(interval);
-            } else {
-                element.innerText = current;
-            }
-        }, 20);
+        let current = 0, step = Math.max(1, Math.ceil(target / 50));
+        const interval = setInterval(() => { current += step; if(current >= target) { element.innerText = target; clearInterval(interval); } else element.innerText = current; }, 20);
     }
 
-    // Helper functions
     function formatDate(iso){ return iso ? new Date(iso).toLocaleDateString('en-GB') : '-'; }
+    function parseDateAny(d) {
+        if(!d) return null;
+        let s = String(d).trim();
+        if(!isNaN(s) && s.indexOf('-')===-1 && s.indexOf('/')===-1){
+            let n = parseFloat(s);
+            if(n>1 && n<60000) return new Date((n-25569)*86400000).toISOString().slice(0,10);
+        }
+        let parts = s.split(/[-/]/);
+        if(parts.length===3){
+            let dd,mm,yy;
+            if(parts[0].length===4){ yy=parts[0]; mm=parts[1]; dd=parts[2]; }
+            else { dd=parts[0]; mm=parts[1]; yy=parts[2]; }
+            if(yy.length===2) yy='20'+yy;
+            return `${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+        }
+        let t = new Date(s);
+        return isNaN(t) ? null : t.toISOString().slice(0,10);
+    }
     function escapeHtml(str){ return str ? String(str).replace(/[&<>]/g,m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;') : ''; }
 
     function saveToFirebase(){
         if(isLoading) return;
-        const obj = {};
-        cases.forEach(c => obj[c.id] = c);
-        casesRef.set(obj).then(()=>showToast('✓ Synced to Firebase')).catch(e=>showToast(e.message, 'error'));
+        const obj = {}; cases.forEach(c => obj[c.id] = c);
+        casesRef.set(obj).then(()=>showToast('✓ Data saved to Firebase')).catch(e=>showToast(e.message, true));
     }
 
-    // Update stats with animation
     function updateStats(animate = true) {
-        const total = cases.length;
-        const pending = cases.filter(c=>!c.disposed).length;
-        const disposed = cases.filter(c=>c.disposed).length;
-        const currentYear = new Date().getFullYear();
-        const yearly = cases.filter(c=>new Date(c.institutionDate).getFullYear() === currentYear).length;
+        const total = cases.length, pending = cases.filter(c=>!c.disposed).length, disposed = cases.filter(c=>c.disposed).length;
+        const currentYear = new Date().getFullYear(), yearly = cases.filter(c=>new Date(c.institutionDate).getFullYear() === currentYear).length;
         if(animate) {
             animateCounter(document.getElementById("totalCases"), total);
             animateCounter(document.getElementById("pendingCount"), pending);
@@ -605,73 +465,47 @@
         }
     }
 
-    // Update tables with progress bars and clearance %
     function updateTables() {
         // Section-wise with progress bar
         let secMap = new Map();
         cases.forEach(c => {
-            if(c.section) {
+            if(c.section){
                 c.section.split(/[ ,]+/).forEach(s => { if(s.trim()) secMap.set(s.trim(), (secMap.get(s.trim())||0)+1); });
             } else secMap.set("Unspecified", (secMap.get("Unspecified")||0)+1);
         });
         let sorted = Array.from(secMap.entries()).sort((a,b)=>b[1]-a[1]);
         let maxCount = sorted.length ? sorted[0][1] : 1;
         let secHtml = '';
-        sorted.forEach(([sec, count]) => {
-            let percent = (count / maxCount) * 100;
-            secHtml += `<tr>
-                <td>${escapeHtml(sec)}</td>
-                <td>${count}</td>
-                <td><div class="progress-bar-container"><div class="progress-bar" style="width: ${percent}%;"></div></div></td>
-            </tr>`;
+        sorted.forEach(([sec,count]) => {
+            let percent = (count/maxCount)*100;
+            secHtml += `<tr><td>${escapeHtml(sec)}</td><td>${count}</td><td><div class="progress-bar-container"><div class="progress-bar" style="width: ${percent}%;"></div></div></td></tr>`;
         });
         if(!secHtml) secHtml = '<tr><td colspan="3">No data</td></tr>';
         document.getElementById("sectionTableBody").innerHTML = secHtml;
 
-        // Year-wise with clearance rate %
+        // Year-wise with clearance rate
         let yearMap = new Map();
         cases.forEach(c => {
             let y = new Date(c.institutionDate).getFullYear();
             if(!isNaN(y)){
                 let cur = yearMap.get(y) || {filed:0, disposed:0};
-                cur.filed++;
-                yearMap.set(y, cur);
+                cur.filed++; yearMap.set(y, cur);
             }
             if(c.disposed && c.disposalDate){
                 let dy = new Date(c.disposalDate).getFullYear();
                 let cur = yearMap.get(dy) || {filed:0, disposed:0};
-                cur.disposed++;
-                yearMap.set(dy, cur);
+                cur.disposed++; yearMap.set(dy, cur);
             }
         });
         let years = Array.from(yearMap.keys()).sort();
         let yearHtml = '';
         years.forEach(y => {
             let data = yearMap.get(y);
-            let clearance = data.filed ? ((data.disposed / data.filed) * 100).toFixed(1) : 0;
+            let clearance = data.filed ? ((data.disposed/data.filed)*100).toFixed(1) : 0;
             yearHtml += `<tr><td>${y}</td><td>${data.filed}</td><td>${data.disposed}</td><td>${clearance}%</td></tr>`;
         });
         if(!yearHtml) yearHtml = '<tr><td colspan="4">No data</td></tr>';
         document.getElementById("yearTableBody").innerHTML = yearHtml;
-    }
-
-    // Click stat cards to show case lists
-    function attachStatCardListeners() {
-        document.querySelectorAll('.stat-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const type = card.getAttribute('data-stat');
-                let filtered = [];
-                if(type === 'total') filtered = cases;
-                else if(type === 'pending') filtered = cases.filter(c=>!c.disposed);
-                else if(type === 'disposed') filtered = cases.filter(c=>c.disposed);
-                else if(type === 'yearly') {
-                    const currentYear = new Date().getFullYear();
-                    filtered = cases.filter(c=>new Date(c.institutionDate).getFullYear() === currentYear);
-                }
-                if(filtered.length === 0) { showToast('No cases found'); return; }
-                showCaseList(`${card.querySelector('.label').innerText} Cases (${filtered.length})`, filtered);
-            });
-        });
     }
 
     function showCaseList(title, caseArray) {
@@ -693,7 +527,7 @@
         });
         modal.style.display = 'flex';
         document.getElementById('exportModalCsvBtn').onclick = () => {
-            const rows = [['Case No','Section','Inst. Date','Purpose','Appellant','Respondent','Hearing Date','Disposal Date','Status']];
+            const rows = [['Case No','Section','Institution Date','Purpose','Appellant','Respondent','Hearing Date','Disposal Date','Status']];
             caseArray.forEach(c => {
                 rows.push([c.caseNo, c.section||'', formatDate(c.institutionDate), c.casePurpose||'', c.appellantName||'', c.respondentName||'', c.hearingDate?formatDate(c.hearingDate):'-', c.disposalDate?formatDate(c.disposalDate):'-', c.disposed?'Disposed':'Pending']);
             });
@@ -704,30 +538,177 @@
         };
     }
 
-    // Search function
     function searchCase() {
         const term = document.getElementById("searchCaseNo").value.trim().toLowerCase();
         if(!term) { showToast("Enter case number"); return; }
         const results = cases.filter(c => c.caseNo.toLowerCase().includes(term));
-        if(results.length === 0) showToast("No cases found", "error");
+        if(results.length === 0) showToast("No cases found", true);
         else showCaseList(`Search Results for "${term}" (${results.length})`, results);
     }
 
-    // Placeholder MPR functions (simplified – full version from previous)
-    function renderPendingMPR() { /* keep existing full logic – omitted for brevity but must be included */ 
-        showToast("Pending MPR generated");
+    // ==================== MPR FUNCTIONS (FULLY WORKING) ====================
+    function getAgeBucket(years){
+        if(years < 0.5) return "Upto 6 Months";
+        if(years < 1) return "6 Months To 1 year";
+        if(years < 2) return "1 To 2 Years";
+        if(years < 3) return "2 To 3 Years";
+        if(years < 5) return "3 To 5 Years";
+        if(years < 10) return "5 To 10 Years";
+        if(years < 20) return "10 To 20 Years";
+        if(years < 30) return "20 To 30 Years";
+        if(years < 40) return "30 To 40 Years";
+        return "More Than 40 Years";
     }
-    function renderDisposalMPR() { showToast("Disposal MPR generated"); }
+    function computeAgeYears(inst, asOn){ let i=new Date(inst), a=new Date(asOn); if(isNaN(i)||isNaN(a)) return 0; let y=a.getFullYear()-i.getFullYear(); if(a.getMonth()<i.getMonth()||(a.getMonth()===i.getMonth()&&a.getDate()<i.getDate())) y--; return Math.max(0,y); }
+    function getDisposalAgeBucket(y){ if(y>=5) return "Over 5 Years"; if(y>=3) return "Over 3 Years"; if(y>=2) return "Over 2 Years"; if(y>=1) return "Over 1 Year"; return "Less Than 1 Year"; }
 
-    // Import/Export (simplified – keep existing full implementations)
-    function importCasesExcel(file){ /* ... */ showToast("Import initiated"); }
-    function importDisposalExcel(file){ /* ... */ showToast("Import disposal initiated"); }
-    function exportBackup(){ /* ... */ }
-    function restoreBackup(file){ /* ... */ }
-    function loadSampleData(){ /* ... */ }
-    function deleteAllData(){ /* ... */ }
+    function renderPendingMPR() {
+        let start = new Date(document.getElementById("reportStartDate").value);
+        let end = new Date(document.getElementById("reportEndDate").value);
+        let office = document.getElementById("officeNameInput").value || "RCCMS Office";
+        if(isNaN(start)||isNaN(end)||start>end){ showToast("Invalid date range", true); return; }
+        // Compute MPR data
+        const initialPending = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>=start) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>start) return true; return false; }).length;
+        const newRegistered = cases.filter(c=>{ let i=new Date(c.institutionDate); return i>=start && i<=end; }).length;
+        const totalDecided = cases.filter(c=>c.disposed && c.disposalDate && (new Date(c.disposalDate)>=start && new Date(c.disposalDate)<=end)).length;
+        const pendingAsOnEnd = initialPending + newRegistered - totalDecided;
+        const pendingOnEnd = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>end) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>end) return true; return false; });
+        const bucketOrder = ["Upto 6 Months","6 Months To 1 year","1 To 2 Years","2 To 3 Years","3 To 5 Years","5 To 10 Years","10 To 20 Years","20 To 30 Years","30 To 40 Years","More Than 40 Years"];
+        const bucketMap = new Map(); bucketOrder.forEach(b => bucketMap.set(b, []));
+        pendingOnEnd.forEach(c => {
+            const age = computeAgeYears(c.institutionDate, end.toISOString().slice(0,10));
+            const bucket = getAgeBucket(age);
+            if(bucketMap.has(bucket)) bucketMap.get(bucket).push(c);
+        });
+        let row = `<tr><td>1</td><td>${escapeHtml(office)}</td><td>${initialPending}</td><td>${newRegistered}</td><td>${totalDecided}</td><td>${pendingAsOnEnd}</td>`;
+        bucketOrder.forEach(b => { row += `<td class="clickable" data-bucket="${b}">${bucketMap.get(b).length}</td>`; });
+        row += `</tr>`;
+        const html = `
+            <h4>📋 Pending MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
+            <div class="grid-2" style="margin-bottom:20px;">
+                <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
+                <div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
+                <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
+                <div><button id="refreshPendingBtn" class="primary">Refresh Report</button></div>
+            </div>
+            <div style="overflow-x:auto;">
+                <table style="min-width:1200px;">
+                    <thead><tr><th>S.No.</th><th>Office Name</th><th>Initial Pending</th><th>New Registered</th><th>Total Decided</th><th>Pending As On End</th>
+                    ${bucketOrder.map(b => `<th>${b}</th>`).join('')}</tr></thead>
+                    <tbody>${row}</tbody>
+                </table>
+            </div>
+            <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportPendingExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
+        `;
+        document.getElementById("reportOutput").innerHTML = html;
+        document.getElementById("refreshPendingBtn").onclick = () => renderPendingMPR();
+        document.querySelectorAll('#reportOutput .clickable').forEach(el => {
+            el.addEventListener('click', () => {
+                const bucket = el.getAttribute('data-bucket');
+                const casesList = bucketMap.get(bucket) || [];
+                if(casesList.length === 0) showToast("No cases in this bucket", true);
+                else showCaseList(`Pending Cases - ${bucket} (as on ${end.toISOString().slice(0,10)})`, casesList);
+            });
+        });
+        document.getElementById("exportPendingExcel").onclick = () => {
+            const wsData = [['S.No.','Office Name','Initial Pending','New Registered','Total Decided','Pending As On End',...bucketOrder]];
+            wsData.push([1, office, initialPending, newRegistered, totalDecided, pendingAsOnEnd, ...bucketOrder.map(b => bucketMap.get(b).length)]);
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Pending_MPR');
+            XLSX.writeFile(wb, `Pending_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`);
+        };
+    }
 
-    // Auth handling
+    function renderDisposalMPR() {
+        let start = new Date(document.getElementById("reportStartDate").value);
+        let end = new Date(document.getElementById("reportEndDate").value);
+        let office = document.getElementById("officeNameInput").value || "RCCMS Office";
+        if(isNaN(start)||isNaN(end)||start>end){ showToast("Invalid date range", true); return; }
+        const disposals = cases.filter(c=>c.disposed && c.disposalDate && (new Date(c.disposalDate)>=start && new Date(c.disposalDate)<=end));
+        const totalDisposal = disposals.length;
+        const ageBucketOrder = ["Over 5 Years","Over 3 Years","Over 2 Years","Over 1 Year","Less Than 1 Year"];
+        const ageBucketsMap = new Map(); ageBucketOrder.forEach(b => ageBucketsMap.set(b, []));
+        disposals.forEach(c => {
+            const age = computeAgeYears(c.institutionDate, c.disposalDate);
+            const bucket = getDisposalAgeBucket(age);
+            if(ageBucketsMap.has(bucket)) ageBucketsMap.get(bucket).push(c);
+        });
+        const monthMap = new Map();
+        disposals.forEach(c => {
+            const d = new Date(c.disposalDate);
+            const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+            if(!monthMap.has(key)) monthMap.set(key, []);
+            monthMap.get(key).push(c);
+        });
+        const monthWise = Array.from(monthMap.keys()).sort().map(m => ({ month: m, count: monthMap.get(m).length, cases: monthMap.get(m) }));
+        let row = `<tr><td>1</td><td>${escapeHtml(office)}</td><td>${totalDisposal}</td>`;
+        ageBucketOrder.forEach(b => { row += `<td class="clickable-age" data-agebucket="${b}">${ageBucketsMap.get(b).length}</td>`; });
+        row += `</tr>`;
+        let monthRows = '';
+        monthWise.forEach(m => { monthRows += `<tr><td class="clickable-month" data-month="${m.month}">${m.month}</td><td class="clickable-month" data-month="${m.month}">${m.count}</td></tr>`; });
+        const html = `
+            <h4>📋 Disposal MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
+            <div class="grid-2" style="margin-bottom:20px;">
+                <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
+                <div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
+                <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
+                <div><button id="refreshDisposalBtn" class="primary">Refresh Report</button></div>
+            </div>
+            <div style="overflow-x:auto;">
+                <table style="min-width:800px;">
+                    <thead><tr><th>S.No.</th><th>Office Name</th><th>Total Disposal</th>${ageBucketOrder.map(b => `<th>${b}</th>`).join('')}</tr></thead>
+                    <tbody>${row}</tbody>
+                </table>
+            </div>
+            <div style="margin-top:20px;"><strong>📅 Month-wise Disposal Breakdown (click on count)</strong>
+                <div style="overflow-x:auto; margin-top:10px;"><table style="min-width:300px;"><thead><tr><th>Year-Month</th><th>Disposals</th></tr></thead><tbody>${monthRows || '<tr><td colspan="2">No disposals</td></tr>'}</tbody></table></div>
+            </div>
+            <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
+        `;
+        document.getElementById("reportOutput").innerHTML = html;
+        document.getElementById("refreshDisposalBtn").onclick = () => renderDisposalMPR();
+        document.querySelectorAll('#reportOutput .clickable-age').forEach(el => {
+            el.addEventListener('click', () => {
+                const bucket = el.getAttribute('data-agebucket');
+                const casesList = ageBucketsMap.get(bucket) || [];
+                if(casesList.length === 0) showToast("No cases in this bucket", true);
+                else showCaseList(`Disposed Cases - Age at Disposal: ${bucket} (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})`, casesList);
+            });
+        });
+        document.querySelectorAll('#reportOutput .clickable-month').forEach(el => {
+            el.addEventListener('click', () => {
+                const month = el.getAttribute('data-month');
+                const monthObj = monthWise.find(m => m.month === month);
+                const casesList = monthObj ? monthObj.cases : [];
+                if(casesList.length === 0) showToast("No cases disposed in this month", true);
+                else showCaseList(`Disposed Cases - ${month} (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})`, casesList);
+            });
+        });
+        document.getElementById("exportDisposalExcel").onclick = () => {
+            const wsData = [['S.No.','Office Name','Total Disposal',...ageBucketOrder]];
+            wsData.push([1, office, totalDisposal, ...ageBucketOrder.map(b => ageBucketsMap.get(b).length)]);
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            const monthData = [['Year-Month','Disposals']];
+            monthWise.forEach(m => monthData.push([m.month, m.count]));
+            const wsMonth = XLSX.utils.aoa_to_sheet(monthData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Disposal_Summary');
+            XLSX.utils.book_append_sheet(wb, wsMonth, 'Month_Wise');
+            XLSX.writeFile(wb, `Disposal_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`);
+        };
+    }
+
+    // Import/Export (keep existing full implementations – simplified here for brevity but functional)
+    function importCasesExcel(file){ let reader = new FileReader(); reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); }; reader.readAsArrayBuffer(file); }
+    function processCaseRows(rows){ if(rows.length<2) return showToast("No data rows", true); let headers = rows[0].map(c=>String(c||"").trim().toLowerCase()); let idxCase = headers.findIndex(h=>h.includes("case no")||h==="caseno"); let idxInst = headers.findIndex(h=>h.includes("institution")||h.includes("inst date")); if(idxCase===-1||idxInst===-1) return showToast("Need 'Case No' and 'Institution Date'", true); let idxSec = headers.findIndex(h=>h.includes("section")), idxPurpose = headers.findIndex(h=>h.includes("purpose")), idxApp = headers.findIndex(h=>h.includes("appellant")), idxResp = headers.findIndex(h=>h.includes("respondent")), idxHear = headers.findIndex(h=>h.includes("hearing")); let imported=0; for(let i=1;i<rows.length;i++){ let row = rows[i]; let caseNo = row[idxCase] ? String(row[idxCase]).trim() : ""; let instRaw = row[idxInst] ? String(row[idxInst]).trim() : ""; if(!caseNo || !instRaw) continue; let instDate = parseDateAny(instRaw); if(!instDate) continue; if(cases.some(c=>c.caseNo===caseNo)) continue; let hearing = (idxHear!==-1 && row[idxHear]) ? parseDateAny(row[idxHear].toString()) : null; cases.push({id:nextId++, caseNo, section:(idxSec!==-1&&row[idxSec])?String(row[idxSec]).trim():"", institutionDate:instDate, casePurpose:(idxPurpose!==-1&&row[idxPurpose])?String(row[idxPurpose]).trim():"", appellantName:(idxApp!==-1&&row[idxApp])?String(row[idxApp]).trim():"", respondentName:(idxResp!==-1&&row[idxResp])?String(row[idxResp]).trim():"", hearingDate:hearing, disposed:false, disposalDate:null}); imported++; } saveToFirebase(); showToast(`Imported ${imported} new cases`); }
+    function importDisposalExcel(file){ let reader = new FileReader(); reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processDisposalRows(rows); }; reader.readAsArrayBuffer(file); }
+    function processDisposalRows(rows){ if(rows.length<2) return showToast("No data", true); let headers = rows[0].map(c=>String(c||"").trim().toLowerCase()); let idxCase = headers.findIndex(h=>h.includes("case no")||h==="caseno"); let idxDisp = headers.findIndex(h=>h.includes("disposal date")||h.includes("disposal")); if(idxCase===-1||idxDisp===-1) return showToast("Need 'Case No' and 'Disposal Date'", true); let updated=0; for(let i=1;i<rows.length;i++){ let row = rows[i]; let caseNo = row[idxCase] ? String(row[idxCase]).trim() : ""; let dispRaw = row[idxDisp] ? String(row[idxDisp]).trim() : ""; if(!caseNo || !dispRaw) continue; let dispDate = parseDateAny(dispRaw); if(!dispDate) continue; let existing = cases.find(c=>c.caseNo===caseNo && !c.disposed); if(existing){ existing.disposed=true; existing.disposalDate=dispDate; updated++; } } saveToFirebase(); showToast(`Updated ${updated} cases with disposal`); }
+    function exportBackup(){ let a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(cases,null,2)],{type:"application/json"})); a.download=`rccms_backup_${new Date().toISOString().slice(0,19)}.json`; a.click(); showToast("Backup downloaded"); }
+    function restoreBackup(file){ let reader=new FileReader(); reader.onload=e=>{ try{ let arr=JSON.parse(e.target.result); if(Array.isArray(arr)){ cases=arr; if(cases.length) nextId=Math.max(...cases.map(c=>c.id||0),0)+1; saveToFirebase(); showToast("Restore successful"); } else throw new Error(); }catch(err){ showToast("Invalid backup file", true); } }; reader.readAsText(file); }
+    function loadSampleData(){ if(confirm("Load sample cases?")){ cases = [{id:1,caseNo:"2025/99",section:"212",institutionDate:"2025-06-13",casePurpose:"साक्ष्य वादी",appellantName:"ओमकंवर",respondentName:"कमलेश",hearingDate:"2026-06-22",disposed:true,disposalDate:"2026-05-01"},{id:2,caseNo:"2025/98",section:"136,188,53",institutionDate:"2025-06-13",casePurpose:"साक्ष्य वादी",appellantName:"ओमकंवर",respondentName:"कमलेश",hearingDate:"2026-06-22",disposed:false}]; nextId=3; saveToFirebase(); showToast("Sample loaded"); } }
+    function deleteAllData(){ if(confirm("⚠️ DANGER: Delete ALL CASES?")){ casesRef.remove().then(()=>{ cases=[]; nextId=1; updateStats(false); updateTables(); showToast("All data deleted"); }).catch(e=>showToast(e.message,true)); } }
+
+    // Auth & Data sync
     auth.onAuthStateChanged(user => {
         if(user){
             updateSyncIndicator('connected', 'Live');
@@ -743,8 +724,7 @@
                 updateStats(true);
                 updateTables();
                 showToast("Data loaded from Firebase");
-                attachStatCardListeners();
-            }, err=>{ showToast(err.message, 'error'); updateSyncIndicator('disconnected', 'Offline'); });
+            }, err=>{ showToast(err.message, true); updateSyncIndicator('disconnected', 'Offline'); });
         } else {
             updateSyncIndicator('connecting', 'Not logged in');
             document.getElementById("loginModal").style.display = "flex";
@@ -754,28 +734,36 @@
         }
     });
 
-    // Login
     document.getElementById("loginBtn").onclick = () => {
         let email = document.getElementById("loginEmail").value;
         let pwd = document.getElementById("loginPassword").value;
-        auth.signInWithEmailAndPassword(email, pwd)
-            .then(() => document.getElementById("loginError").innerText = "")
-            .catch(err => document.getElementById("loginError").innerText = err.message);
+        auth.signInWithEmailAndPassword(email, pwd).then(()=>document.getElementById("loginError").innerText = "").catch(err => document.getElementById("loginError").innerText = err.message);
     };
     document.getElementById("logoutBtn").onclick = () => auth.signOut();
 
-    // Event listeners (simplified – attach all required)
     document.addEventListener("DOMContentLoaded", () => {
+        // Set default report dates
+        const today = new Date(); const lastYear = new Date(); lastYear.setFullYear(today.getFullYear()-1);
+        if(!document.getElementById("reportStartDate")){
+            const startInput = document.createElement("input"); startInput.type = "hidden"; startInput.id = "reportStartDate";
+            const endInput = document.createElement("input"); endInput.type = "hidden"; endInput.id = "reportEndDate";
+            const officeInput = document.createElement("input"); officeInput.type = "hidden"; officeInput.id = "officeNameInput";
+            document.body.appendChild(startInput); document.body.appendChild(endInput); document.body.appendChild(officeInput);
+        }
+        document.getElementById("reportStartDate").value = lastYear.toISOString().slice(0,10);
+        document.getElementById("reportEndDate").value = today.toISOString().slice(0,10);
+        document.getElementById("officeNameInput").value = "राजस्व मंडल, निवाई";
+
         document.getElementById("searchBtn").onclick = searchCase;
         document.getElementById("clearSearchBtn").onclick = () => document.getElementById("searchCaseNo").value = "";
         document.getElementById("pendingMprBtn").onclick = renderPendingMPR;
         document.getElementById("disposalMprBtn").onclick = renderDisposalMPR;
         document.getElementById("addCaseBtn").onclick = () => document.getElementById("caseModal").style.display = "flex";
         document.getElementById("closeCaseModalBtn").onclick = () => document.getElementById("caseModal").style.display = "none";
-        document.getElementById("saveCaseBtn").onclick = () => { /* add case logic */ };
-        document.getElementById("disposeBtn").onclick = () => document.getElementById("disposalModal").style.display = "flex";
-        document.getElementById("closeDisposalModalBtn").onclick = () => document.getElementById("disposalModal").style.display = "none";
-        document.getElementById("confirmDisposalBtn").onclick = () => { /* disposal logic */ };
+        document.getElementById("saveCaseBtn").onclick = () => { let cNo=document.getElementById("caseNo").value.trim(), inst=document.getElementById("instDate").value; if(!cNo||!inst){ showToast("Case No & Date required", true); return; } cases.push({id:nextId++, caseNo:cNo, section:document.getElementById("section").value, institutionDate:inst, casePurpose:document.getElementById("casePurpose").value, appellantName:document.getElementById("appellant").value, respondentName:document.getElementById("respondent").value, hearingDate:document.getElementById("hearingDate").value||null, disposed:false, disposalDate:null}); saveToFirebase(); document.getElementById("caseModal").style.display="none"; };
+        document.getElementById("disposeBtn").onclick = () => { document.getElementById("disposalModal").style.display="flex"; document.getElementById("disposalDate").value=new Date().toISOString().slice(0,10); };
+        document.getElementById("closeDisposalModalBtn").onclick = () => document.getElementById("disposalModal").style.display="none";
+        document.getElementById("confirmDisposalBtn").onclick = () => { let cNo=document.getElementById("disposalCaseNo").value.trim(), dDate=document.getElementById("disposalDate").value; if(!cNo||!dDate){ showToast("Select case and date", true); return; } let found=cases.find(c=>c.caseNo===cNo && !c.disposed); if(found){ found.disposed=true; found.disposalDate=dDate; saveToFirebase(); showToast("Disposal recorded"); } else showToast("Not found or already disposed", true); document.getElementById("disposalModal").style.display="none"; };
         document.getElementById("exportBackupBtn").onclick = exportBackup;
         document.getElementById("importBackupBtn").onclick = () => { let inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>{ if(e.target.files.length) restoreBackup(e.target.files[0]); }; inp.click(); };
         document.getElementById("importCasesExcelBtn").onclick = () => document.getElementById("casesExcelInput").click();
@@ -786,6 +774,26 @@
         document.getElementById("deleteAllBtn").onclick = deleteAllData;
         document.getElementById("closeModalBtn").onclick = () => document.getElementById("listModal").style.display = "none";
         window.onclick = (event) => { if(event.target === document.getElementById("listModal")) document.getElementById("listModal").style.display = "none"; };
+        // Attach stat card listeners after data load
+        const attachStatCards = () => {
+            document.querySelectorAll('.stat-card').forEach(card => {
+                card.removeEventListener('click', () => {});
+                card.addEventListener('click', () => {
+                    const type = card.getAttribute('data-stat');
+                    let filtered = [];
+                    if(type === 'total') filtered = cases;
+                    else if(type === 'pending') filtered = cases.filter(c=>!c.disposed);
+                    else if(type === 'disposed') filtered = cases.filter(c=>c.disposed);
+                    else if(type === 'yearly') {
+                        const currentYear = new Date().getFullYear();
+                        filtered = cases.filter(c=>new Date(c.institutionDate).getFullYear() === currentYear);
+                    }
+                    if(filtered.length === 0) showToast("No cases", true);
+                    else showCaseList(`${card.querySelector('.label').innerText} Cases (${filtered.length})`, filtered);
+                });
+            });
+        };
+        setTimeout(attachStatCards, 500);
     });
 </script>
 </body>
