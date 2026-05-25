@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>RCCMS | Judicial Dashboard</title>
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -327,7 +326,7 @@
                 <div class="data-table">
                     <table id="sectionTable">
                         <thead><tr><th>Section</th><th>Case Count</th><th>Distribution</th></tr></thead>
-                        <tbody id="sectionTableBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+                        <tbody id="sectionTableBody"><tr><td colspan="3">Loading...–</tbody>
                     </table>
                 </div>
             </div>
@@ -336,7 +335,7 @@
                 <div class="data-table">
                     <table id="yearTable">
                         <thead><tr><th>Year</th><th>Filed</th><th>Disposed</th><th>Clearance %</th></tr></thead>
-                        <tbody id="yearTableBody"><tr><td colspan="4">Loading...–</td></tr></tbody>
+                        <tbody id="yearTableBody"><tr><td colspan="4">Loading...–</tbody>
                     </table>
                 </div>
             </div>
@@ -350,7 +349,7 @@
     </div>
 </div>
 
-<!-- Modals -->
+<!-- Modals (same as before) -->
 <div id="loginModal" class="modal" style="display:flex;">
     <div class="modal-content">
         <h3><i class="fas fa-key"></i> Judicial Login</h3>
@@ -364,16 +363,8 @@
 <div id="listModal" class="modal">
     <div class="modal-content">
         <h3 id="modalTitle">Case List</h3>
-        <div style="overflow-x:auto;">
-            <table id="modalTable">
-                <thead><tr><th>Case No</th><th>Section</th><th>Inst. Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Hearing</th><th>Disposal</th><th>Status</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-        <div style="margin-top:20px; display:flex; gap:12px; justify-content:flex-end;">
-            <button id="exportModalCsvBtn" class="primary">Export to Excel</button>
-            <button id="closeModalBtn">Close</button>
-        </div>
+        <div style="overflow-x:auto;"><table id="modalTable"><thead><tr><th>Case No</th><th>Section</th><th>Inst. Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Hearing</th><th>Disposal</th><th>Status</th></tr></thead><tbody></tbody></table></div>
+        <div style="margin-top:20px; display:flex; gap:12px; justify-content:flex-end;"><button id="exportModalCsvBtn" class="primary">Export to Excel</button><button id="closeModalBtn">Close</button></div>
     </div>
 </div>
 
@@ -382,7 +373,7 @@
 <div id="disposalModal" class="modal"><div class="modal-content"><h3>Record Disposal</h3><div class="form-group"><label>Case No</label><input list="caseNosList" id="disposalCaseNo"><datalist id="caseNosList"></datalist></div><div class="form-group"><label>Disposal Date *</label><input type="date" id="disposalDate"></div><div style="display:flex; gap:12px;"><button id="confirmDisposalBtn" class="primary">Mark Disposed</button><button id="closeDisposalModalBtn">Cancel</button></div></div></div>
 
 <script>
-    // Firebase Config
+    // Firebase Config (यहाँ अपनी कॉन्फ़िगरेशन डालें)
     const firebaseConfig = {
         apiKey: "AIzaSyD9VnIRajIj7cJhD-sPBeyT8CYimE_vF7k",
         authDomain: "rccms-5614b.firebaseapp.com",
@@ -401,6 +392,7 @@
 
     let cases = [], nextId = 1, isLoading = true;
 
+    // Helper functions
     function showToast(msg, isError = false) {
         const toast = document.createElement('div');
         toast.className = 'toast';
@@ -423,6 +415,9 @@
     }
 
     function formatDate(iso){ return iso ? new Date(iso).toLocaleDateString('en-GB') : '-'; }
+    function escapeHtml(str){ return str ? String(str).replace(/[&<>]/g,m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;') : ''; }
+
+    // पार्स डेट (DD-MM-YYYY, DD/MM/YYYY, Excel serial)
     function parseDateAny(d) {
         if(!d) return null;
         let s = String(d).trim();
@@ -441,12 +436,11 @@
         let t = new Date(s);
         return isNaN(t) ? null : t.toISOString().slice(0,10);
     }
-    function escapeHtml(str){ return str ? String(str).replace(/[&<>]/g,m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;') : ''; }
 
     function saveToFirebase(){
         if(isLoading) return;
         const obj = {}; cases.forEach(c => obj[c.id] = c);
-        casesRef.set(obj).then(()=>showToast('✓ Data saved to Firebase')).catch(e=>showToast(e.message, true));
+        casesRef.set(obj).then(()=>showToast('✓ Data saved')).catch(e=>showToast(e.message, true));
     }
 
     function updateStats(animate = true) {
@@ -478,9 +472,9 @@
         let secHtml = '';
         sorted.forEach(([sec,count]) => {
             let percent = (count/maxCount)*100;
-            secHtml += `<tr><td>${escapeHtml(sec)}</td><td>${count}</td><td><div class="progress-bar-container"><div class="progress-bar" style="width: ${percent}%;"></div></div></td></tr>`;
+            secHtml += `<tr><td>${escapeHtml(sec)}${count}${'<div class="progress-bar-container"><div class="progress-bar" style="width:'+percent+'%;"></div></div>'}';
         });
-        if(!secHtml) secHtml = '<tr><td colspan="3">No data</td></tr>';
+        if(!secHtml) secHtml = '<table><td colspan="3">No data</tr>';
         document.getElementById("sectionTableBody").innerHTML = secHtml;
 
         // Year-wise with clearance rate
@@ -502,9 +496,9 @@
         years.forEach(y => {
             let data = yearMap.get(y);
             let clearance = data.filed ? ((data.disposed/data.filed)*100).toFixed(1) : 0;
-            yearHtml += `<tr><td>${y}</td><td>${data.filed}</td><td>${data.disposed}</td><td>${clearance}%</td></tr>`;
+            yearHtml += `<tr><td>${y}${data.filed}${data.disposed}${clearance}%`;
         });
-        if(!yearHtml) yearHtml = '<tr><td colspan="4">No data</td></tr>';
+        if(!yearHtml) yearHtml = '<tr><td colspan="4">No data</tr>';
         document.getElementById("yearTableBody").innerHTML = yearHtml;
     }
 
@@ -528,12 +522,9 @@
         modal.style.display = 'flex';
         document.getElementById('exportModalCsvBtn').onclick = () => {
             const rows = [['Case No','Section','Institution Date','Purpose','Appellant','Respondent','Hearing Date','Disposal Date','Status']];
-            caseArray.forEach(c => {
-                rows.push([c.caseNo, c.section||'', formatDate(c.institutionDate), c.casePurpose||'', c.appellantName||'', c.respondentName||'', c.hearingDate?formatDate(c.hearingDate):'-', c.disposalDate?formatDate(c.disposalDate):'-', c.disposed?'Disposed':'Pending']);
-            });
+            caseArray.forEach(c => rows.push([c.caseNo, c.section||'', formatDate(c.institutionDate), c.casePurpose||'', c.appellantName||'', c.respondentName||'', c.hearingDate?formatDate(c.hearingDate):'-', c.disposalDate?formatDate(c.disposalDate):'-', c.disposed?'Disposed':'Pending']));
             const ws = XLSX.utils.aoa_to_sheet(rows);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Cases');
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Cases');
             XLSX.writeFile(wb, `${title.replace(/\s/g,'_')}.xlsx`);
         };
     }
@@ -546,7 +537,83 @@
         else showCaseList(`Search Results for "${term}" (${results.length})`, results);
     }
 
-    // ==================== MPR FUNCTIONS (FULLY WORKING) ====================
+    // ========== CORRECTED DISPOSAL IMPORT (with detailed logging) ==========
+    function importDisposalExcel(file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type:'array'});
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:""});
+            processDisposalRows(rows);
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function processDisposalRows(rows) {
+        if(rows.length < 2) { showToast("No data rows in Excel", true); return; }
+        // Detect header row
+        let headerRow = rows[0].map(c=>String(c||"").trim().toLowerCase());
+        let idxCase = headerRow.findIndex(h => h.includes("case no") || h === "caseno");
+        let idxDisposal = headerRow.findIndex(h => h.includes("disposal date") || h.includes("disposal"));
+        if(idxCase === -1 || idxDisposal === -1) {
+            showToast("Excel must have columns: 'Case No' and 'Disposal Date'", true);
+            return;
+        }
+        let updated = 0, notFound = 0, dateError = 0;
+        for(let i=1; i<rows.length; i++) {
+            const row = rows[i];
+            let caseNo = row[idxCase] ? String(row[idxCase]).trim() : "";
+            let dispRaw = row[idxDisposal] ? String(row[idxDisposal]).trim() : "";
+            if(!caseNo || !dispRaw) continue;
+            let dispDate = parseDateAny(dispRaw);
+            if(!dispDate) { dateError++; continue; }
+            let existing = cases.find(c => c.caseNo === caseNo);
+            if(existing && !existing.disposed) {
+                existing.disposed = true;
+                existing.disposalDate = dispDate;
+                updated++;
+            } else {
+                notFound++;
+            }
+        }
+        saveToFirebase();
+        showToast(`✅ Disposal import: ${updated} updated, ${notFound} not found/already disposed, ${dateError} date errors`);
+        // Refresh stats and tables
+        updateStats(true);
+        updateTables();
+    }
+
+    // Cases import (unchanged but robust)
+    function importCasesExcel(file){
+        let reader = new FileReader();
+        reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); };
+        reader.readAsArrayBuffer(file);
+    }
+    function processCaseRows(rows){
+        if(rows.length<2) return showToast("No data rows", true);
+        let headers = rows[0].map(c=>String(c||"").trim().toLowerCase());
+        let idxCase = headers.findIndex(h=>h.includes("case no")||h==="caseno");
+        let idxInst = headers.findIndex(h=>h.includes("institution")||h.includes("inst date"));
+        if(idxCase===-1||idxInst===-1) return showToast("Need 'Case No' and 'Institution Date'", true);
+        let idxSec = headers.findIndex(h=>h.includes("section")), idxPurpose = headers.findIndex(h=>h.includes("purpose")), idxApp = headers.findIndex(h=>h.includes("appellant")), idxResp = headers.findIndex(h=>h.includes("respondent")), idxHear = headers.findIndex(h=>h.includes("hearing"));
+        let imported=0;
+        for(let i=1;i<rows.length;i++){
+            let row = rows[i];
+            let caseNo = row[idxCase] ? String(row[idxCase]).trim() : "";
+            let instRaw = row[idxInst] ? String(row[idxInst]).trim() : "";
+            if(!caseNo || !instRaw) continue;
+            let instDate = parseDateAny(instRaw);
+            if(!instDate) continue;
+            if(cases.some(c=>c.caseNo===caseNo)) continue;
+            let hearing = (idxHear!==-1 && row[idxHear]) ? parseDateAny(row[idxHear].toString()) : null;
+            cases.push({id:nextId++, caseNo, section:(idxSec!==-1&&row[idxSec])?String(row[idxSec]).trim():"", institutionDate:instDate, casePurpose:(idxPurpose!==-1&&row[idxPurpose])?String(row[idxPurpose]).trim():"", appellantName:(idxApp!==-1&&row[idxApp])?String(row[idxApp]).trim():"", respondentName:(idxResp!==-1&&row[idxResp])?String(row[idxResp]).trim():"", hearingDate:hearing, disposed:false, disposalDate:null});
+            imported++;
+        }
+        saveToFirebase(); showToast(`Imported ${imported} new cases`);
+    }
+
+    // MPR Functions (fully working)
     function getAgeBucket(years){
         if(years < 0.5) return "Upto 6 Months";
         if(years < 1) return "6 Months To 1 year";
@@ -567,7 +634,6 @@
         let end = new Date(document.getElementById("reportEndDate").value);
         let office = document.getElementById("officeNameInput").value || "RCCMS Office";
         if(isNaN(start)||isNaN(end)||start>end){ showToast("Invalid date range", true); return; }
-        // Compute MPR data
         const initialPending = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>=start) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>start) return true; return false; }).length;
         const newRegistered = cases.filter(c=>{ let i=new Date(c.institutionDate); return i>=start && i<=end; }).length;
         const totalDecided = cases.filter(c=>c.disposed && c.disposalDate && (new Date(c.disposalDate)>=start && new Date(c.disposalDate)<=end)).length;
@@ -591,13 +657,7 @@
                 <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
                 <div><button id="refreshPendingBtn" class="primary">Refresh Report</button></div>
             </div>
-            <div style="overflow-x:auto;">
-                <table style="min-width:1200px;">
-                    <thead><tr><th>S.No.</th><th>Office Name</th><th>Initial Pending</th><th>New Registered</th><th>Total Decided</th><th>Pending As On End</th>
-                    ${bucketOrder.map(b => `<th>${b}</th>`).join('')}</tr></thead>
-                    <tbody>${row}</tbody>
-                </table>
-            </div>
+            <div style="overflow-x:auto;"><table style="min-width:1200px;"><thead><tr><th>S.No.</th><th>Office Name</th><th>Initial Pending</th><th>New Registered</th><th>Total Decided</th><th>Pending As On End</th>${bucketOrder.map(b=>`<th>${b}</th>`).join('')}</tr></thead><tbody>${row}</tbody></table></div>
             <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportPendingExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
         `;
         document.getElementById("reportOutput").innerHTML = html;
@@ -654,14 +714,9 @@
                 <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
                 <div><button id="refreshDisposalBtn" class="primary">Refresh Report</button></div>
             </div>
-            <div style="overflow-x:auto;">
-                <table style="min-width:800px;">
-                    <thead><tr><th>S.No.</th><th>Office Name</th><th>Total Disposal</th>${ageBucketOrder.map(b => `<th>${b}</th>`).join('')}</tr></thead>
-                    <tbody>${row}</tbody>
-                </table>
-            </div>
+            <div style="overflow-x:auto;"><table style="min-width:800px;"><thead><tr><th>S.No.</th><th>Office Name</th><th>Total Disposal</th>${ageBucketOrder.map(b=>`<th>${b}</th>`).join('')}</tr></thead><tbody>${row}</tbody></table></div>
             <div style="margin-top:20px;"><strong>📅 Month-wise Disposal Breakdown (click on count)</strong>
-                <div style="overflow-x:auto; margin-top:10px;"><table style="min-width:300px;"><thead><tr><th>Year-Month</th><th>Disposals</th></tr></thead><tbody>${monthRows || '<tr><td colspan="2">No disposals</td></tr>'}</tbody></table></div>
+                <div style="overflow-x:auto; margin-top:10px;"><table style="min-width:300px;"><thead><tr><th>Year-Month</th><th>Disposals</th></tr></thead><tbody>${monthRows || '</td><td colspan="2">No disposals</tr>'}</tbody></table></div>
             </div>
             <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
         `;
@@ -698,17 +753,13 @@
         };
     }
 
-    // Import/Export (keep existing full implementations – simplified here for brevity but functional)
-    function importCasesExcel(file){ let reader = new FileReader(); reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); }; reader.readAsArrayBuffer(file); }
-    function processCaseRows(rows){ if(rows.length<2) return showToast("No data rows", true); let headers = rows[0].map(c=>String(c||"").trim().toLowerCase()); let idxCase = headers.findIndex(h=>h.includes("case no")||h==="caseno"); let idxInst = headers.findIndex(h=>h.includes("institution")||h.includes("inst date")); if(idxCase===-1||idxInst===-1) return showToast("Need 'Case No' and 'Institution Date'", true); let idxSec = headers.findIndex(h=>h.includes("section")), idxPurpose = headers.findIndex(h=>h.includes("purpose")), idxApp = headers.findIndex(h=>h.includes("appellant")), idxResp = headers.findIndex(h=>h.includes("respondent")), idxHear = headers.findIndex(h=>h.includes("hearing")); let imported=0; for(let i=1;i<rows.length;i++){ let row = rows[i]; let caseNo = row[idxCase] ? String(row[idxCase]).trim() : ""; let instRaw = row[idxInst] ? String(row[idxInst]).trim() : ""; if(!caseNo || !instRaw) continue; let instDate = parseDateAny(instRaw); if(!instDate) continue; if(cases.some(c=>c.caseNo===caseNo)) continue; let hearing = (idxHear!==-1 && row[idxHear]) ? parseDateAny(row[idxHear].toString()) : null; cases.push({id:nextId++, caseNo, section:(idxSec!==-1&&row[idxSec])?String(row[idxSec]).trim():"", institutionDate:instDate, casePurpose:(idxPurpose!==-1&&row[idxPurpose])?String(row[idxPurpose]).trim():"", appellantName:(idxApp!==-1&&row[idxApp])?String(row[idxApp]).trim():"", respondentName:(idxResp!==-1&&row[idxResp])?String(row[idxResp]).trim():"", hearingDate:hearing, disposed:false, disposalDate:null}); imported++; } saveToFirebase(); showToast(`Imported ${imported} new cases`); }
-    function importDisposalExcel(file){ let reader = new FileReader(); reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processDisposalRows(rows); }; reader.readAsArrayBuffer(file); }
-    function processDisposalRows(rows){ if(rows.length<2) return showToast("No data", true); let headers = rows[0].map(c=>String(c||"").trim().toLowerCase()); let idxCase = headers.findIndex(h=>h.includes("case no")||h==="caseno"); let idxDisp = headers.findIndex(h=>h.includes("disposal date")||h.includes("disposal")); if(idxCase===-1||idxDisp===-1) return showToast("Need 'Case No' and 'Disposal Date'", true); let updated=0; for(let i=1;i<rows.length;i++){ let row = rows[i]; let caseNo = row[idxCase] ? String(row[idxCase]).trim() : ""; let dispRaw = row[idxDisp] ? String(row[idxDisp]).trim() : ""; if(!caseNo || !dispRaw) continue; let dispDate = parseDateAny(dispRaw); if(!dispDate) continue; let existing = cases.find(c=>c.caseNo===caseNo && !c.disposed); if(existing){ existing.disposed=true; existing.disposalDate=dispDate; updated++; } } saveToFirebase(); showToast(`Updated ${updated} cases with disposal`); }
+    // Backup, restore, sample, delete all
     function exportBackup(){ let a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(cases,null,2)],{type:"application/json"})); a.download=`rccms_backup_${new Date().toISOString().slice(0,19)}.json`; a.click(); showToast("Backup downloaded"); }
     function restoreBackup(file){ let reader=new FileReader(); reader.onload=e=>{ try{ let arr=JSON.parse(e.target.result); if(Array.isArray(arr)){ cases=arr; if(cases.length) nextId=Math.max(...cases.map(c=>c.id||0),0)+1; saveToFirebase(); showToast("Restore successful"); } else throw new Error(); }catch(err){ showToast("Invalid backup file", true); } }; reader.readAsText(file); }
     function loadSampleData(){ if(confirm("Load sample cases?")){ cases = [{id:1,caseNo:"2025/99",section:"212",institutionDate:"2025-06-13",casePurpose:"साक्ष्य वादी",appellantName:"ओमकंवर",respondentName:"कमलेश",hearingDate:"2026-06-22",disposed:true,disposalDate:"2026-05-01"},{id:2,caseNo:"2025/98",section:"136,188,53",institutionDate:"2025-06-13",casePurpose:"साक्ष्य वादी",appellantName:"ओमकंवर",respondentName:"कमलेश",hearingDate:"2026-06-22",disposed:false}]; nextId=3; saveToFirebase(); showToast("Sample loaded"); } }
     function deleteAllData(){ if(confirm("⚠️ DANGER: Delete ALL CASES?")){ casesRef.remove().then(()=>{ cases=[]; nextId=1; updateStats(false); updateTables(); showToast("All data deleted"); }).catch(e=>showToast(e.message,true)); } }
 
-    // Auth & Data sync
+    // Auth
     auth.onAuthStateChanged(user => {
         if(user){
             updateSyncIndicator('connected', 'Live');
@@ -734,6 +785,7 @@
         }
     });
 
+    // Login / Logout
     document.getElementById("loginBtn").onclick = () => {
         let email = document.getElementById("loginEmail").value;
         let pwd = document.getElementById("loginPassword").value;
@@ -741,15 +793,16 @@
     };
     document.getElementById("logoutBtn").onclick = () => auth.signOut();
 
+    // Event listeners
     document.addEventListener("DOMContentLoaded", () => {
-        // Set default report dates
-        const today = new Date(); const lastYear = new Date(); lastYear.setFullYear(today.getFullYear()-1);
+        // Create hidden fields for report dates if not present
         if(!document.getElementById("reportStartDate")){
-            const startInput = document.createElement("input"); startInput.type = "hidden"; startInput.id = "reportStartDate";
-            const endInput = document.createElement("input"); endInput.type = "hidden"; endInput.id = "reportEndDate";
-            const officeInput = document.createElement("input"); officeInput.type = "hidden"; officeInput.id = "officeNameInput";
-            document.body.appendChild(startInput); document.body.appendChild(endInput); document.body.appendChild(officeInput);
+            const inpStart = document.createElement("input"); inpStart.type = "hidden"; inpStart.id = "reportStartDate";
+            const inpEnd = document.createElement("input"); inpEnd.type = "hidden"; inpEnd.id = "reportEndDate";
+            const inpOffice = document.createElement("input"); inpOffice.type = "hidden"; inpOffice.id = "officeNameInput";
+            document.body.appendChild(inpStart); document.body.appendChild(inpEnd); document.body.appendChild(inpOffice);
         }
+        const today = new Date(); const lastYear = new Date(); lastYear.setFullYear(today.getFullYear()-1);
         document.getElementById("reportStartDate").value = lastYear.toISOString().slice(0,10);
         document.getElementById("reportEndDate").value = today.toISOString().slice(0,10);
         document.getElementById("officeNameInput").value = "राजस्व मंडल, निवाई";
@@ -774,10 +827,9 @@
         document.getElementById("deleteAllBtn").onclick = deleteAllData;
         document.getElementById("closeModalBtn").onclick = () => document.getElementById("listModal").style.display = "none";
         window.onclick = (event) => { if(event.target === document.getElementById("listModal")) document.getElementById("listModal").style.display = "none"; };
-        // Attach stat card listeners after data load
+        // Attach stat card clicks after data load
         const attachStatCards = () => {
             document.querySelectorAll('.stat-card').forEach(card => {
-                card.removeEventListener('click', () => {});
                 card.addEventListener('click', () => {
                     const type = card.getAttribute('data-stat');
                     let filtered = [];
