@@ -23,7 +23,6 @@
         ::-webkit-scrollbar-track { background: #1e293b; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
 
-        .gold-gradient { background: linear-gradient(135deg, #d4af37 0%, #f5e7a3 50%, #b8860b 100%); }
         .glass {
             background: rgba(15, 25, 45, 0.55);
             backdrop-filter: blur(12px);
@@ -385,7 +384,6 @@
         measurementId: "G-P1HP9TH5N4"
     };
 
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const database = firebase.database();
@@ -418,7 +416,6 @@
     function formatDate(iso){ return iso ? new Date(iso).toLocaleDateString('en-GB') : '-'; }
     function escapeHtml(str){ return str ? String(str).replace(/[&<>]/g,m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;') : ''; }
 
-    // Robust date parser
     function parseDateAny(d) {
         if(!d) return null;
         let s = String(d).trim();
@@ -473,11 +470,9 @@
         let secHtml = '';
         sorted.forEach(([sec,count]) => {
             let percent = (count/maxCount)*100;
-            secHtml += `<tr>
-                <td>${escapeHtml(sec)}${count}${'<div class="progress-bar-container"><div class="progress-bar" style="width:'+percent+'%;"></div></div>'}?
-            `;
+            secHtml += `<tr><td>${escapeHtml(sec)}</td><td>${count}</td><td><div class="progress-bar-container"><div class="progress-bar" style="width: ${percent}%;"></div></div></td></tr>`;
         });
-        if(!secHtml) secHtml = '<tr><td colspan="3">No data</td>';
+        if(!secHtml) secHtml = '<tr><td colspan="3">No data</td></tr>';
         document.getElementById("sectionTableBody").innerHTML = secHtml;
 
         // Year-wise with clearance rate
@@ -499,11 +494,9 @@
         years.forEach(y => {
             let data = yearMap.get(y);
             let clearance = data.filed ? ((data.disposed/data.filed)*100).toFixed(1) : 0;
-            yearHtml += `<tr>
-                <td>${y}${data.filed}${data.disposed}${clearance}%?
-            `;
+            yearHtml += `<tr><td>${y}</td><td>${data.filed}</td><td>${data.disposed}</td><td>${clearance}%</td></tr>`;
         });
-        if(!yearHtml) yearHtml = '<tr><td colspan="4">No data</td>';
+        if(!yearHtml) yearHtml = '<tr><td colspan="4">No data</td></tr>';
         document.getElementById("yearTableBody").innerHTML = yearHtml;
     }
 
@@ -563,11 +556,23 @@
         let end = new Date(document.getElementById("reportEndDate").value);
         let office = document.getElementById("officeNameInput").value || "RCCMS Office";
         if(isNaN(start)||isNaN(end)||start>end){ showToast("Invalid date range", true); return; }
+        
+        // Calculate pending cases as on end date directly
+        const pendingOnEnd = cases.filter(c => {
+            const inst = new Date(c.institutionDate);
+            if(inst > end) return false;
+            if(!c.disposed) return true;
+            if(c.disposalDate && new Date(c.disposalDate) > end) return true;
+            return false;
+        });
+        const pendingAsOnEnd = pendingOnEnd.length;
+        
+        // For other metrics, we need the period calculation
         const initialPending = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>=start) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>start) return true; return false; }).length;
         const newRegistered = cases.filter(c=>{ let i=new Date(c.institutionDate); return i>=start && i<=end; }).length;
         const totalDecided = cases.filter(c=>c.disposed && c.disposalDate && (new Date(c.disposalDate)>=start && new Date(c.disposalDate)<=end)).length;
-        const pendingAsOnEnd = initialPending + newRegistered - totalDecided;
-        const pendingOnEnd = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>end) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>end) return true; return false; });
+        
+        // Age buckets for pending cases as on end date
         const bucketOrder = ["Upto 6 Months","6 Months To 1 year","1 To 2 Years","2 To 3 Years","3 To 5 Years","5 To 10 Years","10 To 20 Years","20 To 30 Years","30 To 40 Years","More Than 40 Years"];
         const bucketMap = new Map(); bucketOrder.forEach(b => bucketMap.set(b, []));
         pendingOnEnd.forEach(c => {
@@ -575,10 +580,11 @@
             const bucket = getAgeBucket(age);
             if(bucketMap.has(bucket)) bucketMap.get(bucket).push(c);
         });
-        let row = `<tr>
-            <td>1${escapeHtml(office)}${initialPending}${newRegistered}${totalDecided}${pendingAsOnEnd}
-            ${bucketOrder.map(b => `<td class="clickable" data-bucket="${b}">${bucketMap.get(b).length}</td>`).join('')}
-        </tr>`;
+        
+        let row = `<tr><td>1</td><td>${escapeHtml(office)}</td><td>${initialPending}</td><td>${newRegistered}</td><td>${totalDecided}</td><td>${pendingAsOnEnd}</td>`;
+        bucketOrder.forEach(b => { row += `<td class="clickable" data-bucket="${b}">${bucketMap.get(b).length}</td>`; });
+        row += `</tr>`;
+        
         const html = `
             <h4>📋 Pending MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
             <div class="grid-2" style="margin-bottom:20px;">
@@ -614,8 +620,34 @@
         let end = new Date(document.getElementById("reportEndDate").value);
         let office = document.getElementById("officeNameInput").value || "RCCMS Office";
         if(isNaN(start)||isNaN(end)||start>end){ showToast("Invalid date range", true); return; }
-        const disposals = cases.filter(c=>c.disposed && c.disposalDate && (new Date(c.disposalDate)>=start && new Date(c.disposalDate)<=end));
+        
+        const disposals = cases.filter(c => c.disposed && c.disposalDate && (new Date(c.disposalDate) >= start && new Date(c.disposalDate) <= end));
         const totalDisposal = disposals.length;
+        
+        if(totalDisposal === 0) {
+            const html = `
+                <h4>📋 Disposal MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
+                <div class="grid-2" style="margin-bottom:20px;">
+                    <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
+                    <div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
+                    <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
+                    <div><button id="refreshDisposalBtn" class="primary">Refresh Report</button></div>
+                </div>
+                <p style="text-align:center; color:#f5e7a3;">No disposals found in the selected date range. Please check your disposal Excel import or change the date range.</p>
+                <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
+            `;
+            document.getElementById("reportOutput").innerHTML = html;
+            document.getElementById("refreshDisposalBtn").onclick = () => renderDisposalMPR();
+            document.getElementById("exportDisposalExcel").onclick = () => {
+                const wsData = [['S.No.','Office Name','Total Disposal','Over 5 Years','Over 3 Years','Over 2 Years','Over 1 Year','Less Than 1 Year']];
+                wsData.push([1, office, 0, 0, 0, 0, 0, 0]);
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Disposal_Summary');
+                XLSX.writeFile(wb, `Disposal_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`);
+            };
+            return;
+        }
+        
         const ageBucketOrder = ["Over 5 Years","Over 3 Years","Over 2 Years","Over 1 Year","Less Than 1 Year"];
         const ageBucketsMap = new Map(); ageBucketOrder.forEach(b => ageBucketsMap.set(b, []));
         disposals.forEach(c => {
@@ -623,6 +655,7 @@
             const bucket = getDisposalAgeBucket(age);
             if(ageBucketsMap.has(bucket)) ageBucketsMap.get(bucket).push(c);
         });
+        
         const monthMap = new Map();
         disposals.forEach(c => {
             const d = new Date(c.disposalDate);
@@ -631,12 +664,14 @@
             monthMap.get(key).push(c);
         });
         const monthWise = Array.from(monthMap.keys()).sort().map(m => ({ month: m, count: monthMap.get(m).length, cases: monthMap.get(m) }));
-        let row = `<tr>
-            <td>1${escapeHtml(office)}${totalDisposal}
-            ${ageBucketOrder.map(b => `<td class="clickable-age" data-agebucket="${b}">${ageBucketsMap.get(b).length}</td>`).join('')}
-        </tr>`;
+        
+        let row = `<tr><td>1</td><td>${escapeHtml(office)}</td><td>${totalDisposal}</td>`;
+        ageBucketOrder.forEach(b => { row += `<td class="clickable-age" data-agebucket="${b}">${ageBucketsMap.get(b).length}</td>`; });
+        row += `</tr>`;
+        
         let monthRows = '';
         monthWise.forEach(m => { monthRows += `<tr><td class="clickable-month" data-month="${m.month}">${m.month}</td><td class="clickable-month" data-month="${m.month}">${m.count}</td></tr>`; });
+        
         const html = `
             <h4>📋 Disposal MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
             <div class="grid-2" style="margin-bottom:20px;">
@@ -653,6 +688,7 @@
         `;
         document.getElementById("reportOutput").innerHTML = html;
         document.getElementById("refreshDisposalBtn").onclick = () => renderDisposalMPR();
+        
         document.querySelectorAll('#reportOutput .clickable-age').forEach(el => {
             el.addEventListener('click', () => {
                 const bucket = el.getAttribute('data-agebucket');
@@ -684,7 +720,7 @@
         };
     }
 
-    // Import/Export functions
+    // Import functions
     function importCasesExcel(file){
         let reader = new FileReader();
         reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); };
@@ -750,7 +786,6 @@
 
     // Authentication state
     auth.onAuthStateChanged(user => {
-        console.log("Auth state changed", user);
         if(user){
             updateSyncIndicator('connected', 'Live');
             document.getElementById("loginModal").style.display = "none";
@@ -775,42 +810,29 @@
         }
     });
 
-    // Login button
     document.getElementById("loginBtn").onclick = () => {
         const email = document.getElementById("loginEmail").value;
         const pwd = document.getElementById("loginPassword").value;
-        if(!email || !pwd) {
-            document.getElementById("loginError").innerText = "Please enter email and password";
-            return;
-        }
+        if(!email || !pwd) { document.getElementById("loginError").innerText = "Please enter email and password"; return; }
         auth.signInWithEmailAndPassword(email, pwd)
-            .then(() => {
-                document.getElementById("loginError").innerText = "";
-                showToast("Login successful");
-            })
-            .catch(err => {
-                console.error("Login error:", err);
-                document.getElementById("loginError").innerText = err.message;
-                showToast("Login failed: " + err.message, true);
-            });
+            .then(() => { document.getElementById("loginError").innerText = ""; showToast("Login successful"); })
+            .catch(err => { document.getElementById("loginError").innerText = err.message; showToast("Login failed: " + err.message, true); });
     };
     document.getElementById("logoutBtn").onclick = () => auth.signOut();
 
-    // Initialize DOM and set default dates to include all cases
+    // Initialize DOM and set default dates
     document.addEventListener("DOMContentLoaded", () => {
-        // Create hidden date/office fields if they don't exist
         if(!document.getElementById("reportStartDate")){
             const inpStart = document.createElement("input"); inpStart.type = "hidden"; inpStart.id = "reportStartDate";
             const inpEnd = document.createElement("input"); inpEnd.type = "hidden"; inpEnd.id = "reportEndDate";
             const inpOffice = document.createElement("input"); inpOffice.type = "hidden"; inpOffice.id = "officeNameInput";
             document.body.appendChild(inpStart); document.body.appendChild(inpEnd); document.body.appendChild(inpOffice);
         }
-        // Set default start date to year 2000 so that all pending cases are included
+        // Set default start to year 2000 to include all cases
         document.getElementById("reportStartDate").value = "2000-01-01";
         document.getElementById("reportEndDate").value = new Date().toISOString().slice(0,10);
         document.getElementById("officeNameInput").value = "राजस्व मंडल, निवाई";
 
-        // Attach event listeners
         document.getElementById("searchBtn").onclick = searchCase;
         document.getElementById("clearSearchBtn").onclick = () => document.getElementById("searchCaseNo").value = "";
         document.getElementById("pendingMprBtn").onclick = renderPendingMPR;
@@ -832,8 +854,8 @@
         document.getElementById("closeModalBtn").onclick = () => document.getElementById("listModal").style.display = "none";
         window.onclick = (event) => { if(event.target === document.getElementById("listModal")) document.getElementById("listModal").style.display = "none"; };
         
-        // Attach stat card click listeners after data loads
-        const attachStatCards = () => {
+        // Attach stat card clicks
+        setTimeout(() => {
             document.querySelectorAll('.stat-card').forEach(card => {
                 card.addEventListener('click', () => {
                     const type = card.getAttribute('data-stat');
@@ -849,8 +871,7 @@
                     else showCaseList(`${card.querySelector('.label').innerText} Cases (${filtered.length})`, filtered);
                 });
             });
-        };
-        setTimeout(attachStatCards, 500);
+        }, 500);
     });
 </script>
 </body>
