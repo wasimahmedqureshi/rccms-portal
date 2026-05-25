@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>RCCMS | Judicial Dashboard + Debug</title>
+    <title>RCCMS | Judicial Dashboard - Fixed</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -11,7 +11,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <style>
-        /* Your existing CSS (same as before) */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: radial-gradient(circle at 10% 20%, #0a0f1a 0%, #03060c 100%);
@@ -266,8 +265,6 @@
             font-size: 0.9rem;
             color: white;
         }
-
-        /* Debug panel */
         .debug-panel {
             background: rgba(0,0,0,0.6);
             border-radius: 16px;
@@ -327,11 +324,21 @@
         <div class="dashboard-row">
             <div class="dashboard-card">
                 <h3><i class="fas fa-layer-group"></i> Section-wise Case Load</h3>
-                <div class="data-table"><table id="sectionTable"><thead><tr><th>Section</th><th>Case Count</th><th>Distribution</th></tr></thead><tbody id="sectionTableBody"><tr><td colspan="3">Loading...–</tbody></table></div>
+                <div class="data-table">
+                    <table id="sectionTable">
+                        <thead><tr><th>Section</th><th>Case Count</th><th>Distribution</th></tr></thead>
+                        <tbody id="sectionTableBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+                    </table>
+                </div>
             </div>
             <div class="dashboard-card">
                 <h3><i class="fas fa-calendar-alt"></i> Year-wise Filing & Disposal</h3>
-                <div class="data-table"><table id="yearTable"><thead><tr><th>Year</th><th>Filed</th><th>Disposed</th><th>Clearance %</th></tr></thead><tbody id="yearTableBody"><tr><td colspan="4">Loading...–</tbody></table></div>
+                <div class="data-table">
+                    <table id="yearTable">
+                        <thead><tr><th>Year</th><th>Filed</th><th>Disposed</th><th>Clearance %</th></tr></thead>
+                        <tbody id="yearTableBody"><tr><td colspan="4">Loading...</td></tr></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -341,15 +348,14 @@
             </div>
         </div>
 
-        <!-- Debug Panel -->
         <div class="debug-panel" id="debugPanel">
-            <strong>🔍 Debug Information</strong><br>
+            <strong>🔍 Debug</strong><br>
             <span id="debugContent">Waiting for data...</span>
         </div>
     </div>
 </div>
 
-<!-- Modals (same as before) -->
+<!-- Modals -->
 <div id="loginModal" class="modal" style="display:flex;">
     <div class="modal-content">
         <h3><i class="fas fa-key"></i> Judicial Login</h3>
@@ -392,13 +398,14 @@
 
     let cases = [], nextId = 1, isLoading = true;
 
-    // Helper functions (same as before, with debug updates)
+    // Helper functions
     function showToast(msg, isError = false) {
         const toast = document.createElement('div');
         toast.className = 'toast';
         toast.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-info-circle'}" style="margin-right:8px;"></i> ${msg}`;
         document.body.appendChild(toast);
         setTimeout(() => toast.remove(), 3500);
+        console.log(msg);
     }
 
     function updateSyncIndicator(status, msg) {
@@ -431,7 +438,8 @@
             if(parts[0].length===4){ yy=parts[0]; mm=parts[1]; dd=parts[2]; }
             else { dd=parts[0]; mm=parts[1]; yy=parts[2]; }
             if(yy.length===2) yy='20'+yy;
-            return `${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+            let iso = `${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+            if(iso.match(/^\d{4}-\d{2}-\d{2}$/)) return iso;
         }
         let t = new Date(s);
         return isNaN(t) ? null : t.toISOString().slice(0,10);
@@ -443,21 +451,12 @@
         casesRef.set(obj).then(()=>showToast('✓ Data saved')).catch(e=>showToast(e.message, true));
     }
 
-    function updateDebug() {
-        const totalDisposed = cases.filter(c => c.disposed && c.disposalDate).length;
-        const sample = cases.filter(c => c.disposed && c.disposalDate).slice(0,5).map(c => `${c.caseNo} -> ${c.disposalDate}`);
-        const debugDiv = document.getElementById('debugContent');
-        debugDiv.innerHTML = `📊 Total disposed cases in DB: ${totalDisposed}<br>`;
-        if(sample.length) debugDiv.innerHTML += `📋 Last 5 disposed: ${sample.join(', ')}<br>`;
-        else debugDiv.innerHTML += `⚠️ No disposed cases found. Did the import work? Check your Excel.<br>`;
-        const start = document.getElementById('reportStartDate')?.value || 'not set';
-        const end = document.getElementById('reportEndDate')?.value || 'not set';
-        debugDiv.innerHTML += `📅 Report date range: ${start} to ${end}`;
-    }
-
     function updateStats(animate = true) {
-        const total = cases.length, pending = cases.filter(c=>!c.disposed).length, disposed = cases.filter(c=>c.disposed).length;
-        const currentYear = new Date().getFullYear(), yearly = cases.filter(c=>new Date(c.institutionDate).getFullYear() === currentYear).length;
+        const total = cases.length;
+        const pending = cases.filter(c=>!c.disposed).length;
+        const disposed = cases.filter(c=>c.disposed).length;
+        const currentYear = new Date().getFullYear();
+        const yearly = cases.filter(c=>new Date(c.institutionDate).getFullYear() === currentYear).length;
         if(animate) {
             animateCounter(document.getElementById("totalCases"), total);
             animateCounter(document.getElementById("pendingCount"), pending);
@@ -469,41 +468,53 @@
             document.getElementById("disposedCount").innerText = disposed;
             document.getElementById("yearlyFiling").innerText = yearly;
         }
-        updateDebug();
+        // Update debug panel
+        const debugDiv = document.getElementById('debugContent');
+        const disposedCases = cases.filter(c => c.disposed && c.disposalDate);
+        debugDiv.innerHTML = `Total cases: ${total} | Pending: ${pending} | Disposed: ${disposed}<br>`;
+        debugDiv.innerHTML += `Disposed with valid date: ${disposedCases.length}<br>`;
+        if(disposedCases.length > 0) {
+            debugDiv.innerHTML += `Sample disposed dates: ${disposedCases.slice(0,3).map(c=>`${c.caseNo} -> ${c.disposalDate}`).join(', ')}<br>`;
+        }
+        const startDate = document.getElementById('reportStartDate')?.value || 'not set';
+        const endDate = document.getElementById('reportEndDate')?.value || 'not set';
+        debugDiv.innerHTML += `Report range: ${startDate} to ${endDate}`;
     }
 
     function updateTables() {
-        // Section-wise
+        // Section-wise table
         let secMap = new Map();
         cases.forEach(c => {
             if(c.section){
-                c.section.split(/[ ,]+/).forEach(s => { if(s.trim()) secMap.set(s.trim(), (secMap.get(s.trim())||0)+1); });
-            } else secMap.set("Unspecified", (secMap.get("Unspecified")||0)+1);
+                c.section.split(/[ ,]+/).forEach(s => { let sec = s.trim(); if(sec) secMap.set(sec, (secMap.get(sec)||0)+1); });
+            } else {
+                secMap.set("Unspecified", (secMap.get("Unspecified")||0)+1);
+            }
         });
         let sorted = Array.from(secMap.entries()).sort((a,b)=>b[1]-a[1]);
         let maxCount = sorted.length ? sorted[0][1] : 1;
         let secHtml = '';
         sorted.forEach(([sec,count]) => {
             let percent = (count/maxCount)*100;
-            secHtml += `<tr>
-                <td>${escapeHtml(sec)}${count}${'<div class="progress-bar-container"><div class="progress-bar" style="width:'+percent+'%;"></div></div>'}?
-            `;
+            secHtml += `<tr><td>${escapeHtml(sec)}</td><td>${count}</td><td><div class="progress-bar-container"><div class="progress-bar" style="width: ${percent}%;"></div></div></td></tr>`;
         });
-        if(!secHtml) secHtml = '<tr><td colspan="3">No data</td>';
+        if(!secHtml) secHtml = '<tr><td colspan="3">No data</td></tr>';
         document.getElementById("sectionTableBody").innerHTML = secHtml;
 
-        // Year-wise
+        // Year-wise table with clearance %
         let yearMap = new Map();
         cases.forEach(c => {
             let y = new Date(c.institutionDate).getFullYear();
             if(!isNaN(y)){
                 let cur = yearMap.get(y) || {filed:0, disposed:0};
-                cur.filed++; yearMap.set(y, cur);
+                cur.filed++;
+                yearMap.set(y, cur);
             }
             if(c.disposed && c.disposalDate){
                 let dy = new Date(c.disposalDate).getFullYear();
                 let cur = yearMap.get(dy) || {filed:0, disposed:0};
-                cur.disposed++; yearMap.set(dy, cur);
+                cur.disposed++;
+                yearMap.set(dy, cur);
             }
         });
         let years = Array.from(yearMap.keys()).sort();
@@ -511,13 +522,10 @@
         years.forEach(y => {
             let data = yearMap.get(y);
             let clearance = data.filed ? ((data.disposed/data.filed)*100).toFixed(1) : 0;
-            yearHtml += `<tr>
-                <td>${y}${data.filed}${data.disposed}${clearance}%?
-            `;
+            yearHtml += `<tr><td>${y}</td><td>${data.filed}</td><td>${data.disposed}</td><td>${clearance}%</td></tr>`;
         });
-        if(!yearHtml) yearHtml = '<tr><td colspan="4">No data</td>';
+        if(!yearHtml) yearHtml = '<tr><td colspan="4">No data</td></tr>';
         document.getElementById("yearTableBody").innerHTML = yearHtml;
-        updateDebug();
     }
 
     function showCaseList(title, caseArray) {
@@ -555,7 +563,7 @@
         else showCaseList(`Search Results for "${term}" (${results.length})`, results);
     }
 
-    // ========== MPR FUNCTIONS ==========
+    // MPR Functions
     function getAgeBucket(years){
         if(years < 0.5) return "Upto 6 Months";
         if(years < 1) return "6 Months To 1 year";
@@ -568,15 +576,51 @@
         if(years < 40) return "30 To 40 Years";
         return "More Than 40 Years";
     }
-    function computeAgeYears(inst, asOn){ let i=new Date(inst), a=new Date(asOn); if(isNaN(i)||isNaN(a)) return 0; let y=a.getFullYear()-i.getFullYear(); if(a.getMonth()<i.getMonth()||(a.getMonth()===i.getMonth()&&a.getDate()<i.getDate())) y--; return Math.max(0,y); }
-    function getDisposalAgeBucket(y){ if(y>=5) return "Over 5 Years"; if(y>=3) return "Over 3 Years"; if(y>=2) return "Over 2 Years"; if(y>=1) return "Over 1 Year"; return "Less Than 1 Year"; }
+
+    function computeAgeYears(inst, asOn){
+        let i = new Date(inst), a = new Date(asOn);
+        if(isNaN(i)||isNaN(a)) return 0;
+        let y = a.getFullYear() - i.getFullYear();
+        if(a.getMonth() < i.getMonth() || (a.getMonth() === i.getMonth() && a.getDate() < i.getDate())) y--;
+        return Math.max(0,y);
+    }
+
+    function getDisposalAgeBucket(y){
+        if(y >= 5) return "Over 5 Years";
+        if(y >= 3) return "Over 3 Years";
+        if(y >= 2) return "Over 2 Years";
+        if(y >= 1) return "Over 1 Year";
+        return "Less Than 1 Year";
+    }
 
     function renderPendingMPR() {
-        let start = new Date(document.getElementById("reportStartDate").value);
-        let end = new Date(document.getElementById("reportEndDate").value);
-        let office = document.getElementById("officeNameInput").value || "RCCMS Office";
+        let startInput = document.getElementById("reportStartDate");
+        let endInput = document.getElementById("reportEndDate");
+        let officeInput = document.getElementById("officeNameInput");
+        let start = new Date(startInput.value);
+        let end = new Date(endInput.value);
+        let office = officeInput.value || "RCCMS Office";
         if(isNaN(start)||isNaN(end)||start>end){ showToast("Invalid date range", true); return; }
-        
+
+        // Initial pending: cases instituted before start and not disposed before start
+        const initialPending = cases.filter(c => {
+            const inst = new Date(c.institutionDate);
+            if(inst >= start) return false;
+            if(!c.disposed) return true;
+            if(c.disposalDate && new Date(c.disposalDate) > start) return true;
+            return false;
+        }).length;
+
+        const newRegistered = cases.filter(c => {
+            const inst = new Date(c.institutionDate);
+            return inst >= start && inst <= end;
+        }).length;
+
+        const totalDecided = cases.filter(c => {
+            return c.disposed && c.disposalDate && (new Date(c.disposalDate) >= start && new Date(c.disposalDate) <= end);
+        }).length;
+
+        // Pending on end date = cases whose institution <= end and (not disposed OR disposed after end)
         const pendingOnEnd = cases.filter(c => {
             const inst = new Date(c.institutionDate);
             if(inst > end) return false;
@@ -585,22 +629,24 @@
             return false;
         });
         const pendingAsOnEnd = pendingOnEnd.length;
-        const initialPending = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>=start) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>start) return true; return false; }).length;
-        const newRegistered = cases.filter(c=>{ let i=new Date(c.institutionDate); return i>=start && i<=end; }).length;
-        const totalDecided = cases.filter(c=>c.disposed && c.disposalDate && (new Date(c.disposalDate)>=start && new Date(c.disposalDate)<=end)).length;
-        
+
+        // Age buckets for pending on end
         const bucketOrder = ["Upto 6 Months","6 Months To 1 year","1 To 2 Years","2 To 3 Years","3 To 5 Years","5 To 10 Years","10 To 20 Years","20 To 30 Years","30 To 40 Years","More Than 40 Years"];
-        const bucketMap = new Map(); bucketOrder.forEach(b => bucketMap.set(b, []));
+        const bucketMap = new Map();
+        bucketOrder.forEach(b => bucketMap.set(b, []));
         pendingOnEnd.forEach(c => {
             const age = computeAgeYears(c.institutionDate, end.toISOString().slice(0,10));
             const bucket = getAgeBucket(age);
             if(bucketMap.has(bucket)) bucketMap.get(bucket).push(c);
         });
-        
+
         let row = `<tr>
-            <td>1${escapeHtml(office)}${initialPending}${newRegistered}${totalDecided}${pendingAsOnEnd}
+            <td>1</td><td>${escapeHtml(office)}</td>
+            <td>${initialPending}</td><td>${newRegistered}</td>
+            <td>${totalDecided}</td><td>${pendingAsOnEnd}</td>
             ${bucketOrder.map(b => `<td class="clickable" data-bucket="${b}">${bucketMap.get(b).length}</td>`).join('')}
         </tr>`;
+
         const html = `
             <h4>📋 Pending MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
             <div class="grid-2" style="margin-bottom:20px;">
@@ -609,11 +655,16 @@
                 <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
                 <div><button id="refreshPendingBtn" class="primary">Refresh Report</button></div>
             </div>
-            <div style="overflow-x:auto;"><table style="min-width:1200px;"><thead><tr><th>S.No.</th><th>Office Name</th><th>Initial Pending</th><th>New Registered</th><th>Total Decided</th><th>Pending As On End</th>${bucketOrder.map(b=>`<th>${b}</th>`).join('')}</tr></thead><tbody>${row}</tbody></table></div>
+            <div style="overflow-x:auto;">
+                <table style="min-width:1200px;">
+                    <thead><tr><th>S.No.</th><th>Office Name</th><th>Initial Pending</th><th>New Registered</th><th>Total Decided</th><th>Pending As On End</th>${bucketOrder.map(b=>`<th>${b}</th>`).join('')}</tr></thead>
+                    <tbody>${row}</tbody>
+                </table>
+            </div>
             <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportPendingExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
         `;
         document.getElementById("reportOutput").innerHTML = html;
-        document.getElementById("refreshPendingBtn").onclick = () => renderPendingMPR();
+        document.getElementById("refreshPendingBtn").onclick = renderPendingMPR;
         document.querySelectorAll('#reportOutput .clickable').forEach(el => {
             el.addEventListener('click', () => {
                 const bucket = el.getAttribute('data-bucket');
@@ -632,16 +683,19 @@
     }
 
     function renderDisposalMPR() {
-        let start = new Date(document.getElementById("reportStartDate").value);
-        let end = new Date(document.getElementById("reportEndDate").value);
-        let office = document.getElementById("officeNameInput").value || "RCCMS Office";
+        let startInput = document.getElementById("reportStartDate");
+        let endInput = document.getElementById("reportEndDate");
+        let officeInput = document.getElementById("officeNameInput");
+        let start = new Date(startInput.value);
+        let end = new Date(endInput.value);
+        let office = officeInput.value || "RCCMS Office";
         if(isNaN(start)||isNaN(end)||start>end){ showToast("Invalid date range", true); return; }
-        
+
         const disposals = cases.filter(c => c.disposed && c.disposalDate && (new Date(c.disposalDate) >= start && new Date(c.disposalDate) <= end));
         const totalDisposal = disposals.length;
-        
+
         if(totalDisposal === 0) {
-            const html = `
+            document.getElementById("reportOutput").innerHTML = `
                 <h4>📋 Disposal MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
                 <div class="grid-2" style="margin-bottom:20px;">
                     <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
@@ -649,11 +703,10 @@
                     <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
                     <div><button id="refreshDisposalBtn" class="primary">Refresh Report</button></div>
                 </div>
-                <p style="text-align:center; color:#f5e7a3;">No disposals found in the selected date range. Check debug panel below.</p>
-                <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
+                <p style="text-align:center; color:#f5e7a3;">No disposals found in selected date range.</p>
+                <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary">Export Empty Report</button></div>
             `;
-            document.getElementById("reportOutput").innerHTML = html;
-            document.getElementById("refreshDisposalBtn").onclick = () => renderDisposalMPR();
+            document.getElementById("refreshDisposalBtn").onclick = renderDisposalMPR;
             document.getElementById("exportDisposalExcel").onclick = () => {
                 const wsData = [['S.No.','Office Name','Total Disposal','Over 5 Years','Over 3 Years','Over 2 Years','Over 1 Year','Less Than 1 Year']];
                 wsData.push([1, office, 0, 0, 0, 0, 0, 0]);
@@ -661,18 +714,19 @@
                 const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Disposal_Summary');
                 XLSX.writeFile(wb, `Disposal_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`);
             };
-            updateDebug();
+            updateStats(); // refresh debug
             return;
         }
-        
+
         const ageBucketOrder = ["Over 5 Years","Over 3 Years","Over 2 Years","Over 1 Year","Less Than 1 Year"];
-        const ageBucketsMap = new Map(); ageBucketOrder.forEach(b => ageBucketsMap.set(b, []));
+        const ageBucketsMap = new Map();
+        ageBucketOrder.forEach(b => ageBucketsMap.set(b, []));
         disposals.forEach(c => {
             const age = computeAgeYears(c.institutionDate, c.disposalDate);
             const bucket = getDisposalAgeBucket(age);
             if(ageBucketsMap.has(bucket)) ageBucketsMap.get(bucket).push(c);
         });
-        
+
         const monthMap = new Map();
         disposals.forEach(c => {
             const d = new Date(c.disposalDate);
@@ -681,14 +735,15 @@
             monthMap.get(key).push(c);
         });
         const monthWise = Array.from(monthMap.keys()).sort().map(m => ({ month: m, count: monthMap.get(m).length, cases: monthMap.get(m) }));
-        
+
         let row = `<tr>
-            <td>1${escapeHtml(office)}${totalDisposal}
+            <td>1</td><td>${escapeHtml(office)}</td><td>${totalDisposal}</td>
             ${ageBucketOrder.map(b => `<td class="clickable-age" data-agebucket="${b}">${ageBucketsMap.get(b).length}</td>`).join('')}
         </tr>`;
+
         let monthRows = '';
         monthWise.forEach(m => { monthRows += `<tr><td class="clickable-month" data-month="${m.month}">${m.month}</td><td class="clickable-month" data-month="${m.month}">${m.count}</td></tr>`; });
-        
+
         const html = `
             <h4>📋 Disposal MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
             <div class="grid-2" style="margin-bottom:20px;">
@@ -697,14 +752,20 @@
                 <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
                 <div><button id="refreshDisposalBtn" class="primary">Refresh Report</button></div>
             </div>
-            <div style="overflow-x:auto;"><table style="min-width:800px;"><thead><tr><th>S.No.</th><th>Office Name</th><th>Total Disposal</th>${ageBucketOrder.map(b=>`<th>${b}</th>`).join('')}</tr></thead><tbody>${row}</tbody></table></div>
+            <div style="overflow-x:auto;">
+                <table style="min-width:800px;">
+                    <thead><tr><th>S.No.</th><th>Office Name</th><th>Total Disposal</th>${ageBucketOrder.map(b=>`<th>${b}</th>`).join('')}</tr></thead>
+                    <tbody>${row}</tbody>
+                </table>
+            </div>
             <div style="margin-top:20px;"><strong>📅 Month-wise Disposal Breakdown (click on count)</strong>
-                <div style="overflow-x:auto; margin-top:10px;"><table style="min-width:300px;"><thead><tr><th>Year-Month</th><th>Disposals</th></tr></thead><tbody>${monthRows || '<tr><td colspan="2">No disposals</td></tr>'}</tbody>｜｜DSML｜｜</div>
+                <div style="overflow-x:auto; margin-top:10px;"><table style="min-width:300px;"><thead><tr><th>Year-Month</th><th>Disposals</th></tr></thead><tbody>${monthRows || '<tr><td colspan="2">No disposals</td></tr>'}</tbody></table></div>
             </div>
             <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
         `;
         document.getElementById("reportOutput").innerHTML = html;
-        document.getElementById("refreshDisposalBtn").onclick = () => renderDisposalMPR();
+        document.getElementById("refreshDisposalBtn").onclick = renderDisposalMPR;
+
         document.querySelectorAll('#reportOutput .clickable-age').forEach(el => {
             el.addEventListener('click', () => {
                 const bucket = el.getAttribute('data-agebucket');
@@ -734,54 +795,10 @@
             XLSX.utils.book_append_sheet(wb, wsMonth, 'Month_Wise');
             XLSX.writeFile(wb, `Disposal_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`);
         };
-        updateDebug();
+        updateStats();
     }
 
-    // Improved Disposal Import with detailed logging
-    function importDisposalExcel(file){
-        const reader = new FileReader();
-        reader.onload = e => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, {type:'array'});
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:""});
-            processDisposalRows(rows);
-        };
-        reader.readAsArrayBuffer(file);
-    }
-
-    function processDisposalRows(rows) {
-        if(rows.length < 2) { showToast("No data rows in Excel", true); return; }
-        let headerRow = rows[0].map(c=>String(c||"").trim().toLowerCase());
-        let idxCase = headerRow.findIndex(h => h.includes("case no") || h === "caseno");
-        let idxDisposal = headerRow.findIndex(h => h.includes("disposal date") || h.includes("disposal"));
-        if(idxCase === -1 || idxDisposal === -1) { showToast("Excel must have columns: 'Case No' and 'Disposal Date'", true); return; }
-        let updated = 0, notFound = 0, dateError = 0, sampleUpdated = [];
-        for(let i=1; i<rows.length; i++) {
-            const row = rows[i];
-            let caseNo = row[idxCase] ? String(row[idxCase]).trim() : "";
-            let dispRaw = row[idxDisposal] ? String(row[idxDisposal]).trim() : "";
-            if(!caseNo || !dispRaw) continue;
-            let dispDate = parseDateAny(dispRaw);
-            if(!dispDate) { dateError++; continue; }
-            let existing = cases.find(c => c.caseNo === caseNo);
-            if(existing && !existing.disposed) {
-                existing.disposed = true;
-                existing.disposalDate = dispDate;
-                updated++;
-                if(sampleUpdated.length < 3) sampleUpdated.push(`${caseNo} -> ${dispDate}`);
-            } else {
-                notFound++;
-            }
-        }
-        saveToFirebase();
-        showToast(`✅ Disposal import: ${updated} updated, ${notFound} not found/already disposed, ${dateError} date errors`);
-        if(sampleUpdated.length) showToast(`Sample: ${sampleUpdated.join(', ')}`);
-        updateStats(true);
-        updateTables();
-    }
-
-    // Cases import (unchanged)
+    // Import functions
     function importCasesExcel(file){
         let reader = new FileReader();
         reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); };
@@ -808,6 +825,47 @@
             imported++;
         }
         saveToFirebase(); showToast(`Imported ${imported} new cases`);
+    }
+
+    function importDisposalExcel(file){
+        const reader = new FileReader();
+        reader.onload = e => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type:'array'});
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:""});
+            processDisposalRows(rows);
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function processDisposalRows(rows) {
+        if(rows.length < 2) { showToast("No data rows in Excel", true); return; }
+        let headerRow = rows[0].map(c=>String(c||"").trim().toLowerCase());
+        let idxCase = headerRow.findIndex(h => h.includes("case no") || h === "caseno");
+        let idxDisposal = headerRow.findIndex(h => h.includes("disposal date") || h.includes("disposal"));
+        if(idxCase === -1 || idxDisposal === -1) { showToast("Excel must have columns: 'Case No' and 'Disposal Date'", true); return; }
+        let updated = 0, notFound = 0, dateError = 0;
+        for(let i=1; i<rows.length; i++) {
+            const row = rows[i];
+            let caseNo = row[idxCase] ? String(row[idxCase]).trim() : "";
+            let dispRaw = row[idxDisposal] ? String(row[idxDisposal]).trim() : "";
+            if(!caseNo || !dispRaw) continue;
+            let dispDate = parseDateAny(dispRaw);
+            if(!dispDate) { dateError++; continue; }
+            let existing = cases.find(c => c.caseNo === caseNo);
+            if(existing && !existing.disposed) {
+                existing.disposed = true;
+                existing.disposalDate = dispDate;
+                updated++;
+            } else {
+                notFound++;
+            }
+        }
+        saveToFirebase();
+        showToast(`✅ Disposal import: ${updated} updated, ${notFound} not found, ${dateError} date errors`);
+        updateStats(true);
+        updateTables();
     }
 
     function exportBackup(){ let a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(cases,null,2)],{type:"application/json"})); a.download=`rccms_backup_${new Date().toISOString().slice(0,19)}.json`; a.click(); showToast("Backup downloaded"); }
