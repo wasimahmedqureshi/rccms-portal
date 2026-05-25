@@ -10,10 +10,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script>
-    // Safety check - retry if firebase not loaded yet
-    window.__firebaseReady = false;
-    </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -383,7 +379,6 @@
 <div id="disposalModal" class="modal"><div class="modal-content"><h3>Record Disposal</h3><div class="form-group"><label>Case No</label><input list="caseNosList" id="disposalCaseNo"><datalist id="caseNosList"></datalist></div><div class="form-group"><label>Disposal Date *</label><input type="date" id="disposalDate"></div><div style="display:flex; gap:12px;"><button id="confirmDisposalBtn" class="primary">Mark Disposed</button><button id="closeDisposalModalBtn">Cancel</button></div></div></div>
 
 <script>
-    function initApp() {
     // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyD9VnIRajIj7cJhD-sPBeyT8CYimE_vF7k",
@@ -599,20 +594,13 @@
     }
 
     function renderPendingMPR() {
-        const startInputEl  = document.getElementById("reportStartDate");
-        const endInputEl    = document.getElementById("reportEndDate");
-        const officeInputEl = document.getElementById("officeNameInput");
-        if(startInputEl  && startInputEl.value)  window._rStartVal  = startInputEl.value;
-        if(endInputEl    && endInputEl.value)     window._rEndVal    = endInputEl.value;
-        if(officeInputEl && officeInputEl.value)  window._rOfficeVal = officeInputEl.value;
-        if(!window._rStartVal)  window._rStartVal  = "2000-01-01";
-        if(!window._rEndVal)    window._rEndVal    = new Date().toISOString().slice(0,10);
-        if(!window._rOfficeVal) window._rOfficeVal = "\u0930\u093e\u091c\u0938\u094d\u0935 \u092e\u0902\u0921\u0932, \u0928\u093f\u0935\u093e\u0908";
-        let start  = new Date(window._rStartVal);
-        let end    = new Date(window._rEndVal);
-        end.setHours(23,59,59,999);
-        let office = window._rOfficeVal;
-        if(isNaN(start.getTime())||isNaN(end.getTime())||start>end){ showToast("Invalid date range", true); return; }
+        let startInput = document.getElementById("reportStartDate");
+        let endInput = document.getElementById("reportEndDate");
+        let officeInput = document.getElementById("officeNameInput");
+        let start = new Date(startInput.value);
+        let end = new Date(endInput.value);
+        let office = officeInput.value || "RCCMS Office";
+        if(isNaN(start)||isNaN(end)||start>end){ showToast("Invalid date range", true); return; }
 
         // Initial pending: cases instituted before start and not disposed before start
         const initialPending = cases.filter(c => {
@@ -659,13 +647,11 @@
             ${bucketOrder.map(b => `<td class="clickable" data-bucket="${b}">${bucketMap.get(b).length}</td>`).join('')}
         </tr>`;
 
-        const startStr = window._rStartVal;
-        const endStr   = window._rEndVal;
         const html = `
-            <h4>📋 Pending MPR (${startStr} to ${endStr})</h4>
+            <h4>📋 Pending MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
             <div class="grid-2" style="margin-bottom:20px;">
-                <div><label>Start Date</label><input type="date" id="reportStartDate" value="${startStr}"></div>
-                <div><label>End Date</label><input type="date" id="reportEndDate" value="${endStr}"></div>
+                <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
+                <div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
                 <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
                 <div><button id="refreshPendingBtn" class="primary">Refresh Report</button></div>
             </div>
@@ -692,47 +678,46 @@
             wsData.push([1, office, initialPending, newRegistered, totalDecided, pendingAsOnEnd, ...bucketOrder.map(b => bucketMap.get(b).length)]);
             const ws = XLSX.utils.aoa_to_sheet(wsData);
             const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Pending_MPR');
-            XLSX.writeFile(wb, `Pending_MPR_${window._rStartVal}_to_${window._rEndVal}.xlsx`);
+            XLSX.writeFile(wb, `Pending_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`);
         };
     }
 
     function renderDisposalMPR() {
-        // ── Read date values safely (inputs may or may not exist in DOM) ──
-        const startInputEl  = document.getElementById("reportStartDate");
-        const endInputEl    = document.getElementById("reportEndDate");
-        const officeInputEl = document.getElementById("officeNameInput");
+        let startInput = document.getElementById("reportStartDate");
+        let endInput = document.getElementById("reportEndDate");
+        let officeInput = document.getElementById("officeNameInput");
+        let start = new Date(startInput.value);
+        let end = new Date(endInput.value);
+        let office = officeInput.value || "RCCMS Office";
+        if(isNaN(start)||isNaN(end)||start>end){ showToast("Invalid date range", true); return; }
 
-        // Use stored globals so values survive across re-renders
-        if(startInputEl  && startInputEl.value)  window._rStartVal  = startInputEl.value;
-        if(endInputEl    && endInputEl.value)     window._rEndVal    = endInputEl.value;
-        if(officeInputEl && officeInputEl.value)  window._rOfficeVal = officeInputEl.value;
-
-        // Defaults if never set
-        if(!window._rStartVal)  window._rStartVal  = "2000-01-01";
-        if(!window._rEndVal)    window._rEndVal    = new Date().toISOString().slice(0,10);
-        if(!window._rOfficeVal) window._rOfficeVal = "राजस्व मंडल, निवाई";
-
-        let start  = new Date(window._rStartVal);
-        let end    = new Date(window._rEndVal);
-        // Set end to end-of-day so same-day disposals are included
-        end.setHours(23,59,59,999);
-        let office = window._rOfficeVal;
-
-        if(isNaN(start.getTime()) || isNaN(end.getTime()) || start > end){
-            showToast("Invalid date range", true); return;
-        }
-
-        // ── Filter disposed cases in range ──
-        const disposals = cases.filter(c => {
-            if(!c.disposed || !c.disposalDate) return false;
-            const d = new Date(c.disposalDate);
-            // Fix: parse date correctly (avoid timezone shifting ISO dates)
-            const dLocal = new Date(c.disposalDate + "T00:00:00");
-            return dLocal >= start && dLocal <= end;
-        });
+        const disposals = cases.filter(c => c.disposed && c.disposalDate && (new Date(c.disposalDate) >= start && new Date(c.disposalDate) <= end));
         const totalDisposal = disposals.length;
 
-        // ── Age buckets ──
+        if(totalDisposal === 0) {
+            document.getElementById("reportOutput").innerHTML = `
+                <h4>📋 Disposal MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
+                <div class="grid-2" style="margin-bottom:20px;">
+                    <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
+                    <div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
+                    <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
+                    <div><button id="refreshDisposalBtn" class="primary">Refresh Report</button></div>
+                </div>
+                <p style="text-align:center; color:#f5e7a3;">No disposals found in selected date range.</p>
+                <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary">Export Empty Report</button></div>
+            `;
+            document.getElementById("refreshDisposalBtn").onclick = renderDisposalMPR;
+            document.getElementById("exportDisposalExcel").onclick = () => {
+                const wsData = [['S.No.','Office Name','Total Disposal','Over 5 Years','Over 3 Years','Over 2 Years','Over 1 Year','Less Than 1 Year']];
+                wsData.push([1, office, 0, 0, 0, 0, 0, 0]);
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Disposal_Summary');
+                XLSX.writeFile(wb, `Disposal_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`);
+            };
+            updateStats(); // refresh debug
+            return;
+        }
+
         const ageBucketOrder = ["Over 5 Years","Over 3 Years","Over 2 Years","Over 1 Year","Less Than 1 Year"];
         const ageBucketsMap = new Map();
         ageBucketOrder.forEach(b => ageBucketsMap.set(b, []));
@@ -742,121 +727,62 @@
             if(ageBucketsMap.has(bucket)) ageBucketsMap.get(bucket).push(c);
         });
 
-        // ── Month-wise breakdown ──
         const monthMap = new Map();
         disposals.forEach(c => {
-            const d = new Date(c.disposalDate + "T00:00:00");
+            const d = new Date(c.disposalDate);
             const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
             if(!monthMap.has(key)) monthMap.set(key, []);
             monthMap.get(key).push(c);
         });
-        const monthWise = Array.from(monthMap.keys()).sort().map(m => ({
-            month: m, count: monthMap.get(m).length, cases: monthMap.get(m)
-        }));
+        const monthWise = Array.from(monthMap.keys()).sort().map(m => ({ month: m, count: monthMap.get(m).length, cases: monthMap.get(m) }));
 
-        const startStr = window._rStartVal;
-        const endStr   = window._rEndVal;
-
-        // ── Summary row ──
-        const summaryRow = `<tr>
-            <td>1</td><td>${escapeHtml(office)}</td>
-            <td style="font-weight:700; color:#d4af37; font-size:1.1rem;">${totalDisposal}</td>
-            ${ageBucketOrder.map(b => `<td class="clickable-age" data-agebucket="${b}" style="${ageBucketsMap.get(b).length>0?'color:#d4af37;font-weight:700;':''}">${ageBucketsMap.get(b).length}</td>`).join('')}
+        let row = `<tr>
+            <td>1</td><td>${escapeHtml(office)}</td><td>${totalDisposal}</td>
+            ${ageBucketOrder.map(b => `<td class="clickable-age" data-agebucket="${b}">${ageBucketsMap.get(b).length}</td>`).join('')}
         </tr>`;
 
-        // ── Month rows ──
         let monthRows = '';
-        monthWise.forEach(m => {
-            monthRows += `<tr>
-                <td class="clickable-month" data-month="${m.month}">${m.month}</td>
-                <td class="clickable-month" data-month="${m.month}" style="color:#d4af37; font-weight:700;">${m.count}</td>
-            </tr>`;
-        });
-
-        // ── No disposals message ──
-        const noDisposalMsg = totalDisposal === 0
-            ? `<div style="text-align:center; padding:20px; color:#f5e7a3; background:rgba(212,175,55,0.08); border-radius:16px; margin:12px 0;">
-                ⚠️ इस date range (${startStr} से ${endStr}) में कोई disposal नहीं मिला।<br>
-                <small style="color:#a0b3d9;">कुल disposed cases: ${cases.filter(c=>c.disposed&&c.disposalDate).length} | कृपया date range बदलें।</small>
-               </div>` : '';
-
-        // ── Debug info for disposed cases ──
-        const totalDisposedInDb = cases.filter(c=>c.disposed && c.disposalDate).length;
-        const sampleDates = cases.filter(c=>c.disposed&&c.disposalDate).slice(0,3).map(c=>c.disposalDate).join(', ');
+        monthWise.forEach(m => { monthRows += `<tr><td class="clickable-month" data-month="${m.month}">${m.month}</td><td class="clickable-month" data-month="${m.month}">${m.count}</td></tr>`; });
 
         const html = `
-            <h4 style="color:#d4af37; font-family:'Playfair Display',serif; margin-bottom:16px;">
-                📋 Disposal MPR — ${startStr} से ${endStr}
-                <span style="font-size:0.75rem; color:#a0b3d9; font-family:'DM Sans',sans-serif; margin-left:12px;">
-                    (DB में कुल disposed: ${totalDisposedInDb})
-                </span>
-            </h4>
-
+            <h4>📋 Disposal MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
             <div class="grid-2" style="margin-bottom:20px;">
-                <div><label>Start Date</label><input type="date" id="reportStartDate" value="${startStr}"></div>
-                <div><label>End Date</label><input type="date" id="reportEndDate" value="${endStr}"></div>
+                <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
+                <div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
                 <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
-                <div style="display:flex; align-items:flex-end;">
-                    <button id="refreshDisposalBtn" class="primary" style="width:100%;">
-                        <i class="fas fa-sync-alt"></i> Refresh Report
-                    </button>
-                </div>
+                <div><button id="refreshDisposalBtn" class="primary">Refresh Report</button></div>
             </div>
-
-            ${noDisposalMsg}
-
-            <div style="overflow-x:auto; margin-bottom:20px;">
+            <div style="overflow-x:auto;">
                 <table style="min-width:800px;">
-                    <thead><tr>
-                        <th>S.No.</th><th>Office Name</th><th>Total Disposal</th>
-                        ${ageBucketOrder.map(b=>`<th>${b}</th>`).join('')}
-                    </tr></thead>
-                    <tbody>${summaryRow}</tbody>
+                    <thead><tr><th>S.No.</th><th>Office Name</th><th>Total Disposal</th>${ageBucketOrder.map(b=>`<th>${b}</th>`).join('')}</tr></thead>
+                    <tbody>${row}</tbody>
                 </table>
             </div>
-
-            <div style="margin-top:20px;">
-                <strong style="color:#d4af37;">📅 Month-wise Disposal Breakdown</strong>
-                <small style="color:#a0b3d9; margin-left:8px;">(count pe click karke cases dekhen)</small>
-                <div style="overflow-x:auto; margin-top:10px;">
-                    <table style="min-width:300px;">
-                        <thead><tr><th>Year-Month</th><th>Disposals</th></tr></thead>
-                        <tbody>${monthRows || '<tr><td colspan="2" style="text-align:center; color:#a0b3d9;">इस range में कोई disposal नहीं</td></tr>'}</tbody>
-                    </table>
-                </div>
+            <div style="margin-top:20px;"><strong>📅 Month-wise Disposal Breakdown (click on count)</strong>
+                <div style="overflow-x:auto; margin-top:10px;"><table style="min-width:300px;"><thead><tr><th>Year-Month</th><th>Disposals</th></tr></thead><tbody>${monthRows || '<tr><td colspan="2">No disposals</td></tr>'}</tbody></table></div>
             </div>
-
-            <div style="margin-top:15px; text-align:right;">
-                <button id="exportDisposalExcel" class="primary">
-                    <i class="fas fa-file-excel"></i> Export to Excel
-                </button>
-            </div>
+            <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
         `;
-
         document.getElementById("reportOutput").innerHTML = html;
-
-        // ── Wire up buttons ──
         document.getElementById("refreshDisposalBtn").onclick = renderDisposalMPR;
 
         document.querySelectorAll('#reportOutput .clickable-age').forEach(el => {
             el.addEventListener('click', () => {
                 const bucket = el.getAttribute('data-agebucket');
                 const casesList = ageBucketsMap.get(bucket) || [];
-                if(casesList.length === 0) showToast("इस bucket में कोई case नहीं", true);
-                else showCaseList(`Disposed — ${bucket} (${startStr} to ${endStr})`, casesList);
+                if(casesList.length === 0) showToast("No cases in this bucket", true);
+                else showCaseList(`Disposed Cases - Age at Disposal: ${bucket} (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})`, casesList);
             });
         });
-
         document.querySelectorAll('#reportOutput .clickable-month').forEach(el => {
             el.addEventListener('click', () => {
                 const month = el.getAttribute('data-month');
                 const monthObj = monthWise.find(m => m.month === month);
                 const casesList = monthObj ? monthObj.cases : [];
-                if(casesList.length === 0) showToast("इस month में कोई case नहीं", true);
-                else showCaseList(`Disposed — ${month}`, casesList);
+                if(casesList.length === 0) showToast("No cases disposed in this month", true);
+                else showCaseList(`Disposed Cases - ${month} (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})`, casesList);
             });
         });
-
         document.getElementById("exportDisposalExcel").onclick = () => {
             const wsData = [['S.No.','Office Name','Total Disposal',...ageBucketOrder]];
             wsData.push([1, office, totalDisposal, ...ageBucketOrder.map(b => ageBucketsMap.get(b).length)]);
@@ -867,9 +793,8 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, 'Disposal_Summary');
             XLSX.utils.book_append_sheet(wb, wsMonth, 'Month_Wise');
-            XLSX.writeFile(wb, `Disposal_MPR_${startStr}_to_${endStr}.xlsx`);
+            XLSX.writeFile(wb, `Disposal_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`);
         };
-
         updateStats();
     }
 
@@ -991,13 +916,9 @@
             const inpOffice = document.createElement("input"); inpOffice.type = "hidden"; inpOffice.id = "officeNameInput";
             document.body.appendChild(inpStart); document.body.appendChild(inpEnd); document.body.appendChild(inpOffice);
         }
-        const todayStr = new Date().toISOString().slice(0,10);
         document.getElementById("reportStartDate").value = "2000-01-01";
-        document.getElementById("reportEndDate").value = todayStr;
+        document.getElementById("reportEndDate").value = new Date().toISOString().slice(0,10);
         document.getElementById("officeNameInput").value = "राजस्व मंडल, निवाई";
-        window._rStartVal  = "2000-01-01";
-        window._rEndVal    = todayStr;
-        window._rOfficeVal = "राजस्व मंडल, निवाई";
 
         document.getElementById("searchBtn").onclick = searchCase;
         document.getElementById("clearSearchBtn").onclick = () => document.getElementById("searchCaseNo").value = "";
@@ -1038,22 +959,6 @@
             });
         }, 500);
     });
-    } // end initApp
-
-    // Safe loader: wait for firebase to be available
-    function safeInit() {
-        if (typeof firebase !== 'undefined' && typeof firebase.initializeApp === 'function') {
-            initApp();
-        } else {
-            setTimeout(safeInit, 100);
-        }
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', safeInit);
-    } else {
-        safeInit();
-    }
 </script>
 </body>
 </html>
