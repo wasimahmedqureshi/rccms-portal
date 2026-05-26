@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>RCCMS | Judicial Dashboard (Fixed Disposal Import)</title>
+    <title>RCCMS | Judicial Dashboard (Fixed)</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
@@ -11,275 +11,59 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <style>
-        /* Same styles as before – keep everything */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            background: radial-gradient(circle at 10% 20%, #0a0f1a 0%, #03060c 100%);
-            font-family: 'DM Sans', sans-serif;
-            color: #e2e8f0;
-            padding: 24px 20px;
-            min-height: 100vh;
-        }
+        body { background: radial-gradient(circle at 10% 20%, #0a0f1a 0%, #03060c 100%); font-family: 'DM Sans', sans-serif; color: #e2e8f0; padding: 24px 20px; min-height: 100vh; }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #1e293b; border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 10px; }
-
-        .glass {
-            background: rgba(15, 25, 45, 0.55);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            border-radius: 32px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        }
         .container { max-width: 1600px; margin: 0 auto; }
-
-        .header {
-            background: rgba(10, 20, 35, 0.7);
-            backdrop-filter: blur(12px);
-            border-radius: 48px;
-            padding: 18px 28px;
-            margin-bottom: 28px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            border-bottom: 2px solid #d4af37;
-        }
-        .header h1 {
-            font-family: 'Playfair Display', serif;
-            font-weight: 700;
-            font-size: 1.9rem;
-            background: linear-gradient(135deg, #f5e7a3, #d4af37);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
-        .badge {
-            background: rgba(0,0,0,0.5);
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-size: 0.85rem;
-            border-left: 2px solid #d4af37;
-        }
-        .toolbar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 28px;
-            background: rgba(15, 25, 45, 0.6);
-            backdrop-filter: blur(8px);
-            padding: 16px 24px;
-            border-radius: 60px;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-        }
-        button {
-            background: rgba(20, 30, 50, 0.8);
-            border: 1px solid rgba(212, 175, 55, 0.4);
-            padding: 10px 22px;
-            border-radius: 40px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            color: #f0f3fa;
-        }
-        button.primary {
-            background: linear-gradient(95deg, #1e2a3a, #0f1722);
-            border: 1px solid #d4af37;
-            color: #d4af37;
-        }
-        button.primary:hover {
-            background: #d4af37;
-            color: #0a0f1a;
-            transform: translateY(-2px);
-        }
+        .header { background: rgba(10, 20, 35, 0.7); backdrop-filter: blur(12px); border-radius: 48px; padding: 18px 28px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; border-bottom: 2px solid #d4af37; }
+        .header h1 { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 1.9rem; background: linear-gradient(135deg, #f5e7a3, #d4af37); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .badge { background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 40px; font-size: 0.85rem; border-left: 2px solid #d4af37; }
+        .toolbar { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; background: rgba(15, 25, 45, 0.6); backdrop-filter: blur(8px); padding: 16px 24px; border-radius: 60px; border: 1px solid rgba(212, 175, 55, 0.3); }
+        button { background: rgba(20, 30, 50, 0.8); border: 1px solid rgba(212, 175, 55, 0.4); padding: 10px 22px; border-radius: 40px; font-weight: 600; font-size: 0.85rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; color: #f0f3fa; }
+        button.primary { background: linear-gradient(95deg, #1e2a3a, #0f1722); border: 1px solid #d4af37; color: #d4af37; }
+        button.primary:hover { background: #d4af37; color: #0a0f1a; transform: translateY(-2px); }
         button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(212,175,55,0.2); }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 24px;
-            margin-bottom: 36px;
-        }
-        .stat-card {
-            background: rgba(10, 20, 35, 0.7);
-            backdrop-filter: blur(10px);
-            border-radius: 32px;
-            padding: 24px;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-            transition: transform 0.2s, border-color 0.2s;
-            cursor: pointer;
-        }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 36px; }
+        .stat-card { background: rgba(10, 20, 35, 0.7); backdrop-filter: blur(10px); border-radius: 32px; padding: 24px; border: 1px solid rgba(212, 175, 55, 0.3); transition: transform 0.2s, border-color 0.2s; cursor: pointer; }
         .stat-card:hover { transform: translateY(-4px); border-color: #d4af37; }
-        .stat-card .number {
-            font-size: 2.8rem;
-            font-weight: 800;
-            font-family: 'Playfair Display', serif;
-            background: linear-gradient(135deg, #fff, #d4af37);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-        }
+        .stat-card .number { font-size: 2.8rem; font-weight: 800; font-family: 'Playfair Display', serif; background: linear-gradient(135deg, #fff, #d4af37); -webkit-background-clip: text; background-clip: text; color: transparent; }
         .stat-card .label { font-size: 0.9rem; color: #a0b3d9; margin-top: 8px; }
-
-        .dashboard-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 28px;
-            margin-bottom: 40px;
-        }
-        .dashboard-card {
-            background: rgba(10, 20, 35, 0.6);
-            backdrop-filter: blur(12px);
-            border-radius: 36px;
-            padding: 24px;
-            flex: 1;
-            min-width: 280px;
-            border: 1px solid rgba(212, 175, 55, 0.25);
-        }
-        .dashboard-card h3 {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.35rem;
-            font-weight: 700;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-left: 4px solid #d4af37;
-            padding-left: 16px;
-            color: #f5e7a3;
-        }
+        .dashboard-row { display: flex; flex-wrap: wrap; gap: 28px; margin-bottom: 40px; }
+        .dashboard-card { background: rgba(10, 20, 35, 0.6); backdrop-filter: blur(12px); border-radius: 36px; padding: 24px; flex: 1; min-width: 280px; border: 1px solid rgba(212, 175, 55, 0.25); }
+        .dashboard-card h3 { font-family: 'Playfair Display', serif; font-size: 1.35rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; border-left: 4px solid #d4af37; padding-left: 16px; color: #f5e7a3; }
         .data-table { overflow-x: auto; }
         .data-table table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         .data-table th, .data-table td { padding: 12px 10px; text-align: left; border-bottom: 1px solid rgba(212, 175, 55, 0.2); }
         .data-table th { color: #d4af37; font-weight: 600; }
         .progress-bar-container { width: 100%; background: #1e2a3a; border-radius: 20px; overflow: hidden; height: 6px; }
         .progress-bar { height: 6px; background: linear-gradient(90deg, #d4af37, #f5e7a3); width: 0%; border-radius: 20px; }
-
-        .search-section {
-            background: rgba(10, 20, 35, 0.6);
-            backdrop-filter: blur(8px);
-            border-radius: 48px;
-            padding: 16px 24px;
-            margin-bottom: 30px;
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-            border: 1px solid rgba(212, 175, 55, 0.3);
-        }
-        .search-section input {
-            flex: 2;
-            min-width: 200px;
-            padding: 14px 20px;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid rgba(212, 175, 55, 0.4);
-            border-radius: 48px;
-            font-size: 1rem;
-            color: white;
-        }
-        .report-output {
-            background: rgba(10, 20, 35, 0.6);
-            backdrop-filter: blur(12px);
-            border-radius: 36px;
-            padding: 24px;
-            border: 1px solid rgba(212, 175, 55, 0.25);
-        }
+        .search-section { background: rgba(10, 20, 35, 0.6); backdrop-filter: blur(8px); border-radius: 48px; padding: 16px 24px; margin-bottom: 30px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; border: 1px solid rgba(212, 175, 55, 0.3); }
+        .search-section input { flex: 2; min-width: 200px; padding: 14px 20px; background: rgba(0,0,0,0.4); border: 1px solid rgba(212, 175, 55, 0.4); border-radius: 48px; font-size: 1rem; color: white; }
+        .report-output { background: rgba(10, 20, 35, 0.6); backdrop-filter: blur(12px); border-radius: 36px; padding: 24px; border: 1px solid rgba(212, 175, 55, 0.25); }
         .report-output table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
         .report-output th, .report-output td { padding: 10px 8px; border: 1px solid rgba(212, 175, 55, 0.3); text-align: center; }
         .report-output th { background: rgba(0,0,0,0.4); color: #d4af37; }
         .clickable { cursor: pointer; color: #d4af37; font-weight: 600; text-decoration: underline; }
-
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(8px);
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            animation: fadeIn 0.2s ease;
-        }
+        .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); align-items: center; justify-content: center; z-index: 2000; animation: fadeIn 0.2s ease; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .modal-content {
-            background: rgba(10, 20, 35, 0.95);
-            backdrop-filter: blur(16px);
-            max-width: 95%;
-            width: 95%;
-            max-height: 85%;
-            border-radius: 48px;
-            padding: 28px;
-            overflow: auto;
-            border: 1px solid #d4af37;
-            animation: scaleIn 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-        }
+        .modal-content { background: rgba(10, 20, 35, 0.95); backdrop-filter: blur(16px); max-width: 95%; width: 95%; max-height: 85%; border-radius: 48px; padding: 28px; overflow: auto; border: 1px solid #d4af37; animation: scaleIn 0.25s cubic-bezier(0.2, 0.9, 0.4, 1.1); }
         @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-content h3 { font-family: 'Playfair Display', serif; color: #d4af37; border-left: 4px solid #d4af37; padding-left: 16px; margin-bottom: 20px; }
-
-        .toast {
-            position: fixed;
-            bottom: 25px;
-            right: 25px;
-            background: rgba(10, 20, 35, 0.9);
-            backdrop-filter: blur(12px);
-            color: #e2e8f0;
-            padding: 12px 24px;
-            border-radius: 60px;
-            font-size: 0.85rem;
-            z-index: 2100;
-            border-left: 4px solid #d4af37;
-            animation: slideInRight 0.3s ease;
-        }
+        .toast { position: fixed; bottom: 25px; right: 25px; background: rgba(10, 20, 35, 0.9); backdrop-filter: blur(12px); color: #e2e8f0; padding: 12px 24px; border-radius: 60px; font-size: 0.85rem; z-index: 2100; border-left: 4px solid #d4af37; animation: slideInRight 0.3s ease; }
         @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
-        .sync-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(0,0,0,0.5);
-            padding: 6px 14px;
-            border-radius: 40px;
-            font-size: 0.75rem;
-        }
+        .sync-indicator { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); padding: 6px 14px; border-radius: 40px; font-size: 0.75rem; }
         .sync-dot { width: 10px; height: 10px; border-radius: 50%; }
         .sync-dot.connected { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
         .sync-dot.disconnected { background: #ef4444; }
         .sync-dot.connecting { background: #eab308; }
-
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width:700px){ .grid-2{ grid-template-columns:1fr; } button{ padding: 6px 14px; } .header h1{ font-size:1.4rem; } }
-
         .form-group { margin-bottom: 20px; }
         label { font-weight: 600; display: block; margin-bottom: 8px; color: #d4af37; }
-        input, select {
-            width: 100%;
-            padding: 12px 16px;
-            background: rgba(0,0,0,0.5);
-            border: 1px solid rgba(212, 175, 55, 0.5);
-            border-radius: 28px;
-            font-size: 0.9rem;
-            color: white;
-        }
-        .debug-panel {
-            background: rgba(0,0,0,0.6);
-            border-radius: 16px;
-            padding: 12px;
-            margin-top: 20px;
-            font-size: 0.75rem;
-            font-family: monospace;
-            color: #a0b3d9;
-            border-left: 3px solid #d4af37;
-        }
-        .show-disposals-btn {
-            margin-left: 10px;
-            background: #2c3e50;
-        }
+        input, select { width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.5); border: 1px solid rgba(212, 175, 55, 0.5); border-radius: 28px; font-size: 0.9rem; color: white; }
+        .debug-panel { background: rgba(0,0,0,0.6); border-radius: 16px; padding: 12px; margin-top: 20px; font-size: 0.75rem; font-family: monospace; color: #a0b3d9; border-left: 3px solid #d4af37; }
     </style>
 </head>
 <body>
@@ -302,7 +86,7 @@
         <button id="importBackupBtn"><i class="fas fa-upload"></i> Restore</button>
         <button id="pendingMprBtn" class="primary"><i class="fas fa-chart-line"></i> Pending MPR</button>
         <button id="disposalMprBtn" class="primary"><i class="fas fa-chart-bar"></i> Disposal MPR</button>
-        <button id="showAllDisposalsBtn" class="show-disposals-btn"><i class="fas fa-list"></i> Show All Disposed Cases</button>
+        <button id="showAllDisposalsBtn" class="primary"><i class="fas fa-list"></i> Show All Disposed</button>
         <button id="sampleDataBtn"><i class="fas fa-chart-simple"></i> Sample</button>
         <button id="deleteAllBtn" class="danger"><i class="fas fa-trash-alt"></i> Delete All</button>
         <button id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -359,7 +143,7 @@
     </div>
 </div>
 
-<!-- Modals (same as before) -->
+<!-- Modals -->
 <div id="loginModal" class="modal" style="display:flex;">
     <div class="modal-content">
         <h3><i class="fas fa-key"></i> Judicial Login</h3>
@@ -383,7 +167,7 @@
 <div id="disposalModal" class="modal"><div class="modal-content"><h3>Record Disposal</h3><div class="form-group"><label>Case No</label><input list="caseNosList" id="disposalCaseNo"><datalist id="caseNosList"></datalist></div><div class="form-group"><label>Disposal Date *</label><input type="date" id="disposalDate"></div><div style="display:flex; gap:12px;"><button id="confirmDisposalBtn" class="primary">Mark Disposed</button><button id="closeDisposalModalBtn">Cancel</button></div></div></div>
 
 <script>
-    // Firebase Config
+    // Firebase Config (same as before)
     const firebaseConfig = {
         apiKey: "AIzaSyD9VnIRajIj7cJhD-sPBeyT8CYimE_vF7k",
         authDomain: "rccms-5614b.firebaseapp.com",
@@ -402,7 +186,7 @@
 
     let cases = [], nextId = 1, isLoading = true;
 
-    // Helper functions (same as before)
+    // Helper functions
     function showToast(msg, isError = false) {
         const toast = document.createElement('div');
         toast.className = 'toast';
@@ -452,7 +236,6 @@
         casesRef.set(obj).then(()=>showToast('✓ Data saved')).catch(e=>showToast(e.message, true));
     }
 
-    // Age calculation functions
     function getAgeMonths(instDate, asOnDate) {
         const inst = new Date(instDate);
         const asOn = new Date(asOnDate);
@@ -511,7 +294,6 @@
     }
 
     function updateTables() {
-        // Section-wise
         let secMap = new Map();
         cases.forEach(c => {
             if(c.section){
@@ -523,12 +305,11 @@
         let secHtml = '';
         sorted.forEach(([sec,count]) => {
             let percent = (count/maxCount)*100;
-            secHtml += `<tr><td>${escapeHtml(sec)}${count}${'<div class="progress-bar-container"><div class="progress-bar" style="width:'+percent+'%;"></div></div>'}? `;
+            secHtml += `<tr><td>${escapeHtml(sec)}</td><td>${count}</td><td><div class="progress-bar-container"><div class="progress-bar" style="width: ${percent}%;"></div></div></td></tr>`;
         });
-        if(!secHtml) secHtml = '<tr><td colspan="3">No data</td>';
+        if(!secHtml) secHtml = '<tr><td colspan="3">No data</td></tr>';
         document.getElementById("sectionTableBody").innerHTML = secHtml;
 
-        // Year-wise
         let yearMap = new Map();
         cases.forEach(c => {
             let y = new Date(c.institutionDate).getFullYear();
@@ -547,11 +328,9 @@
         years.forEach(y => {
             let data = yearMap.get(y);
             let clearance = data.filed ? ((data.disposed/data.filed)*100).toFixed(1) : 0;
-            yearHtml += `<tr>
-                <td>${y}${data.filed}${data.disposed}${clearance}%?
-            `;
+            yearHtml += `<tr><td>${y}</td><td>${data.filed}</td><td>${data.disposed}</td><td>${clearance}%</td></tr>`;
         });
-        if(!yearHtml) yearHtml = '<tr><td colspan="4">No data</td>';
+        if(!yearHtml) yearHtml = '<tr><td colspan="4">No data</td></tr>';
         document.getElementById("yearTableBody").innerHTML = yearHtml;
         updateDebug();
     }
@@ -591,7 +370,7 @@
         else showCaseList(`Search Results for "${term}" (${results.length})`, results);
     }
 
-    // ========== IMPROVED DISPOSAL IMPORT WITH UNMATCHED LIST ==========
+    // Disposal Import with detailed unmatched list
     function importDisposalExcel(file) {
         const reader = new FileReader();
         reader.onload = e => {
@@ -637,14 +416,12 @@
         if(notFoundCases.length) {
             msg += `\nNot found (first 20): ${notFoundCases.join(', ')}`;
             showToast(msg, true);
-            // Also show in debug panel
-            const debugDiv = document.getElementById('debugContent');
-            debugDiv.innerHTML += `<br>⚠️ Unmatched case numbers in Excel: ${notFoundCases.join(', ')}`;
         } else {
             showToast(msg);
         }
         updateStats(true);
         updateTables();
+        updateDebug();
     }
 
     // Cases import (unchanged)
@@ -676,7 +453,7 @@
         saveToFirebase(); showToast(`Imported ${imported} new cases`);
     }
 
-    // MPR Reports (same as before – working)
+    // MPR Reports (correct table formatting)
     function renderPendingMPR() {
         let start = new Date(document.getElementById("reportStartDate").value);
         let end = new Date(document.getElementById("reportEndDate").value);
@@ -701,10 +478,9 @@
             const bucket = getPendingAgeBucket(months);
             if(bucketMap.has(bucket)) bucketMap.get(bucket).push(c);
         });
-        let row = `<tr>
-            <td>1${escapeHtml(office)}${initialPending}${newRegistered}${totalDecided}${pendingAsOnEnd}
-            ${bucketOrder.map(b => `<td class="clickable" data-bucket="${b}">${bucketMap.get(b).length}</td>`).join('')}
-        </tr>`;
+        let row = `<tr><td>1</td><td>${escapeHtml(office)}</td><td>${initialPending}</td><td>${newRegistered}</td><td>${totalDecided}</td><td>${pendingAsOnEnd}</td>`;
+        bucketOrder.forEach(b => { row += `<td class="clickable" data-bucket="${b}">${bucketMap.get(b).length}</td>`; });
+        row += `</tr>`;
         const html = `
             <h4>📋 Pending MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
             <div class="grid-2" style="margin-bottom:20px;">
@@ -751,7 +527,7 @@
                     <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
                     <div><button id="refreshDisposalBtn" class="primary">Refresh Report</button></div>
                 </div>
-                <p style="text-align:center; color:#f5e7a3;">⚠️ No disposals found in the selected date range.<br>Check the debug panel below to see how many disposed cases exist in the database.</p>
+                <p style="text-align:center; color:#f5e7a3;">⚠️ No disposals found in the selected date range.<br>Check the debug panel below – currently only <strong>${cases.filter(c=>c.disposed).length}</strong> disposed case(s) exist in the database.</p>
                 <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
             `;
             document.getElementById("reportOutput").innerHTML = html;
@@ -780,10 +556,9 @@
             monthMap.get(key).push(c);
         });
         const monthWise = Array.from(monthMap.keys()).sort().map(m => ({ month: m, count: monthMap.get(m).length, cases: monthMap.get(m) }));
-        let row = `<tr>
-            <td>1${escapeHtml(office)}${totalDisposal}
-            ${ageBucketOrder.map(b => `<td class="clickable-age" data-agebucket="${b}">${ageBucketsMap.get(b).length}</td>`).join('')}
-        </tr>`;
+        let row = `<tr><td>1</td><td>${escapeHtml(office)}</td><td>${totalDisposal}</td>`;
+        ageBucketOrder.forEach(b => { row += `<td class="clickable-age" data-agebucket="${b}">${ageBucketsMap.get(b).length}</td>`; });
+        row += `</tr>`;
         let monthRows = '';
         monthWise.forEach(m => { monthRows += `<tr><td class="clickable-month" data-month="${m.month}">${m.month}</td><td class="clickable-month" data-month="${m.month}">${m.count}</td></tr>`; });
         const html = `
@@ -794,9 +569,9 @@
                 <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
                 <div><button id="refreshDisposalBtn" class="primary">Refresh Report</button></div>
             </div>
-            <div style="overflow-x:auto;"><table style="min-width:800px;"><thead><tr><th>S.No.</th><th>Office Name</th><th>Total Disposal</th>${ageBucketOrder.map(b=>`<th>${b}</th>`).join('')}</td></thead><tbody>${row}</tbody></table></div>
+            <div style="overflow-x:auto;"><table style="min-width:800px;"><thead><tr><th>S.No.</th><th>Office Name</th><th>Total Disposal</th>${ageBucketOrder.map(b=>`<th>${b}</th>`).join('')}</tr></thead><tbody>${row}</tbody></table></div>
             <div style="margin-top:20px;"><strong>📅 Month-wise Disposal Breakdown (click on count)</strong>
-                <div style="overflow-x:auto; margin-top:10px;"><table style="min-width:300px;"><thead><tr><th>Year-Month</th><th>Disposals</th></tr></thead><tbody>${monthRows || '</td><td colspan="2">No disposals</tr>'}</tbody></table></div>
+                <div style="overflow-x:auto; margin-top:10px;"><table style="min-width:300px;"><thead><tr><th>Year-Month</th><th>Disposals</th></tr></thead><tbody>${monthRows || '<tr><td colspan="2">No disposals</td></tr>'}</tbody></table></div>
             </div>
             <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
         `;
@@ -833,6 +608,15 @@
         };
     }
 
+    function showAllDisposals() {
+        const disposed = cases.filter(c => c.disposed);
+        if(disposed.length === 0) {
+            showToast("No disposed cases found in the database", true);
+            return;
+        }
+        showCaseList(`All Disposed Cases (${disposed.length})`, disposed);
+    }
+
     function exportBackup(){ let a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(cases,null,2)],{type:"application/json"})); a.download=`rccms_backup_${new Date().toISOString().slice(0,19)}.json`; a.click(); showToast("Backup downloaded"); }
     function restoreBackup(file){ let reader=new FileReader(); reader.onload=e=>{ try{ let arr=JSON.parse(e.target.result); if(Array.isArray(arr)){ cases=arr; if(cases.length) nextId=Math.max(...cases.map(c=>c.id||0),0)+1; saveToFirebase(); showToast("Restore successful"); } else throw new Error(); }catch(err){ showToast("Invalid backup file", true); } }; reader.readAsText(file); }
     function loadSampleData(){ if(confirm("Load sample cases?")){ cases = [{id:1,caseNo:"2025/99",section:"212",institutionDate:"2025-06-13",casePurpose:"साक्ष्य वादी",appellantName:"ओमकंवर",respondentName:"कमलेश",hearingDate:"2026-06-22",disposed:true,disposalDate:"2026-05-01"},{id:2,caseNo:"2025/98",section:"136,188,53",institutionDate:"2025-06-13",casePurpose:"साक्ष्य वादी",appellantName:"ओमकंवर",respondentName:"कमलेश",hearingDate:"2026-06-22",disposed:false}]; nextId=3; saveToFirebase(); showToast("Sample loaded"); } }
@@ -848,16 +632,6 @@
         const start = document.getElementById('reportStartDate')?.value || 'not set';
         const end = document.getElementById('reportEndDate')?.value || 'not set';
         debugDiv.innerHTML += `📅 Report date range: ${start} to ${end}`;
-    }
-
-    // Show all disposed cases button
-    function showAllDisposals() {
-        const disposed = cases.filter(c => c.disposed);
-        if(disposed.length === 0) {
-            showToast("No disposed cases found in the database", true);
-            return;
-        }
-        showCaseList(`All Disposed Cases (${disposed.length})`, disposed);
     }
 
     // Authentication
