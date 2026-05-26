@@ -72,12 +72,16 @@
     <div class="header">
         <h1><i class="fas fa-gavel"></i> RCCMS | Judicial Dashboard</h1>
         <div style="display: flex; gap: 12px; align-items: center;">
-            <a href="https://wasimahmedqureshi.github.io/disposal-mpr/" target="_blank" class="primary" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; background: #1e4a76; border-color: #1e4a76; color: white; padding: 8px 18px; border-radius: 40px; font-weight: 500; font-size: 0.85rem;">
-                <i class="fas fa-chart-line"></i> 📊 Go to Disposal MPR Portal
-            </a>
             <div class="sync-indicator"><span class="sync-dot" id="syncDot"></span><span id="syncText">Connecting...</span></div>
             <div class="badge" id="userStatus"><i class="fas fa-user-lock"></i> Secured</div>
         </div>
+    </div>
+
+    <!-- Prominent Disposal MPR Portal Link -->
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+        <a href="https://wasimahmedqureshi.github.io/disposal-mpr/" target="_blank" style="background: linear-gradient(95deg, #1e4a76, #0f3a5c); border: 1px solid #d4af37; color: #d4af37; padding: 10px 24px; border-radius: 48px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 10px; font-size: 0.9rem; transition: 0.2s;">
+            <i class="fas fa-chart-line"></i> 📊 Go to Disposal MPR Portal
+        </a>
     </div>
 
     <div class="toolbar" id="mainToolbar" style="display: none;">
@@ -126,7 +130,7 @@
                 <h3><i class="fas fa-calendar-alt"></i> Year-wise Filing & Disposal</h3>
                 <div class="data-table">
                     <table id="yearTable">
-                        <thead><tr><th>Year</th><th>Filed</th><th>Disposed</th><th>Clearance %</th></td></thead>
+                        <thead><tr><th>Year</th><th>Filed</th><th>Disposed</th><th>Clearance %</th></tr></thead>
                         <tbody id="yearTableBody"><tr><td colspan="4">Loading...–</tbody>
                     </table>
                 </div>
@@ -189,7 +193,7 @@
 
     let cases = [], nextId = 1, isLoading = true;
 
-    // Helper functions
+    // Helper functions (same as before, keep all)
     function showToast(msg, isError = false) {
         const toast = document.createElement('div');
         toast.className = 'toast';
@@ -308,7 +312,9 @@
         let secHtml = '';
         sorted.forEach(([sec,count]) => {
             let percent = (count/maxCount)*100;
-            secHtml += `<tr><td>${escapeHtml(sec)}${count}${'<div class="progress-bar-container"><div class="progress-bar" style="width:'+percent+'%;"></div></div>'}? `;
+            secHtml += `<tr>
+                <td>${escapeHtml(sec)}${count}${'<div class="progress-bar-container"><div class="progress-bar" style="width:'+percent+'%;"></div></div>'}?
+            `;
         });
         if(!secHtml) secHtml = '<tr><td colspan="3">No data</td>';
         document.getElementById("sectionTableBody").innerHTML = secHtml;
@@ -331,9 +337,7 @@
         years.forEach(y => {
             let data = yearMap.get(y);
             let clearance = data.filed ? ((data.disposed/data.filed)*100).toFixed(1) : 0;
-            yearHtml += `<tr>
-                <td>${y}${data.filed}${data.disposed}${clearance}%?
-            `;
+            yearHtml += `<td>${y}${data.filed}${data.disposed}${clearance}%?`;
         });
         if(!yearHtml) yearHtml = '<tr><td colspan="4">No data</td>';
         document.getElementById("yearTableBody").innerHTML = yearHtml;
@@ -578,7 +582,7 @@
             </div>
             <div style="overflow-x:auto;"><table style="min-width:800px;"><thead><tr><th>S.No.</th><th>Office Name</th><th>Total Disposal</th>${ageBucketOrder.map(b=>`<th>${b}</th>`).join('')}</tr></thead><tbody>${row}</tbody></table></div>
             <div style="margin-top:20px;"><strong>📅 Month-wise Disposal Breakdown (click on count)</strong>
-                <div style="overflow-x:auto; margin-top:10px;"><table style="min-width:300px;"><thead><tr><th>Year-Month</th><th>Disposals</th></tr></thead><tbody>${monthRows || '<tr><td colspan="2">No disposals</td>'}</tbody></table></div>
+                <div style="overflow-x:auto; margin-top:10px;"><table style="min-width:300px;"><thead></tr><th>Year-Month</th><th>Disposals</th></tr></thead><tbody>${monthRows || '<tr><td colspan="2">No disposals</td>'}</tbody></table></div>
             </div>
             <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
         `;
