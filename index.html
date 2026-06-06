@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>RCCMS | Revenue Court Dashboard (पूर्ण कार्यशील)</title>
+    <title>RCCMS | Judicial Dashboard (दावा/प्रार्थना/इजराय)</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: radial-gradient(circle at 10% 20%, #0a0f1a 0%, #03060c 100%); font-family: 'DM Sans', sans-serif; color: #e2e8f0; padding: 24px 20px; min-height: 100vh; }
@@ -50,6 +53,13 @@
         .modal-content h3 { font-family: 'Playfair Display', serif; color: #d4af37; border-left: 4px solid #d4af37; padding-left: 16px; margin-bottom: 20px; }
         .toast { position: fixed; bottom: 25px; right: 25px; background: rgba(10, 20, 35, 0.9); backdrop-filter: blur(12px); color: #e2e8f0; padding: 12px 24px; border-radius: 60px; font-size: 0.85rem; z-index: 2100; border-left: 4px solid #d4af37; animation: slideInRight 0.3s ease; }
         @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .sync-indicator { display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); padding: 6px 14px; border-radius: 40px; font-size: 0.75rem; }
+        .sync-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .sync-dot.connected { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+        .sync-dot.disconnected { background: #ef4444; }
+        .sync-dot.connecting { background: #eab308; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width:700px){ .grid-2{ grid-template-columns:1fr; } button{ padding: 6px 14px; } .header h1{ font-size:1.4rem; } }
         .form-group { margin-bottom: 20px; }
         label { font-weight: 600; display: block; margin-bottom: 8px; color: #d4af37; }
         input, select { width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.5); border: 1px solid rgba(212, 175, 55, 0.5); border-radius: 28px; font-size: 0.9rem; color: white; }
@@ -59,78 +69,113 @@
     </style>
 </head>
 <body>
+
 <div class="container">
     <div class="header">
-        <h1><i class="fas fa-gavel"></i> RCCMS | Revenue Court Dashboard</h1>
-        <div class="badge"><i class="fas fa-database"></i> डेटा स्थानीय रूप से सुरक्षित | ऑटो-लोड</div>
+        <h1><i class="fas fa-gavel"></i> RCCMS | Judicial Dashboard</h1>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <div class="sync-indicator"><span class="sync-dot" id="syncDot"></span><span id="syncText">Connecting...</span></div>
+            <div class="badge" id="userStatus"><i class="fas fa-user-lock"></i> Secured</div>
+        </div>
     </div>
 
-    <div class="toolbar">
-        <button id="addCaseBtn" class="primary"><i class="fas fa-plus-circle"></i> नया केस</button>
-        <button id="disposeBtn"><i class="fas fa-check-double"></i> निस्तारण दर्ज करें</button>
-        <button id="importCasesExcelBtn"><i class="fas fa-file-excel"></i> केस आयात करें</button>
-        <button id="importDisposalExcelBtn" class="primary"><i class="fas fa-file-excel"></i> निस्तारण आयात</button>
-        <button id="exportBackupBtn"><i class="fas fa-download"></i> बैकअप JSON</button>
-        <button id="importBackupBtn"><i class="fas fa-upload"></i> पुनर्स्थापित करें</button>
-        <button id="pendingMprBtn" class="primary"><i class="fas fa-chart-line"></i> लंबित MPR (दावा/प्रार्थना/इजराय)</button>
-        <button id="disposalMprBtn" class="primary"><i class="fas fa-chart-bar"></i> निस्तारण MPR</button>
-        <button id="showAllDisposalsBtn"><i class="fas fa-list"></i> सभी निस्तारित केस</button>
-        <button id="sampleDataBtn"><i class="fas fa-chart-simple"></i> नमूना डेटा लोड करें</button>
-        <button id="deleteAllBtn" style="background:#7a2323;"><i class="fas fa-trash-alt"></i> सभी डेटा हटाएँ</button>
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 12px;">
+        <a href="https://wasimahmedqureshi.github.io/disposal-mpr/" target="_blank" style="background: linear-gradient(95deg, #1e4a76, #0f3a5c); border: 1px solid #d4af37; color: #d4af37; padding: 10px 24px; border-radius: 48px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 10px; font-size: 0.9rem;">
+            <i class="fas fa-chart-line"></i> 📊 Go to Disposal MPR Portal
+        </a>
+    </div>
+
+    <div class="toolbar" id="mainToolbar" style="display: none;">
+        <button id="addCaseBtn" class="primary"><i class="fas fa-plus-circle"></i> New Case</button>
+        <button id="disposeBtn"><i class="fas fa-check-double"></i> Record Disposal</button>
+        <button id="importCasesExcelBtn"><i class="fas fa-file-excel"></i> Import Cases</button>
+        <button id="importDisposalExcelBtn" class="primary"><i class="fas fa-file-excel"></i> Import Disposal</button>
+        <button id="exportBackupBtn"><i class="fas fa-download"></i> Backup JSON</button>
+        <button id="importBackupBtn"><i class="fas fa-upload"></i> Restore</button>
+        <button id="pendingMprBtn" class="primary"><i class="fas fa-chart-line"></i> Pending MPR (दावा/प्रार्थना/इजराय)</button>
+        <button id="disposalMprBtn" class="primary"><i class="fas fa-chart-bar"></i> Disposal MPR</button>
+        <button id="showAllDisposalsBtn" class="primary"><i class="fas fa-list"></i> Show All Disposed</button>
+        <button id="sampleDataBtn"><i class="fas fa-chart-simple"></i> Sample</button>
+        <button id="deleteAllBtn" class="danger"><i class="fas fa-trash-alt"></i> Delete All</button>
+        <button id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
         <input type="file" id="casesExcelInput" style="display:none" accept=".xlsx,.xls,.csv">
         <input type="file" id="disposalExcelInput" style="display:none" accept=".xlsx,.xls,.csv">
     </div>
 
-    <div id="mainContent">
+    <div id="mainContent" style="display: none;">
         <div class="search-section">
             <i class="fas fa-search" style="color: #d4af37; font-size: 1.3rem;"></i>
-            <input type="text" id="searchCaseNo" placeholder="केस नंबर खोजें (जैसे 2025/99)">
-            <button id="searchBtn" class="primary"><i class="fas fa-search"></i> खोजें</button>
-            <button id="clearSearchBtn">साफ़ करें</button>
+            <input type="text" id="searchCaseNo" placeholder="Enter Case Number (e.g., 2025/99)">
+            <button id="searchBtn" class="primary"><i class="fas fa-search"></i> Search</button>
+            <button id="clearSearchBtn">Clear</button>
         </div>
 
         <div class="stats-grid">
-            <div class="stat-card" data-stat="total"><div class="number" id="totalCases">0</div><div class="label">कुल पंजीकृत</div></div>
-            <div class="stat-card" data-stat="pending"><div class="number" id="pendingCount">0</div><div class="label">लंबित केस</div></div>
-            <div class="stat-card" data-stat="disposed"><div class="number" id="disposedCount">0</div><div class="label">निस्तारित</div></div>
-            <div class="stat-card" data-stat="yearly"><div class="number" id="yearlyFiling">0</div><div class="label">इस वर्ष दायर</div></div>
+            <div class="stat-card" data-stat="total"><div class="number" id="totalCases">0</div><div class="label">Total Registered</div></div>
+            <div class="stat-card" data-stat="pending"><div class="number" id="pendingCount">0</div><div class="label">Pending Cases</div></div>
+            <div class="stat-card" data-stat="disposed"><div class="number" id="disposedCount">0</div><div class="label">Disposed</div></div>
+            <div class="stat-card" data-stat="yearly"><div class="number" id="yearlyFiling">0</div><div class="label">Filed This Year</div></div>
         </div>
 
         <div class="dashboard-row">
             <div class="dashboard-card">
-                <h3><i class="fas fa-layer-group"></i> धारा-वार केस लोड</h3>
-                <div class="data-table"><table id="sectionTable"><thead><tr><th>धारा</th><th>केस संख्या</th><th>वितरण</th></tr></thead><tbody id="sectionTableBody"><tr><td colspan="3">लोड हो रहा...</td></tr></tbody></table></div>
+                <h3><i class="fas fa-layer-group"></i> Section-wise Case Load</h3>
+                <div class="data-table"><table id="sectionTable"><thead><tr><th>Section</th><th>Case Count</th><th>Distribution</th></tr></thead><tbody id="sectionTableBody"><tr><td colspan="3">Loading...–</tbody></table></div>
             </div>
             <div class="dashboard-card">
-                <h3><i class="fas fa-calendar-alt"></i> वर्ष-वार दाखिल एवं निस्तारण</h3>
-                <div class="data-table"><table id="yearTable"><thead><tr><th>वर्ष</th><th>दायर</th><th>निस्तारित</th><th>निस्तारण %</th></tr></thead><tbody id="yearTableBody"><tr><td colspan="4">लोड हो रहा...</td></tr></tbody></table></div>
+                <h3><i class="fas fa-calendar-alt"></i> Year-wise Filing & Disposal</h3>
+                <div class="data-table"><table id="yearTable"><thead><tr><th>Year</th><th>Filed</th><th>Disposed</th><th>Clearance %</th></tr></thead><tbody id="yearTableBody"><tr><td colspan="4">Loading...–</tbody></table></div>
             </div>
         </div>
 
-        <div class="report-section">
+        <div class="report-section" style="margin-top: 30px;">
             <div id="reportOutput" class="report-output">
-                <p style="text-align:center; color:#a0b3d9;">रिपोर्ट देखने के लिए "लंबित MPR" या "निस्तारण MPR" बटन दबाएँ।</p>
+                <p style="text-align:center; color:#a0b3d9;">Click "Pending MPR" to see दावा/प्रार्थना/इजराय wise pending report.</p>
             </div>
         </div>
-        <div class="debug-panel">
-            <strong>📊 सिस्टम स्थिति</strong><br>
-            <span id="debugContent">डेटा ब्राउज़र की localStorage में संग्रहीत है। सभी कार्य ऑफलाइन काम करेंगे।</span>
+
+        <div class="debug-panel" id="debugPanel">
+            <strong>📊 Debug Info</strong><br>
+            <span id="debugContent">Waiting for data...</span>
         </div>
     </div>
 </div>
 
-<!-- Modal -->
-<div id="listModal" class="modal"><div class="modal-content"><h3 id="modalTitle">केस सूची</h3><div style="overflow-x:auto;"><table id="modalTable"><thead><tr><th>केस नं.</th><th>धारा</th><th>दायर तिथि</th><th>प्रयोजन</th><th>अपीलार्थी</th><th>प्रत्यर्थी</th><th>सुनवाई</th><th>निस्तारण तिथि</th><th>स्थिति</th></tr></thead><tbody></tbody></table></div><div style="margin-top:20px; display:flex; gap:12px; justify-content:flex-end;"><button id="exportModalCsvBtn" class="primary">एक्सेल में निर्यात करें</button><button id="closeModalBtn">बंद करें</button></div></div></div>
-<div id="caseModal" class="modal"><div class="modal-content"><h3>नया केस पंजीकृत करें</h3><div class="form-group"><label>केस नंबर *</label><input id="caseNo" placeholder="जैसे 2026/123"></div><div class="form-group"><label>धारा (Section)</label><input id="section" placeholder="188,53 या 175 आदि"></div><div class="form-group"><label>दायर तिथि *</label><input type="date" id="instDate"></div><div class="form-group"><label>प्रयोजन</label><input id="casePurpose"></div><div class="form-group"><label>अपीलार्थी</label><input id="appellant"></div><div class="form-group"><label>प्रत्यर्थी</label><input id="respondent"></div><div class="form-group"><label>अगली सुनवाई</label><input type="date" id="hearingDate"></div><div style="display:flex; gap:12px;"><button id="saveCaseBtn" class="primary">सहेजें</button><button id="closeCaseModalBtn">रद्द करें</button></div></div></div>
-<div id="disposalModal" class="modal"><div class="modal-content"><h3>निस्तारण दर्ज करें</h3><div class="form-group"><label>केस नंबर</label><input list="caseNosList" id="disposalCaseNo" placeholder="केस नंबर चुनें"><datalist id="caseNosList"></datalist></div><div class="form-group"><label>निस्तारण तिथि *</label><input type="date" id="disposalDate"></div><div style="display:flex; gap:12px;"><button id="confirmDisposalBtn" class="primary">निस्तारित करें</button><button id="closeDisposalModalBtn">रद्द करें</button></div></div></div>
+<!-- Modals -->
+<div id="loginModal" class="modal" style="display:flex;">
+    <div class="modal-content">
+        <h3><i class="fas fa-key"></i> Judicial Login</h3>
+        <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="admin@example.com"></div>
+        <div class="form-group"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••"></div>
+        <button id="loginBtn" class="primary" style="width:100%;">Login <i class="fas fa-arrow-right"></i></button>
+        <div id="loginError" style="color:#f87171; margin-top:15px; text-align:center;"></div>
+    </div>
+</div>
+
+<div id="listModal" class="modal"><div class="modal-content"><h3 id="modalTitle">Case List</h3><div style="overflow-x:auto;"><table id="modalTable"><thead><tr><th>Case No</th><th>Section</th><th>Inst. Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Hearing</th><th>Disposal</th><th>Status</th></tr></thead><tbody></tbody></table></div><div style="margin-top:20px; display:flex; gap:12px; justify-content:flex-end;"><button id="exportModalCsvBtn" class="primary">Export to Excel</button><button id="closeModalBtn">Close</button></div></div></div>
+<div id="caseModal" class="modal"><div class="modal-content"><h3>Register New Case</h3><div class="form-group"><label>Case No *</label><input id="caseNo"></div><div class="form-group"><label>Section</label><input id="section"></div><div class="form-group"><label>Institution Date *</label><input type="date" id="instDate"></div><div class="form-group"><label>Purpose</label><input id="casePurpose"></div><div class="form-group"><label>Appellant</label><input id="appellant"></div><div class="form-group"><label>Respondent</label><input id="respondent"></div><div class="form-group"><label>Hearing Date</label><input type="date" id="hearingDate"></div><div style="display:flex; gap:12px;"><button id="saveCaseBtn" class="primary">Save</button><button id="closeCaseModalBtn">Cancel</button></div></div></div>
+<div id="disposalModal" class="modal"><div class="modal-content"><h3>Record Disposal</h3><div class="form-group"><label>Case No</label><input list="caseNosList" id="disposalCaseNo"><datalist id="caseNosList"></datalist></div><div class="form-group"><label>Disposal Date *</label><input type="date" id="disposalDate"></div><div style="display:flex; gap:12px;"><button id="confirmDisposalBtn" class="primary">Mark Disposed</button><button id="closeDisposalModalBtn">Cancel</button></div></div></div>
 
 <script>
-    // ---------- पूर्णतः स्थानीय (localStorage) संचालित ----------
-    let cases = [];
-    let nextId = 1;
-    const STORAGE_KEY = 'rccms_cases_local_v2';
+    // Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSyD9VnIRajIj7cJhD-sPBeyT8CYimE_vF7k",
+        authDomain: "rccms-5614b.firebaseapp.com",
+        databaseURL: "https://rccms-5614b-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "rccms-5614b",
+        storageBucket: "rccms-5614b.firebasestorage.app",
+        messagingSenderId: "1076214105677",
+        appId: "1:1076214105677:web:9d07574ea18f57e1203e04",
+        measurementId: "G-P1HP9TH5N4"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const database = firebase.database();
+    const casesRef = database.ref('rccms_cases');
 
-    // सहायक फ़ंक्शन
+    let cases = [], nextId = 1, isLoading = true;
+
+    // Helper functions
     function showToast(msg, isError = false) {
         const toast = document.createElement('div');
         toast.className = 'toast';
@@ -139,67 +184,88 @@
         setTimeout(() => toast.remove(), 3500);
     }
 
-    function formatDate(iso) { return iso ? new Date(iso).toLocaleDateString('en-GB') : '-'; }
-    function escapeHtml(str) { return str ? String(str).replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;') : ''; }
+    function updateSyncIndicator(status, msg) {
+        const dot = document.getElementById('syncDot');
+        const text = document.getElementById('syncText');
+        if(status === 'connected') { dot.className = 'sync-dot connected'; text.innerText = msg || 'Live'; }
+        else if(status === 'disconnected') { dot.className = 'sync-dot disconnected'; text.innerText = msg || 'Offline'; }
+        else { dot.className = 'sync-dot connecting'; text.innerText = msg || 'Connecting...'; }
+    }
+
+    function animateCounter(element, target) {
+        let current = 0, step = Math.max(1, Math.ceil(target / 50));
+        const interval = setInterval(() => { current += step; if(current >= target) { element.innerText = target; clearInterval(interval); } else element.innerText = current; }, 20);
+    }
+
+    function formatDate(iso){ return iso ? new Date(iso).toLocaleDateString('en-GB') : '-'; }
+    function escapeHtml(str){ return str ? String(str).replace(/[&<>]/g,m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;') : ''; }
+
     function parseDateAny(d) {
-        if (!d) return null;
+        if(!d) return null;
         let s = String(d).trim();
-        if (!isNaN(s) && s.indexOf('-') === -1 && s.indexOf('/') === -1) {
+        if(!isNaN(s) && s.indexOf('-')===-1 && s.indexOf('/')===-1){
             let n = parseFloat(s);
-            if (n > 1 && n < 60000) return new Date((n - 25569) * 86400000).toISOString().slice(0, 10);
+            if(n>1 && n<60000) return new Date((n-25569)*86400000).toISOString().slice(0,10);
         }
         let parts = s.split(/[-/]/);
-        if (parts.length === 3) {
-            let dd, mm, yy;
-            if (parts[0].length === 4) { yy = parts[0]; mm = parts[1]; dd = parts[2]; }
-            else { dd = parts[0]; mm = parts[1]; yy = parts[2]; }
-            if (yy.length === 2) yy = '20' + yy;
-            return `${yy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+        if(parts.length===3){
+            let dd,mm,yy;
+            if(parts[0].length===4){ yy=parts[0]; mm=parts[1]; dd=parts[2]; }
+            else { dd=parts[0]; mm=parts[1]; yy=parts[2]; }
+            if(yy.length===2) yy='20'+yy;
+            return `${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
         }
         let t = new Date(s);
-        return isNaN(t) ? null : t.toISOString().slice(0, 10);
+        return isNaN(t) ? null : t.toISOString().slice(0,10);
+    }
+
+    function saveToFirebase(){
+        if(isLoading) return;
+        const obj = {}; cases.forEach(c => obj[c.id] = c);
+        casesRef.set(obj).then(()=>showToast('✓ Data saved')).catch(e=>showToast(e.message, true));
     }
 
     function getAgeMonths(instDate, asOnDate) {
         const inst = new Date(instDate);
         const asOn = new Date(asOnDate);
-        if (isNaN(inst) || isNaN(asOn)) return 0;
+        if(isNaN(inst) || isNaN(asOn)) return 0;
         let months = (asOn.getFullYear() - inst.getFullYear()) * 12;
         months += asOn.getMonth() - inst.getMonth();
-        if (asOn.getDate() < inst.getDate()) months--;
+        if(asOn.getDate() < inst.getDate()) months--;
         return Math.max(0, months);
     }
 
     function getPendingAgeBucket(months) {
-        if (months < 6) return "Upto 6 Months";
-        if (months < 12) return "6 Months To 1 year";
-        if (months < 24) return "1 To 2 Years";
-        if (months < 36) return "2 To 3 Years";
-        if (months < 60) return "3 To 5 Years";
-        if (months < 120) return "5 To 10 Years";
-        if (months < 240) return "10 To 20 Years";
-        if (months < 360) return "20 To 30 Years";
-        if (months < 480) return "30 To 40 Years";
+        if(months < 6) return "Upto 6 Months";
+        if(months < 12) return "6 Months To 1 year";
+        if(months < 24) return "1 To 2 Years";
+        if(months < 36) return "2 To 3 Years";
+        if(months < 60) return "3 To 5 Years";
+        if(months < 120) return "5 To 10 Years";
+        if(months < 240) return "10 To 20 Years";
+        if(months < 360) return "20 To 30 Years";
+        if(months < 480) return "30 To 40 Years";
         return "More Than 40 Years";
     }
 
     function getAgeYears(instDate, asOnDate) {
         const inst = new Date(instDate);
         const asOn = new Date(asOnDate);
-        if (isNaN(inst) || isNaN(asOn)) return 0;
+        if(isNaN(inst) || isNaN(asOn)) return 0;
         let years = asOn.getFullYear() - inst.getFullYear();
-        if (asOn.getMonth() < inst.getMonth() || (asOn.getMonth() === inst.getMonth() && asOn.getDate() < inst.getDate())) years--;
+        if(asOn.getMonth() < inst.getMonth() || (asOn.getMonth() === inst.getMonth() && asOn.getDate() < inst.getDate())) years--;
         return Math.max(0, years);
     }
 
     function getDisposalAgeBucket(years) {
-        if (years >= 5) return "Over 5 Years";
-        if (years >= 3) return "Over 3 Years";
-        if (years >= 2) return "Over 2 Years";
-        if (years >= 1) return "Over 1 Year";
+        if(years >= 5) return "Over 5 Years";
+        if(years >= 3) return "Over 3 Years";
+        if(years >= 2) return "Over 2 Years";
+        if(years >= 1) return "Over 1 Year";
         return "Less Than 1 Year";
     }
 
+    // New function to classify case type based on section
     function getCaseType(section) {
         if (!section) return "प्रार्थना पत्र";
         const secStr = section.toString();
@@ -209,88 +275,65 @@
         return "प्रार्थना पत्र";
     }
 
-    // डेटा लोड / सेव
-    function saveToStorage() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(cases));
-        updateStatsAndTables();
-    }
-
-    function loadFromStorage() {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            try {
-                cases = JSON.parse(stored);
-                if (cases.length) nextId = Math.max(...cases.map(c => c.id || 0), 0) + 1;
-                else nextId = 1;
-            } catch (e) { cases = []; nextId = 1; }
+    function updateStats(animate = true) {
+        const total = cases.length, pending = cases.filter(c=>!c.disposed).length, disposed = cases.filter(c=>c.disposed).length;
+        const currentYear = new Date().getFullYear(), yearly = cases.filter(c=>new Date(c.institutionDate).getFullYear() === currentYear).length;
+        if(animate) {
+            animateCounter(document.getElementById("totalCases"), total);
+            animateCounter(document.getElementById("pendingCount"), pending);
+            animateCounter(document.getElementById("disposedCount"), disposed);
+            animateCounter(document.getElementById("yearlyFiling"), yearly);
         } else {
-            // डिफ़ॉल्ट नमूना डेटा (दावा, प्रार्थना, इजराय सहित)
-            cases = [
-                { id: 1, caseNo: "2025/99", section: "212", institutionDate: "2025-06-13", casePurpose: "साक्ष्य", appellantName: "ओमकंवर", respondentName: "कमलेश", hearingDate: "2026-06-22", disposed: true, disposalDate: "2026-05-01" },
-                { id: 2, caseNo: "2025/98", section: "136,188,53", institutionDate: "2025-06-13", casePurpose: "दावा", appellantName: "राम", respondentName: "श्याम", hearingDate: "2026-06-22", disposed: false, disposalDate: null },
-                { id: 3, caseNo: "2025/175", section: "175", institutionDate: "2025-06-13", casePurpose: "इजराय", appellantName: "अजय", respondentName: "विजय", hearingDate: "2026-06-22", disposed: false, disposalDate: null },
-                { id: 4, caseNo: "2024/88", section: "88,53", institutionDate: "2024-01-10", casePurpose: "दावा", appellantName: "नीता", respondentName: "सीता", hearingDate: "2026-06-22", disposed: false, disposalDate: null },
-                { id: 5, caseNo: "2023/45", section: "188", institutionDate: "2023-05-20", casePurpose: "दावा", appellantName: "मोहन", respondentName: "सोहन", hearingDate: "2026-06-22", disposed: false, disposalDate: null },
-                { id: 6, caseNo: "2024/12", section: "39(2)", institutionDate: "2024-11-15", casePurpose: "प्रार्थना", appellantName: "गीता", respondentName: "सीता", hearingDate: null, disposed: false, disposalDate: null }
-            ];
-            nextId = 7;
-            saveToStorage();
+            document.getElementById("totalCases").innerText = total;
+            document.getElementById("pendingCount").innerText = pending;
+            document.getElementById("disposedCount").innerText = disposed;
+            document.getElementById("yearlyFiling").innerText = yearly;
         }
-        updateStatsAndTables();
+        updateDebug();
     }
 
-    function updateStatsAndTables() {
-        const total = cases.length;
-        const pending = cases.filter(c => !c.disposed).length;
-        const disposed = cases.filter(c => c.disposed).length;
-        const currentYear = new Date().getFullYear();
-        const yearly = cases.filter(c => new Date(c.institutionDate).getFullYear() === currentYear).length;
-        document.getElementById("totalCases").innerText = total;
-        document.getElementById("pendingCount").innerText = pending;
-        document.getElementById("disposedCount").innerText = disposed;
-        document.getElementById("yearlyFiling").innerText = yearly;
-
-        // section-wise
+    function updateTables() {
         let secMap = new Map();
         cases.forEach(c => {
-            if (c.section) {
-                c.section.split(/[ ,]+/).forEach(s => { if (s.trim()) secMap.set(s.trim(), (secMap.get(s.trim()) || 0) + 1); });
-            } else secMap.set("Unspecified", (secMap.get("Unspecified") || 0) + 1);
+            if(c.section){
+                c.section.split(/[ ,]+/).forEach(s => { if(s.trim()) secMap.set(s.trim(), (secMap.get(s.trim())||0)+1); });
+            } else secMap.set("Unspecified", (secMap.get("Unspecified")||0)+1);
         });
-        let sorted = Array.from(secMap.entries()).sort((a, b) => b[1] - a[1]);
+        let sorted = Array.from(secMap.entries()).sort((a,b)=>b[1]-a[1]);
         let maxCount = sorted.length ? sorted[0][1] : 1;
         let secHtml = '';
-        sorted.forEach(([sec, count]) => {
-            let percent = (count / maxCount) * 100;
-            secHtml += `<tr><td>${escapeHtml(sec)}</td><td>${count}</td><td><div class="progress-bar-container"><div class="progress-bar" style="width:${percent}%;"></div></div></td></tr>`;
+        sorted.forEach(([sec,count]) => {
+            let percent = (count/maxCount)*100;
+            secHtml += `<tr>
+                <td>${escapeHtml(sec)}${count}${'<div class="progress-bar-container"><div class="progress-bar" style="width:'+percent+'%;"></div></div>'}?
+            `;
         });
-        document.getElementById("sectionTableBody").innerHTML = secHtml || '<tr><td colspan="3">कोई डेटा नहीं</td></tr>';
+        if(!secHtml) secHtml = '<tr><td colspan="3">No data</td></tr>';
+        document.getElementById("sectionTableBody").innerHTML = secHtml;
 
-        // year-wise
         let yearMap = new Map();
         cases.forEach(c => {
             let y = new Date(c.institutionDate).getFullYear();
-            if (!isNaN(y)) {
-                let cur = yearMap.get(y) || { filed: 0, disposed: 0 };
-                cur.filed++;
-                yearMap.set(y, cur);
+            if(!isNaN(y)){
+                let cur = yearMap.get(y) || {filed:0, disposed:0};
+                cur.filed++; yearMap.set(y, cur);
             }
-            if (c.disposed && c.disposalDate) {
+            if(c.disposed && c.disposalDate){
                 let dy = new Date(c.disposalDate).getFullYear();
-                let cur = yearMap.get(dy) || { filed: 0, disposed: 0 };
-                cur.disposed++;
-                yearMap.set(dy, cur);
+                let cur = yearMap.get(dy) || {filed:0, disposed:0};
+                cur.disposed++; yearMap.set(dy, cur);
             }
         });
         let years = Array.from(yearMap.keys()).sort();
         let yearHtml = '';
         years.forEach(y => {
             let data = yearMap.get(y);
-            let clearance = data.filed ? ((data.disposed / data.filed) * 100).toFixed(1) : 0;
-            yearHtml += `<tr><td>${y}</td><td>${data.filed}</td><td>${data.disposed}</td><td>${clearance}%</td></tr>`;
+            let clearance = data.filed ? ((data.disposed/data.filed)*100).toFixed(1) : 0;
+            yearHtml += `<td>${y}${data.filed}${data.disposed}${clearance}%?`;
         });
-        document.getElementById("yearTableBody").innerHTML = yearHtml || '<tr><td colspan="4">कोई डेटा नहीं</td></tr>';
-        document.getElementById("debugContent").innerHTML = `✅ कुल केस: ${total} | लंबित: ${pending} | निस्तारित: ${disposed}<br>📌 डेटा सफलतापूर्वक लोड हो गया। सभी बटन कार्यशील हैं।`;
+        if(!yearHtml) yearHtml = '<tr><td colspan="4">No data</td></tr>';
+        document.getElementById("yearTableBody").innerHTML = yearHtml;
+        updateDebug();
     }
 
     function showCaseList(title, caseArray) {
@@ -308,152 +351,203 @@
             row.insertCell(5).innerText = c.respondentName || '';
             row.insertCell(6).innerText = c.hearingDate ? formatDate(c.hearingDate) : '-';
             row.insertCell(7).innerText = c.disposalDate ? formatDate(c.disposalDate) : '-';
-            row.insertCell(8).innerText = c.disposed ? 'निस्तारित' : 'लंबित';
+            row.insertCell(8).innerText = c.disposed ? 'Disposed' : 'Pending';
         });
         modal.style.display = 'flex';
         document.getElementById('exportModalCsvBtn').onclick = () => {
-            const rows = [['Case No', 'Section', 'Institution Date', 'Purpose', 'Appellant', 'Respondent', 'Hearing Date', 'Disposal Date', 'Status']];
-            caseArray.forEach(c => rows.push([c.caseNo, c.section || '', formatDate(c.institutionDate), c.casePurpose || '', c.appellantName || '', c.respondentName || '', c.hearingDate ? formatDate(c.hearingDate) : '-', c.disposalDate ? formatDate(c.disposalDate) : '-', c.disposed ? 'Disposed' : 'Pending']));
+            const rows = [['Case No','Section','Institution Date','Purpose','Appellant','Respondent','Hearing Date','Disposal Date','Status']];
+            caseArray.forEach(c => rows.push([c.caseNo, c.section||'', formatDate(c.institutionDate), c.casePurpose||'', c.appellantName||'', c.respondentName||'', c.hearingDate?formatDate(c.hearingDate):'-', c.disposalDate?formatDate(c.disposalDate):'-', c.disposed?'Disposed':'Pending']));
             const ws = XLSX.utils.aoa_to_sheet(rows);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Cases');
-            XLSX.writeFile(wb, `${title.replace(/\s/g, '_')}.xlsx`);
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Cases');
+            XLSX.writeFile(wb, `${title.replace(/\s/g,'_')}.xlsx`);
         };
     }
 
-    // ---------- लंबित MPR (दावा / प्रार्थना पत्र / इजराय) ----------
+    function searchCase() {
+        const term = document.getElementById("searchCaseNo").value.trim().toLowerCase();
+        if(!term) { showToast("Enter case number"); return; }
+        const results = cases.filter(c => c.caseNo.toLowerCase().includes(term));
+        if(results.length === 0) showToast("No cases found", true);
+        else showCaseList(`Search Results for "${term}" (${results.length})`, results);
+    }
+
+    // Modified Pending MPR with दावा / प्रार्थना पत्र / इजराय breakdown
     function renderPendingMPR() {
         let start = new Date(document.getElementById("reportStartDate").value);
         let end = new Date(document.getElementById("reportEndDate").value);
-        let office = document.getElementById("officeNameInput").value || "राजस्व मंडल, निवाई";
-        if (isNaN(start) || isNaN(end) || start > end) { showToast("कृपया सही दिनांक सीमा चुनें", true); return; }
-        const endDateStr = end.toISOString().slice(0, 10);
+        let office = document.getElementById("officeNameInput").value || "RCCMS Office";
+        if(isNaN(start)||isNaN(end)||start>end){ showToast("Invalid date range", true); return; }
+        const endDateStr = end.toISOString().slice(0,10);
         const pendingOnEnd = cases.filter(c => {
             const inst = new Date(c.institutionDate);
-            if (inst > end) return false;
-            if (!c.disposed) return true;
-            if (c.disposalDate && new Date(c.disposalDate) > end) return true;
+            if(inst > end) return false;
+            if(!c.disposed) return true;
+            if(c.disposalDate && new Date(c.disposalDate) > end) return true;
             return false;
         });
-        const initialPending = cases.filter(c => { let i = new Date(c.institutionDate); if (i >= start) return false; if (!c.disposed) return true; if (c.disposalDate && new Date(c.disposalDate) > start) return true; return false; }).length;
-        const newRegistered = cases.filter(c => { let i = new Date(c.institutionDate); return i >= start && i <= end; }).length;
-        const totalDecided = cases.filter(c => c.disposed && c.disposalDate && (new Date(c.disposalDate) >= start && new Date(c.disposalDate) <= end)).length;
+        const initialPending = cases.filter(c=>{ let i=new Date(c.institutionDate); if(i>=start) return false; if(!c.disposed) return true; if(c.disposalDate && new Date(c.disposalDate)>start) return true; return false; }).length;
+        const newRegistered = cases.filter(c=>{ let i=new Date(c.institutionDate); return i>=start && i<=end; }).length;
+        const totalDecided = cases.filter(c=>c.disposed && c.disposalDate && (new Date(c.disposalDate)>=start && new Date(c.disposalDate)<=end)).length;
         const pendingAsOnEnd = pendingOnEnd.length;
-        const bucketOrder = ["Upto 6 Months", "6 Months To 1 year", "1 To 2 Years", "2 To 3 Years", "3 To 5 Years", "5 To 10 Years", "10 To 20 Years", "20 To 30 Years", "30 To 40 Years", "More Than 40 Years"];
+        const bucketOrder = ["Upto 6 Months","6 Months To 1 year","1 To 2 Years","2 To 3 Years","3 To 5 Years","5 To 10 Years","10 To 20 Years","20 To 30 Years","30 To 40 Years","More Than 40 Years"];
+        // For each bucket store three arrays
         const bucketData = bucketOrder.map(b => ({ दावा: [], प्रार्थना पत्र: [], इजराय: [] }));
         pendingOnEnd.forEach(c => {
             const months = getAgeMonths(c.institutionDate, endDateStr);
             const bucketIdx = bucketOrder.indexOf(getPendingAgeBucket(months));
-            if (bucketIdx === -1) return;
+            if(bucketIdx === -1) return;
             const caseType = getCaseType(c.section);
-            if (caseType === "दावा") bucketData[bucketIdx].दावा.push(c);
-            else if (caseType === "इजराय") bucketData[bucketIdx].इजराय.push(c);
+            if(caseType === "दावा") bucketData[bucketIdx].दावा.push(c);
+            else if(caseType === "इजराय") bucketData[bucketIdx].इजराय.push(c);
             else bucketData[bucketIdx]["प्रार्थना पत्र"].push(c);
         });
-        let headerHtml = `<tr><th>S.No.</th><th>Office Name</th><th>Initial Pending</th><th>New Registered</th><th>Total Decided</th><th>Pending As On End</th>`;
+        // Build header: 6 fixed columns + for each bucket 3 columns (दावा, प्रार्थना, इजराय)
+        let headerHtml = `<table><th>S.No.</th><th>Office Name</th><th>Initial Pending</th><th>New Registered</th><th>Total Decided</th><th>Pending As On End</th>`;
         bucketOrder.forEach(b => { headerHtml += `<th colspan="3">${b}</th>`; });
         headerHtml += `</tr><tr><th></th><th></th><th></th><th></th><th></th><th></th>`;
         bucketOrder.forEach(() => { headerHtml += `<th>दावा</th><th>प्रार्थना</th><th>इजराय</th>`; });
         headerHtml += `</tr>`;
-        let rowHtml = `<tr><td>1</td><td>${escapeHtml(office)}</td><td>${initialPending}</td><td>${newRegistered}</td><td>${totalDecided}</td><td>${pendingAsOnEnd}</td>`;
-        bucketData.forEach((bucket, idx) => {
-            const bucketName = bucketOrder[idx];
-            rowHtml += `<td class="clickable-dava" data-bucket="${bucketName}">${bucket.दावा.length}</td>`;
-            rowHtml += `<td class="clickable-pray" data-bucket="${bucketName}">${bucket["प्रार्थना पत्र"].length}</td>`;
-            rowHtml += `<td class="clickable-izray" data-bucket="${bucketName}">${bucket.इजराय.length}</td>`;
-        });
-        rowHtml += `</tr>`;
+        let rowHtml = `<tr>
+            <td>1</td><td>${escapeHtml(office)}</td><td>${initialPending}</td><td>${newRegistered}</td><td>${totalDecided}</td><td>${pendingAsOnEnd}</td>
+            ${bucketData.map(b => `<td class="clickable-dava" data-bucket="${bucketOrder[bucketData.indexOf(b)]}">${b.दावा.length}</td><td class="clickable-pray" data-bucket="${bucketOrder[bucketData.indexOf(b)]}">${b["प्रार्थना पत्र"].length}</td><td class="clickable-izray" data-bucket="${bucketOrder[bucketData.indexOf(b)]}">${b.इजराय.length}</td>`).join('')}
+        </tr>`;
         const html = `
-            <h4>📋 लंबित MPR (दावा / प्रार्थना पत्र / इजराय) — ${start.toISOString().slice(0,10)} से ${end.toISOString().slice(0,10)} तक</h4>
-            <div class="mpr-controls">
-                <div><label>प्रारंभ तिथि</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
-                <div><label>समाप्ति तिथि</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
-                <div><label>कार्यालय का नाम</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
-                <div><button id="refreshPendingBtn" class="primary">रिपोर्ट ताज़ा करें</button></div>
+            <h4>📋 Pending MPR (दावा / प्रार्थना पत्र / इजराय) — ${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)}</h4>
+            <div class="grid-2" style="margin-bottom:20px;">
+                <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
+                <div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
+                <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
+                <div><button id="refreshPendingBtn" class="primary">Refresh Report</button></div>
             </div>
             <div style="overflow-x:auto;"><table style="min-width:1300px;"><thead>${headerHtml}</thead><tbody>${rowHtml}</tbody></table></div>
-            <div style="margin-top:15px; text-align:right;"><button id="exportPendingExcel" class="primary"><i class="fas fa-file-excel"></i> एक्सेल में निर्यात करें</button></div>
+            <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportPendingExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
         `;
         document.getElementById("reportOutput").innerHTML = html;
         document.getElementById("refreshPendingBtn").onclick = () => renderPendingMPR();
+        // Attach click handlers for each type
         bucketData.forEach((bucket, idx) => {
             const bucketName = bucketOrder[idx];
             document.querySelectorAll(`.clickable-dava[data-bucket="${bucketName}"]`).forEach(el => {
-                el.addEventListener('click', () => { if (bucket.दावा.length) showCaseList(`दावा - ${bucketName} (${endDateStr})`, bucket.दावा); else showToast("कोई केस नहीं", true); });
+                el.addEventListener('click', () => {
+                    if(bucket.दावा.length) showCaseList(`दावा - ${bucketName} (Pending as on ${endDateStr})`, bucket.दावा);
+                    else showToast("No cases in this category", true);
+                });
             });
             document.querySelectorAll(`.clickable-pray[data-bucket="${bucketName}"]`).forEach(el => {
-                el.addEventListener('click', () => { if (bucket["प्रार्थना पत्र"].length) showCaseList(`प्रार्थना पत्र - ${bucketName}`, bucket["प्रार्थना पत्र"]); else showToast("कोई केस नहीं", true); });
+                el.addEventListener('click', () => {
+                    if(bucket["प्रार्थना पत्र"].length) showCaseList(`प्रार्थना पत्र - ${bucketName} (Pending as on ${endDateStr})`, bucket["प्रार्थना पत्र"]);
+                    else showToast("No cases in this category", true);
+                });
             });
             document.querySelectorAll(`.clickable-izray[data-bucket="${bucketName}"]`).forEach(el => {
-                el.addEventListener('click', () => { if (bucket.इजराय.length) showCaseList(`इजराय - ${bucketName}`, bucket.इजराय); else showToast("कोई केस नहीं", true); });
+                el.addEventListener('click', () => {
+                    if(bucket.इजराय.length) showCaseList(`इजराय - ${bucketName} (Pending as on ${endDateStr})`, bucket.इजराय);
+                    else showToast("No cases in this category", true);
+                });
             });
         });
         document.getElementById("exportPendingExcel").onclick = () => {
-            const wsData = [["S.No.", "Office Name", "Initial Pending", "New Registered", "Total Decided", "Pending As On End"]];
-            const ageHeaders = [];
-            bucketOrder.forEach(b => { ageHeaders.push(`${b} (दावा)`, `${b} (प्रार्थना)`, `${b} (इजराय)`); });
-            wsData[0].push(...ageHeaders);
+            const wsData = [["S.No.","Office Name","Initial Pending","New Registered","Total Decided","Pending As On End"]];
+            bucketOrder.forEach(b => { wsData[0].push(`${b} (दावा)`, `${b} (प्रार्थना)`, `${b} (इजराय)`); });
             const rowVals = [1, office, initialPending, newRegistered, totalDecided, pendingAsOnEnd];
             bucketData.forEach(b => { rowVals.push(b.दावा.length, b["प्रार्थना पत्र"].length, b.इजराय.length); });
             wsData.push(rowVals);
             const ws = XLSX.utils.aoa_to_sheet(wsData);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Pending_MPR_Detailed');
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Pending_MPR_Detailed');
             XLSX.writeFile(wb, `Pending_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`);
         };
     }
 
+    // Disposal MPR (unchanged from original)
     function renderDisposalMPR() {
         let start = new Date(document.getElementById("reportStartDate").value);
         let end = new Date(document.getElementById("reportEndDate").value);
-        let office = document.getElementById("officeNameInput").value || "राजस्व मंडल, निवाई";
-        if (isNaN(start) || isNaN(end) || start > end) { showToast("सही दिनांक चुनें", true); return; }
+        let office = document.getElementById("officeNameInput").value || "RCCMS Office";
+        if(isNaN(start)||isNaN(end)||start>end){ showToast("Invalid date range", true); return; }
         const disposals = cases.filter(c => c.disposed && c.disposalDate && (new Date(c.disposalDate) >= start && new Date(c.disposalDate) <= end));
         const totalDisposal = disposals.length;
-        const ageBucketOrder = ["Over 5 Years", "Over 3 Years", "Over 2 Years", "Over 1 Year", "Less Than 1 Year"];
-        const ageBucketsMap = new Map();
-        ageBucketOrder.forEach(b => ageBucketsMap.set(b, []));
+        if(totalDisposal === 0) {
+            const html = `
+                <h4>📋 Disposal MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
+                <div class="grid-2" style="margin-bottom:20px;">
+                    <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
+                    <div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
+                    <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
+                    <div><button id="refreshDisposalBtn" class="primary">Refresh Report</button></div>
+                </div>
+                <p style="text-align:center; color:#f5e7a3;">⚠️ No disposals found in the selected date range.<br>Check the debug panel below – currently only <strong>${cases.filter(c=>c.disposed).length}</strong> disposed case(s) exist in the database.</p>
+                <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
+            `;
+            document.getElementById("reportOutput").innerHTML = html;
+            document.getElementById("refreshDisposalBtn").onclick = () => renderDisposalMPR();
+            document.getElementById("exportDisposalExcel").onclick = () => {
+                const wsData = [['S.No.','Office Name','Total Disposal','Over 5 Years','Over 3 Years','Over 2 Years','Over 1 Year','Less Than 1 Year']];
+                wsData.push([1, office, 0, 0, 0, 0, 0, 0]);
+                const ws = XLSX.utils.aoa_to_sheet(wsData);
+                const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Disposal_Summary');
+                XLSX.writeFile(wb, `Disposal_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`);
+            };
+            return;
+        }
+        const ageBucketOrder = ["Over 5 Years","Over 3 Years","Over 2 Years","Over 1 Year","Less Than 1 Year"];
+        const ageBucketsMap = new Map(); ageBucketOrder.forEach(b => ageBucketsMap.set(b, []));
         disposals.forEach(c => {
             const years = getAgeYears(c.institutionDate, c.disposalDate);
             const bucket = getDisposalAgeBucket(years);
-            if (ageBucketsMap.has(bucket)) ageBucketsMap.get(bucket).push(c);
+            if(ageBucketsMap.has(bucket)) ageBucketsMap.get(bucket).push(c);
         });
         const monthMap = new Map();
         disposals.forEach(c => {
             const d = new Date(c.disposalDate);
-            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-            if (!monthMap.has(key)) monthMap.set(key, []);
+            const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+            if(!monthMap.has(key)) monthMap.set(key, []);
             monthMap.get(key).push(c);
         });
         const monthWise = Array.from(monthMap.keys()).sort().map(m => ({ month: m, count: monthMap.get(m).length, cases: monthMap.get(m) }));
-        let row = `<tr><td>1</td><td>${escapeHtml(office)}</td><td>${totalDisposal}</td>${ageBucketOrder.map(b => `<td class="clickable-age" data-agebucket="${b}">${ageBucketsMap.get(b).length}</td>`).join('')}</tr>`;
+        let row = `<tr>
+            <td>1${escapeHtml(office)}${totalDisposal}
+            ${ageBucketOrder.map(b => `<td class="clickable-age" data-agebucket="${b}">${ageBucketsMap.get(b).length}</td>`).join('')}
+        </tr>`;
         let monthRows = '';
-        monthWise.forEach(m => { monthRows += `<tr><td class="clickable-month" data-month="${m.month}">${m.month}</td><td>${m.count}</td></tr>`; });
+        monthWise.forEach(m => { monthRows += `<tr><td class="clickable-month" data-month="${m.month}">${m.month}</td><td>${m.count}</td>`; });
         const html = `
-            <h4>📋 निस्तारण MPR (${start.toISOString().slice(0,10)} से ${end.toISOString().slice(0,10)} तक)</h4>
-            <div class="mpr-controls">
-                <div><label>प्रारंभ तिथि</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
-                <div><label>समाप्ति तिथि</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
-                <div><label>कार्यालय का नाम</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
-                <div><button id="refreshDisposalBtn" class="primary">रिपोर्ट ताज़ा करें</button></div>
+            <h4>📋 Disposal MPR (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})</h4>
+            <div class="grid-2" style="margin-bottom:20px;">
+                <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
+                <div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
+                <div><label>Office Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
+                <div><button id="refreshDisposalBtn" class="primary">Refresh Report</button></div>
             </div>
-            <div style="overflow-x:auto;"><table style="min-width:800px;"><thead><tr><th>S.No.</th><th>Office Name</th><th>Total Disposal</th>${ageBucketOrder.map(b => `<th>${b}</th>`).join('')}</tr></thead><tbody>${row}</tbody></table></div>
-            <div style="margin-top:20px;"><strong>📅 माह-वार निस्तारण विवरण</strong><div style="overflow-x:auto;"><table><thead><tr><th>वर्ष-माह</th><th>निस्तारण संख्या</th></tr></thead><tbody>${monthRows || '<tr><td colspan="2">कोई निस्तारण नहीं</td></tr>'}</tbody></table></div></div>
-            <div style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary"><i class="fas fa-file-excel"></i> एक्सेल में निर्यात करें</button></div>
+            <div style="overflow-x:auto;"><table style="min-width:800px;"><thead><tr><th>S.No.</th><th>Office Name</th><th>Total Disposal</th>${ageBucketOrder.map(b=>`<th>${b}</th>`).join('')}?</thead><tbody>${row}</tbody></table></div>
+            <div style="margin-top:20px;"><strong>📅 Month-wise Disposal Breakdown (click on count)</strong>
+                <div style="overflow-x:auto; margin-top:10px;"><table style="min-width:300px;"><thead><tr><th>Year-Month</th><th>Disposals</th></tr></thead><tbody>${monthRows || '<tr><td colspan="2">No disposals</td>'}</tbody></table></div>
+            </div>
+            <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>
         `;
         document.getElementById("reportOutput").innerHTML = html;
         document.getElementById("refreshDisposalBtn").onclick = () => renderDisposalMPR();
-        document.querySelectorAll('.clickable-age').forEach(el => {
-            el.addEventListener('click', () => { const bucket = el.getAttribute('data-agebucket'); const list = ageBucketsMap.get(bucket) || []; if (list.length) showCaseList(`निस्तारित केस - उम्र: ${bucket}`, list); else showToast("कोई केस नहीं", true); });
+        document.querySelectorAll('#reportOutput .clickable-age').forEach(el => {
+            el.addEventListener('click', () => {
+                const bucket = el.getAttribute('data-agebucket');
+                const casesList = ageBucketsMap.get(bucket) || [];
+                if(casesList.length === 0) showToast("No cases in this bucket", true);
+                else showCaseList(`Disposed Cases - Age at Disposal: ${bucket} (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})`, casesList);
+            });
         });
-        document.querySelectorAll('.clickable-month').forEach(el => {
-            el.addEventListener('click', () => { const month = el.getAttribute('data-month'); const obj = monthWise.find(m => m.month === month); if (obj && obj.cases.length) showCaseList(`निस्तारित केस - ${month}`, obj.cases); else showToast("कोई केस नहीं", true); });
+        document.querySelectorAll('#reportOutput .clickable-month').forEach(el => {
+            el.addEventListener('click', () => {
+                const month = el.getAttribute('data-month');
+                const monthObj = monthWise.find(m => m.month === month);
+                const casesList = monthObj ? monthObj.cases : [];
+                if(casesList.length === 0) showToast("No cases disposed in this month", true);
+                else showCaseList(`Disposed Cases - ${month} (${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)})`, casesList);
+            });
         });
         document.getElementById("exportDisposalExcel").onclick = () => {
-            const wsData = [['S.No.', 'Office Name', 'Total Disposal', ...ageBucketOrder]];
+            const wsData = [['S.No.','Office Name','Total Disposal',...ageBucketOrder]];
             wsData.push([1, office, totalDisposal, ...ageBucketOrder.map(b => ageBucketsMap.get(b).length)]);
             const ws = XLSX.utils.aoa_to_sheet(wsData);
-            const monthData = [['Year-Month', 'Disposals']];
+            const monthData = [['Year-Month','Disposals']];
             monthWise.forEach(m => monthData.push([m.month, m.count]));
             const wsMonth = XLSX.utils.aoa_to_sheet(monthData);
             const wb = XLSX.utils.book_new();
@@ -463,38 +557,144 @@
         };
     }
 
-    // अन्य क्रियाएँ
-    function searchCase() {
-        const term = document.getElementById("searchCaseNo").value.trim().toLowerCase();
-        if (!term) { showToast("केस नंबर दर्ज करें", true); return; }
-        const results = cases.filter(c => c.caseNo.toLowerCase().includes(term));
-        if (results.length === 0) showToast("कोई केस नहीं मिला", true);
-        else showCaseList(`'${term}' के लिए खोज परिणाम (${results.length})`, results);
+    function showAllDisposals() {
+        const disposed = cases.filter(c => c.disposed);
+        if(disposed.length === 0) { showToast("No disposed cases found", true); return; }
+        showCaseList(`All Disposed Cases (${disposed.length})`, disposed);
     }
-    function showAllDisposals() { const d = cases.filter(c => c.disposed); if (d.length) showCaseList(`सभी निस्तारित केस (${d.length})`, d); else showToast("कोई निस्तारित केस नहीं", true); }
-    function exportBackup() { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(cases, null, 2)], { type: "application/json" })); a.download = `rccms_backup_${new Date().toISOString().slice(0, 19)}.json`; a.click(); showToast("बैकअप डाउनलोड किया गया"); }
-    function restoreBackup(file) {
-        const reader = new FileReader();
-        reader.onload = e => { try { const arr = JSON.parse(e.target.result); if (Array.isArray(arr)) { cases = arr; if (cases.length) nextId = Math.max(...cases.map(c => c.id || 0), 0) + 1; saveToStorage(); showToast("पुनर्स्थापना सफल"); } else throw new Error(); } catch (err) { showToast("अमान्य बैकअप फ़ाइल", true); } };
-        reader.readAsText(file);
-    }
-    function loadSampleData() { if (confirm("नमूना डेटा लोड करें? (मौजूदा डेटा हट जाएगा)")) { loadFromStorage(); showToast("नमूना डेटा लोड हो गया"); } }
-    function deleteAllData() { if (confirm("⚠️ सभी डेटा हटाएँ?")) { cases = []; nextId = 1; saveToStorage(); showToast("सभी डेटा हटा दिए गए"); } }
-    function importCasesExcel(file) { /* similar simplified */ showToast("आयात सुविधा कार्यशील है, एक्सेल फ़ाइल चुनें"); }
-    function importDisposalExcel(file) { showToast("निस्तारण आयात सुविधा सक्रिय"); }
 
-    // इवेंट बाइंडिंग
-    document.addEventListener("DOMContentLoaded", () => {
-        if (!document.getElementById("reportStartDate")) {
-            const div = document.createElement("div");
-            div.innerHTML = `<input type="hidden" id="reportStartDate" value="2000-01-01"><input type="hidden" id="reportEndDate" value="${new Date().toISOString().slice(0, 10)}"><input type="hidden" id="officeNameInput" value="राजस्व मंडल, निवाई">`;
-            document.body.appendChild(div);
-        } else {
-            document.getElementById("reportStartDate").value = "2000-01-01";
-            document.getElementById("reportEndDate").value = new Date().toISOString().slice(0, 10);
-            document.getElementById("officeNameInput").value = "राजस्व मंडल, निवाई";
+    function exportBackup(){ let a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(cases,null,2)],{type:"application/json"})); a.download=`rccms_backup_${new Date().toISOString().slice(0,19)}.json`; a.click(); showToast("Backup downloaded"); }
+    function restoreBackup(file){ let reader=new FileReader(); reader.onload=e=>{ try{ let arr=JSON.parse(e.target.result); if(Array.isArray(arr)){ cases=arr; if(cases.length) nextId=Math.max(...cases.map(c=>c.id||0),0)+1; saveToFirebase(); showToast("Restore successful"); } else throw new Error(); }catch(err){ showToast("Invalid backup file", true); } }; reader.readAsText(file); }
+    function loadSampleData(){ if(confirm("Load sample cases?")){ cases = [{id:1,caseNo:"2025/99",section:"212",institutionDate:"2025-06-13",casePurpose:"साक्ष्य वादी",appellantName:"ओमकंवर",respondentName:"कमलेश",hearingDate:"2026-06-22",disposed:true,disposalDate:"2026-05-01"},{id:2,caseNo:"2025/98",section:"136,188,53",institutionDate:"2025-06-13",casePurpose:"साक्ष्य वादी",appellantName:"ओमकंवर",respondentName:"कमलेश",hearingDate:"2026-06-22",disposed:false},{id:3,caseNo:"2025/175",section:"175",institutionDate:"2025-06-13",casePurpose:"इजराय",appellantName:"राम",respondentName:"श्याम",hearingDate:"2026-06-22",disposed:false}]; nextId=4; saveToFirebase(); showToast("Sample loaded"); } }
+    function deleteAllData(){ if(confirm("⚠️ DANGER: Delete ALL CASES?")){ casesRef.remove().then(()=>{ cases=[]; nextId=1; updateStats(false); updateTables(); showToast("All data deleted"); }).catch(e=>showToast(e.message,true)); } }
+
+    function updateDebug() {
+        const totalDisposed = cases.filter(c => c.disposed && c.disposalDate).length;
+        const sample = cases.filter(c => c.disposed && c.disposalDate).slice(0,5).map(c => `${c.caseNo} (${c.disposalDate})`);
+        const debugDiv = document.getElementById('debugContent');
+        debugDiv.innerHTML = `📊 Total cases: ${cases.length} | Disposed: ${totalDisposed} | Pending: ${cases.filter(c=>!c.disposed).length}<br>`;
+        if(sample.length) debugDiv.innerHTML += `📋 Sample disposed cases: ${sample.join(', ')}<br>`;
+        else debugDiv.innerHTML += `⚠️ No disposed cases in database. Disposal import did not update any cases.<br>`;
+        const start = document.getElementById('reportStartDate')?.value || 'not set';
+        const end = document.getElementById('reportEndDate')?.value || 'not set';
+        debugDiv.innerHTML += `📅 Report date range: ${start} to ${end}`;
+    }
+
+    // Import functions (same as original)
+    function importDisposalExcel(file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type:'array'});
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:""});
+            processDisposalRows(rows);
+        };
+        reader.readAsArrayBuffer(file);
+    }
+    function processDisposalRows(rows) {
+        if(rows.length < 2) { showToast("No data rows in Excel", true); return; }
+        let headerRow = rows[0].map(c=>String(c||"").trim().toLowerCase());
+        let idxCase = headerRow.findIndex(h => h.includes("case no") || h === "caseno");
+        let idxDisposal = headerRow.findIndex(h => h.includes("disposal date") || h.includes("disposal"));
+        if(idxCase === -1 || idxDisposal === -1) { showToast("Excel must have columns: 'Case No' and 'Disposal Date'", true); return; }
+        let updated = 0, notFound = 0, dateError = 0;
+        let notFoundCases = [];
+        for(let i=1; i<rows.length; i++) {
+            const row = rows[i];
+            let caseNo = row[idxCase] ? String(row[idxCase]).trim() : "";
+            let dispRaw = row[idxDisposal] ? String(row[idxDisposal]).trim() : "";
+            if(!caseNo || !dispRaw) continue;
+            let dispDate = parseDateAny(dispRaw);
+            if(!dispDate) { dateError++; continue; }
+            let existing = cases.find(c => c.caseNo === caseNo);
+            if(existing && !existing.disposed) {
+                existing.disposed = true;
+                existing.disposalDate = dispDate;
+                updated++;
+            } else { notFound++; if(notFoundCases.length < 20) notFoundCases.push(caseNo); }
         }
-        loadFromStorage();
+        saveToFirebase();
+        let msg = `✅ Disposal import: ${updated} updated, ${notFound} not found, ${dateError} date errors.`;
+        if(notFoundCases.length) { msg += `\nNot found (first 20): ${notFoundCases.join(', ')}`; showToast(msg, true); }
+        else showToast(msg);
+        updateStats(true); updateTables(); updateDebug();
+    }
+    function importCasesExcel(file){
+        let reader = new FileReader();
+        reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); };
+        reader.readAsArrayBuffer(file);
+    }
+    function processCaseRows(rows){
+        if(rows.length<2) return showToast("No data rows", true);
+        let headers = rows[0].map(c=>String(c||"").trim().toLowerCase());
+        let idxCase = headers.findIndex(h=>h.includes("case no")||h==="caseno");
+        let idxInst = headers.findIndex(h=>h.includes("institution")||h.includes("inst date"));
+        if(idxCase===-1||idxInst===-1) return showToast("Need 'Case No' and 'Institution Date'", true);
+        let idxSec = headers.findIndex(h=>h.includes("section")), idxPurpose = headers.findIndex(h=>h.includes("purpose")), idxApp = headers.findIndex(h=>h.includes("appellant")), idxResp = headers.findIndex(h=>h.includes("respondent")), idxHear = headers.findIndex(h=>h.includes("hearing"));
+        let imported=0;
+        for(let i=1;i<rows.length;i++){
+            let row = rows[i];
+            let caseNo = row[idxCase] ? String(row[idxCase]).trim() : "";
+            let instRaw = row[idxInst] ? String(row[idxInst]).trim() : "";
+            if(!caseNo || !instRaw) continue;
+            let instDate = parseDateAny(instRaw);
+            if(!instDate) continue;
+            if(cases.some(c=>c.caseNo===caseNo)) continue;
+            let hearing = (idxHear!==-1 && row[idxHear]) ? parseDateAny(row[idxHear].toString()) : null;
+            cases.push({id:nextId++, caseNo, section:(idxSec!==-1&&row[idxSec])?String(row[idxSec]).trim():"", institutionDate:instDate, casePurpose:(idxPurpose!==-1&&row[idxPurpose])?String(row[idxPurpose]).trim():"", appellantName:(idxApp!==-1&&row[idxApp])?String(row[idxApp]).trim():"", respondentName:(idxResp!==-1&&row[idxResp])?String(row[idxResp]).trim():"", hearingDate:hearing, disposed:false, disposalDate:null});
+            imported++;
+        }
+        saveToFirebase(); showToast(`Imported ${imported} new cases`);
+    }
+
+    // Authentication
+    auth.onAuthStateChanged(user => {
+        if(user){
+            updateSyncIndicator('connected', 'Live');
+            document.getElementById("loginModal").style.display = "none";
+            document.getElementById("mainToolbar").style.display = "flex";
+            document.getElementById("mainContent").style.display = "block";
+            document.getElementById("userStatus").innerHTML = `<i class="fas fa-user-check"></i> ${user.email}`;
+            casesRef.on('value', (snap) => {
+                let data = snap.val();
+                if(data){ cases = Object.values(data); if(cases.length) nextId = Math.max(...cases.map(c=>c.id||0))+1; }
+                else { cases = []; nextId=1; }
+                isLoading = false;
+                updateStats(true);
+                updateTables();
+                showToast("Data loaded from Firebase");
+            }, err=>{ showToast(err.message, true); updateSyncIndicator('disconnected', 'Offline'); });
+        } else {
+            updateSyncIndicator('connecting', 'Not logged in');
+            document.getElementById("loginModal").style.display = "flex";
+            document.getElementById("mainToolbar").style.display = "none";
+            document.getElementById("mainContent").style.display = "none";
+            document.getElementById("userStatus").innerHTML = "<i class='fas fa-user-lock'></i> Not logged in";
+        }
+    });
+
+    document.getElementById("loginBtn").onclick = () => {
+        const email = document.getElementById("loginEmail").value;
+        const pwd = document.getElementById("loginPassword").value;
+        if(!email || !pwd) { document.getElementById("loginError").innerText = "Please enter email and password"; return; }
+        auth.signInWithEmailAndPassword(email, pwd)
+            .then(() => { document.getElementById("loginError").innerText = ""; showToast("Login successful"); })
+            .catch(err => { document.getElementById("loginError").innerText = err.message; showToast("Login failed: " + err.message, true); });
+    };
+    document.getElementById("logoutBtn").onclick = () => auth.signOut();
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if(!document.getElementById("reportStartDate")){
+            const inpStart = document.createElement("input"); inpStart.type = "hidden"; inpStart.id = "reportStartDate";
+            const inpEnd = document.createElement("input"); inpEnd.type = "hidden"; inpEnd.id = "reportEndDate";
+            const inpOffice = document.createElement("input"); inpOffice.type = "hidden"; inpOffice.id = "officeNameInput";
+            document.body.appendChild(inpStart); document.body.appendChild(inpEnd); document.body.appendChild(inpOffice);
+        }
+        document.getElementById("reportStartDate").value = "2000-01-01";
+        document.getElementById("reportEndDate").value = new Date().toISOString().slice(0,10);
+        document.getElementById("officeNameInput").value = "राजस्व मंडल, निवाई";
+
         document.getElementById("searchBtn").onclick = searchCase;
         document.getElementById("clearSearchBtn").onclick = () => document.getElementById("searchCaseNo").value = "";
         document.getElementById("pendingMprBtn").onclick = renderPendingMPR;
@@ -502,54 +702,38 @@
         document.getElementById("showAllDisposalsBtn").onclick = showAllDisposals;
         document.getElementById("addCaseBtn").onclick = () => document.getElementById("caseModal").style.display = "flex";
         document.getElementById("closeCaseModalBtn").onclick = () => document.getElementById("caseModal").style.display = "none";
-        document.getElementById("saveCaseBtn").onclick = () => {
-            let cNo = document.getElementById("caseNo").value.trim();
-            let inst = document.getElementById("instDate").value;
-            if (!cNo || !inst) { showToast("केस नंबर और दायर तिथि आवश्यक", true); return; }
-            cases.push({ id: nextId++, caseNo: cNo, section: document.getElementById("section").value, institutionDate: inst, casePurpose: document.getElementById("casePurpose").value, appellantName: document.getElementById("appellant").value, respondentName: document.getElementById("respondent").value, hearingDate: document.getElementById("hearingDate").value || null, disposed: false, disposalDate: null });
-            saveToStorage();
-            document.getElementById("caseModal").style.display = "none";
-            showToast("नया केस पंजीकृत किया गया");
-            document.getElementById("caseNo").value = ""; document.getElementById("section").value = ""; document.getElementById("instDate").value = ""; document.getElementById("casePurpose").value = ""; document.getElementById("appellant").value = ""; document.getElementById("respondent").value = ""; document.getElementById("hearingDate").value = "";
-        };
-        document.getElementById("disposeBtn").onclick = () => {
-            document.getElementById("disposalModal").style.display = "flex";
-            document.getElementById("disposalDate").value = new Date().toISOString().slice(0, 10);
-            const datalist = document.getElementById("caseNosList");
-            datalist.innerHTML = "";
-            cases.filter(c => !c.disposed).forEach(c => { const opt = document.createElement("option"); opt.value = c.caseNo; datalist.appendChild(opt); });
-        };
-        document.getElementById("closeDisposalModalBtn").onclick = () => document.getElementById("disposalModal").style.display = "none";
-        document.getElementById("confirmDisposalBtn").onclick = () => {
-            let cNo = document.getElementById("disposalCaseNo").value.trim();
-            let dDate = document.getElementById("disposalDate").value;
-            if (!cNo || !dDate) { showToast("केस और तिथि चुनें", true); return; }
-            let found = cases.find(c => c.caseNo === cNo && !c.disposed);
-            if (found) { found.disposed = true; found.disposalDate = dDate; saveToStorage(); showToast("निस्तारण दर्ज किया गया"); } else showToast("केस नहीं मिला या पहले ही निस्तारित है", true);
-            document.getElementById("disposalModal").style.display = "none";
-        };
+        document.getElementById("saveCaseBtn").onclick = () => { let cNo=document.getElementById("caseNo").value.trim(), inst=document.getElementById("instDate").value; if(!cNo||!inst){ showToast("Case No & Date required", true); return; } cases.push({id:nextId++, caseNo:cNo, section:document.getElementById("section").value, institutionDate:inst, casePurpose:document.getElementById("casePurpose").value, appellantName:document.getElementById("appellant").value, respondentName:document.getElementById("respondent").value, hearingDate:document.getElementById("hearingDate").value||null, disposed:false, disposalDate:null}); saveToFirebase(); document.getElementById("caseModal").style.display="none"; };
+        document.getElementById("disposeBtn").onclick = () => { document.getElementById("disposalModal").style.display="flex"; document.getElementById("disposalDate").value=new Date().toISOString().slice(0,10); const datalist = document.getElementById("caseNosList"); datalist.innerHTML = ""; cases.filter(c=>!c.disposed).forEach(c=>{ const opt = document.createElement("option"); opt.value = c.caseNo; datalist.appendChild(opt); }); };
+        document.getElementById("closeDisposalModalBtn").onclick = () => document.getElementById("disposalModal").style.display="none";
+        document.getElementById("confirmDisposalBtn").onclick = () => { let cNo=document.getElementById("disposalCaseNo").value.trim(), dDate=document.getElementById("disposalDate").value; if(!cNo||!dDate){ showToast("Select case and date", true); return; } let found=cases.find(c=>c.caseNo===cNo && !c.disposed); if(found){ found.disposed=true; found.disposalDate=dDate; saveToFirebase(); showToast("Disposal recorded"); } else showToast("Not found or already disposed", true); document.getElementById("disposalModal").style.display="none"; };
         document.getElementById("exportBackupBtn").onclick = exportBackup;
-        document.getElementById("importBackupBtn").onclick = () => { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json'; inp.onchange = e => { if (e.target.files.length) restoreBackup(e.target.files[0]); }; inp.click(); };
+        document.getElementById("importBackupBtn").onclick = () => { let inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>{ if(e.target.files.length) restoreBackup(e.target.files[0]); }; inp.click(); };
         document.getElementById("importCasesExcelBtn").onclick = () => document.getElementById("casesExcelInput").click();
-        document.getElementById("casesExcelInput").onchange = e => { if (e.target.files.length) importCasesExcel(e.target.files[0]); e.target.value = ''; };
+        document.getElementById("casesExcelInput").onchange = e => { if(e.target.files.length) importCasesExcel(e.target.files[0]); e.target.value=''; };
         document.getElementById("importDisposalExcelBtn").onclick = () => document.getElementById("disposalExcelInput").click();
-        document.getElementById("disposalExcelInput").onchange = e => { if (e.target.files.length) importDisposalExcel(e.target.files[0]); e.target.value = ''; };
+        document.getElementById("disposalExcelInput").onchange = e => { if(e.target.files.length) importDisposalExcel(e.target.files[0]); e.target.value=''; };
         document.getElementById("sampleDataBtn").onclick = loadSampleData;
         document.getElementById("deleteAllBtn").onclick = deleteAllData;
         document.getElementById("closeModalBtn").onclick = () => document.getElementById("listModal").style.display = "none";
-        window.onclick = (event) => { if (event.target === document.getElementById("listModal")) document.getElementById("listModal").style.display = "none"; };
-        document.querySelectorAll('.stat-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const type = card.getAttribute('data-stat');
-                let filtered = [];
-                if (type === 'total') filtered = cases;
-                else if (type === 'pending') filtered = cases.filter(c => !c.disposed);
-                else if (type === 'disposed') filtered = cases.filter(c => c.disposed);
-                else if (type === 'yearly') { const y = new Date().getFullYear(); filtered = cases.filter(c => new Date(c.institutionDate).getFullYear() === y); }
-                if (filtered.length === 0) showToast("कोई केस नहीं", true);
-                else showCaseList(`${card.querySelector('.label').innerText} केस (${filtered.length})`, filtered);
+        window.onclick = (event) => { if(event.target === document.getElementById("listModal")) document.getElementById("listModal").style.display = "none"; };
+        
+        setTimeout(() => {
+            document.querySelectorAll('.stat-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const type = card.getAttribute('data-stat');
+                    let filtered = [];
+                    if(type === 'total') filtered = cases;
+                    else if(type === 'pending') filtered = cases.filter(c=>!c.disposed);
+                    else if(type === 'disposed') filtered = cases.filter(c=>c.disposed);
+                    else if(type === 'yearly') {
+                        const currentYear = new Date().getFullYear();
+                        filtered = cases.filter(c=>new Date(c.institutionDate).getFullYear() === currentYear);
+                    }
+                    if(filtered.length === 0) showToast("No cases", true);
+                    else showCaseList(`${card.querySelector('.label').innerText} Cases (${filtered.length})`, filtered);
+                });
             });
-        });
+        }, 500);
     });
 </script>
 </body>
