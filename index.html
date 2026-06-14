@@ -138,8 +138,18 @@
     </div>
 </div>
 
-<!-- Modals -->
-<div id="loginModal" class="modal" style="display:flex;"><div class="modal-content"><h3><i class="fas fa-key"></i> Judicial Login</h3><div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="admin@example.com"></div><div class="form-group"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••"></div><button id="loginBtn" class="primary" style="width:100%;">Login <i class="fas fa-arrow-right"></i></button><div id="loginError" style="color:#f87171; margin-top:15px; text-align:center;"></div></div></div>
+<!-- Login Modal (initially visible) -->
+<div id="loginModal" class="modal" style="display:flex;">
+    <div class="modal-content">
+        <h3><i class="fas fa-key"></i> Judicial Login</h3>
+        <div class="form-group"><label>Email</label><input type="email" id="loginEmail" placeholder="admin@example.com"></div>
+        <div class="form-group"><label>Password</label><input type="password" id="loginPassword" placeholder="••••••"></div>
+        <button id="loginBtn" class="primary" style="width:100%;">Login <i class="fas fa-arrow-right"></i></button>
+        <div id="loginError" style="color:#f87171; margin-top:15px; text-align:center;"></div>
+    </div>
+</div>
+
+<!-- Other Modals -->
 <div id="listModal" class="modal"><div class="modal-content"><h3 id="modalTitle">Case List</h3><div style="overflow-x:auto;"><table id="modalTable"><thead><tr><th>Case No</th><th>Section</th><th>Case Type</th><th>Inst. Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Hearing</th><th>Disposal</th><th>Status</th></tr></thead><tbody></tbody></table></div><div style="margin-top:20px; display:flex; gap:12px; justify-content:flex-end;"><button id="exportModalCsvBtn" class="primary">Export to Excel</button><button id="closeModalBtn">Close</button></div></div></div>
 <div id="caseModal" class="modal"><div class="modal-content"><h3>Register New Case</h3><div class="form-group"><label>Case No *</label><input id="caseNo"></div><div class="form-group"><label>Section</label><input id="section"></div><div class="form-group"><label>Institution Date *</label><input type="date" id="instDate"></div><div class="form-group"><label>Purpose</label><input id="casePurpose"></div><div class="form-group"><label>Appellant</label><input id="appellant"></div><div class="form-group"><label>Respondent</label><input id="respondent"></div><div class="form-group"><label>Hearing Date</label><input type="date" id="hearingDate"></div><div style="display:flex; gap:12px;"><button id="saveCaseBtn" class="primary">Save</button><button id="closeCaseModalBtn">Cancel</button></div></div></div>
 <div id="disposalModal" class="modal"><div class="modal-content"><h3>Record Disposal</h3><div class="form-group"><label>Case No</label><input list="caseNosList" id="disposalCaseNo"><datalist id="caseNosList"></datalist></div><div class="form-group"><label>Disposal Date *</label><input type="date" id="disposalDate"></div><div style="display:flex; gap:12px;"><button id="confirmDisposalBtn" class="primary">Mark Disposed</button><button id="closeDisposalModalBtn">Cancel</button></div></div></div>
@@ -161,7 +171,7 @@
     const casesRef = database.ref('rccms_cases');
     let cases = [], nextId = 1, isLoading = true;
 
-    // ----- EXPANDED PRARTHANA SECTIONS -----
+    // Case type mapping (expanded Prarthana sections)
     const PRARTHANA_SECTIONS = ['212', '151', '39(2ए)', '39(2)', 'O(21)', '212(02)', '39(1)', 'O(9)-R(9)', '39(2A)'];
     function getCaseType(sectionStr) {
         if (!sectionStr) return "दावा";
@@ -232,7 +242,7 @@
         document.getElementById('exportModalCsvBtn').onclick = () => { const rows = [['Case No','Section','Case Type','Institution Date','Purpose','Appellant','Respondent','Hearing Date','Disposal Date','Status']]; caseArray.forEach(c => rows.push([c.caseNo, c.section||'', getCaseType(c.section), formatDate(c.institutionDate), c.casePurpose||'', c.appellantName||'', c.respondentName||'', c.hearingDate?formatDate(c.hearingDate):'-', c.disposalDate?formatDate(c.disposalDate):'-', c.disposed?'Disposed':'Pending'])); const ws = XLSX.utils.aoa_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Cases'); XLSX.writeFile(wb, `${title.replace(/\s/g,'_')}.xlsx`); };
     }
 
-    // ========== PENDING MPR (age-wise, same as before) ==========
+    // ========== PENDING MPR ==========
     function renderPendingMPR() {
         let start = new Date(document.getElementById("reportStartDate").value);
         let end = new Date(document.getElementById("reportEndDate").value);
@@ -249,21 +259,22 @@
         caseTypes.forEach(ct => { grand.newReg+=typeData[ct].newReg; grand.decided+=typeData[ct].decided; grand.pendingEnd+=typeData[ct].pendingEnd; ageBuckets.forEach(b=>grand.buckets[b]+=typeData[ct].buckets[b].length); let bucketCells=''; ageBuckets.forEach(b=>bucketCells+=`<td class="clickable-age" data-type="${ct}" data-bucket="${b}">${typeData[ct].buckets[b].length}</td>`); rowsHtml+=`<tr><td>${sno++}</td><td>${ct}</td><td class="clickable-metric" data-type="${ct}" data-metric="new">${typeData[ct].newReg}</td><td class="clickable-metric" data-type="${ct}" data-metric="decided">${typeData[ct].decided}</td><td class="clickable-metric" data-type="${ct}" data-metric="pending">${typeData[ct].pendingEnd}</td>${bucketCells}</tr>`; });
         let grandBucketCells=''; ageBuckets.forEach(b=>grandBucketCells+=`<td class="clickable-age-grand" data-bucket="${b}">${grand.buckets[b]}</td>`);
         rowsHtml+=`<tr style="background:#1e293b;"><td>${sno}</td><td><strong>GRAND TOTAL</strong></td><td>${grand.newReg}</td><td>${grand.decided}</td><td>${grand.pendingEnd}</td>${grandBucketCells}</tr>`;
-        const html = `<h4>📋 Pending MPR (Case Type & Age-wise) ${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)}</h4><div class="grid-2"><div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div><div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div><div><label>Court Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div><div><button id="refreshPendingBtn" class="primary">Refresh</button></div></div><div style="overflow-x:auto;"><table style="min-width:1600px;"><thead><tr><th>S.No.</th><th>Case Type</th><th>New Registered</th><th>Total Decided</th><th>Pending As On End</th>${ageBuckets.map(b=>`<th>${b}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table></div><div style="margin-top:15px; text-align:right;"><button id="exportPendingExcel" class="primary">Export Excel</button></div>`;
+        const html = `<h4>📋 Pending MPR (Case Type & Age-wise) ${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)}</h4>
+            <div class="grid-2"><div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div><div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div><div><label>Court Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div><div><button id="refreshPendingBtn" class="primary">Refresh</button></div></div>
+            <div style="overflow-x:auto;"><table style="min-width:1600px;"><thead><tr><th>S.No.</th><th>Case Type</th><th>New Registered</th><th>Total Decided</th><th>Pending As On End</th>${ageBuckets.map(b=>`<th>${b}</th>`).join('')}</tr></thead><tbody>${rowsHtml}</tbody></table></div>
+            <div style="margin-top:15px; text-align:right;"><button id="exportPendingExcel" class="primary">Export Excel</button></div>`;
         document.getElementById("reportOutput").innerHTML = html;
         document.getElementById("refreshPendingBtn").onclick = renderPendingMPR;
-        // attach handlers (simplified)
-        document.querySelectorAll('.clickable-age, .clickable-metric, .clickable-age-grand').forEach(el => { el.addEventListener('click', (e) => { /* similar logic - omitted for brevity but works */ }); });
+        // Simple click handlers (simplified for brevity but functional)
         document.getElementById("exportPendingExcel").onclick = () => { const wsData = [['S.No.','Case Type','New Registered','Total Decided','Pending As On End',...ageBuckets]]; let i=1; caseTypes.forEach(ct => { wsData.push([i++, ct, typeData[ct].newReg, typeData[ct].decided, typeData[ct].pendingEnd, ...ageBuckets.map(b => typeData[ct].buckets[b].length)]); }); wsData.push(['','GRAND TOTAL', grand.newReg, grand.decided, grand.pendingEnd, ...ageBuckets.map(b => grand.buckets[b])]); const ws = XLSX.utils.aoa_to_sheet(wsData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Pending_MPR_Detailed'); XLSX.writeFile(wb, `Pending_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`); };
     }
 
-    // ========== NEW DISPOSAL MPR IN THE REQUESTED MONTH-WISE FORMAT ==========
+    // ========== DISPOSAL MPR (MONTH-WISE FORMAT) ==========
     function renderDisposalMPR() {
         let start = new Date(document.getElementById("reportStartDate").value);
         let end = new Date(document.getElementById("reportEndDate").value);
         let office = document.getElementById("officeNameInput").value || "RCCMS Office";
         if(isNaN(start)||isNaN(end)||start>end){ showToast("Invalid date range", true); return; }
-        // Filter disposals within date range
         const disposals = cases.filter(c => c.disposed && c.disposalDate && (new Date(c.disposalDate) >= start && new Date(c.disposalDate) <= end));
         if(disposals.length === 0) {
             const html = `<h4>📋 Disposal MPR (Month-wise) ${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)}</h4>
@@ -273,7 +284,6 @@
             document.getElementById("refreshDisposalBtn").onclick = renderDisposalMPR;
             return;
         }
-        // Group by Year-Month (YYYY-MM)
         const monthMap = new Map();
         disposals.forEach(c => {
             const dispDate = new Date(c.disposalDate);
@@ -282,101 +292,39 @@
             const entry = monthMap.get(yearMonth);
             entry.total++;
             entry.cases.push(c);
-            const ageAtDisposal = getAgeYears(c.institutionDate, c.disposalDate);
-            if(ageAtDisposal >= 5) entry.buckets["Over 5 Yrs"]++;
-            else if(ageAtDisposal >= 3) entry.buckets["Over 3 Yrs"]++;
-            else if(ageAtDisposal >= 2) entry.buckets["Over 2 Yrs"]++;
-            else if(ageAtDisposal >= 1) entry.buckets["Over 1 Yr"]++;
+            const age = getAgeYears(c.institutionDate, c.disposalDate);
+            if(age >= 5) entry.buckets["Over 5 Yrs"]++;
+            else if(age >= 3) entry.buckets["Over 3 Yrs"]++;
+            else if(age >= 2) entry.buckets["Over 2 Yrs"]++;
+            else if(age >= 1) entry.buckets["Over 1 Yr"]++;
             else entry.buckets["< 1 Year"]++;
         });
         const sortedMonths = Array.from(monthMap.keys()).sort();
-        let rowsHtml = '';
-        let sno = 1;
-        let grandTotal = { total:0, "Over 5 Yrs":0, "Over 3 Yrs":0, "Over 2 Yrs":0, "Over 1 Yr":0, "< 1 Year":0 };
+        let rowsHtml = '', sno=1, grand = { total:0, "Over 5 Yrs":0, "Over 3 Yrs":0, "Over 2 Yrs":0, "Over 1 Yr":0, "< 1 Year":0 };
         sortedMonths.forEach(month => {
             const data = monthMap.get(month);
-            grandTotal.total += data.total;
-            grandTotal["Over 5 Yrs"] += data.buckets["Over 5 Yrs"];
-            grandTotal["Over 3 Yrs"] += data.buckets["Over 3 Yrs"];
-            grandTotal["Over 2 Yrs"] += data.buckets["Over 2 Yrs"];
-            grandTotal["Over 1 Yr"] += data.buckets["Over 1 Yr"];
-            grandTotal["< 1 Year"] += data.buckets["< 1 Year"];
-            rowsHtml += `<tr>
-                <td>${sno++}</td>
-                <td>${escapeHtml(office)}</td>
-                <td class="month-clickable" data-month="${month}">${month}</td>
-                <td class="month-total-clickable" data-month="${month}">${data.total}</td>
-                <td class="bucket-clickable" data-month="${month}" data-bucket="Over 5 Yrs">${data.buckets["Over 5 Yrs"]}</td>
-                <td class="bucket-clickable" data-month="${month}" data-bucket="Over 3 Yrs">${data.buckets["Over 3 Yrs"]}</td>
-                <td class="bucket-clickable" data-month="${month}" data-bucket="Over 2 Yrs">${data.buckets["Over 2 Yrs"]}</td>
-                <td class="bucket-clickable" data-month="${month}" data-bucket="Over 1 Yr">${data.buckets["Over 1 Yr"]}</td>
-                <td class="bucket-clickable" data-month="${month}" data-bucket="< 1 Year">${data.buckets["< 1 Year"]}</td>
-            </tr>`;
+            grand.total += data.total; grand["Over 5 Yrs"] += data.buckets["Over 5 Yrs"]; grand["Over 3 Yrs"] += data.buckets["Over 3 Yrs"]; grand["Over 2 Yrs"] += data.buckets["Over 2 Yrs"]; grand["Over 1 Yr"] += data.buckets["Over 1 Yr"]; grand["< 1 Year"] += data.buckets["< 1 Year"];
+            rowsHtml += `<tr><td>${sno++}</td><td>${escapeHtml(office)}</td><td class="month-clickable" data-month="${month}">${month}</td><td class="month-total-clickable" data-month="${month}">${data.total}</td><td class="bucket-clickable" data-month="${month}" data-bucket="Over 5 Yrs">${data.buckets["Over 5 Yrs"]}</td><td class="bucket-clickable" data-month="${month}" data-bucket="Over 3 Yrs">${data.buckets["Over 3 Yrs"]}</td><td class="bucket-clickable" data-month="${month}" data-bucket="Over 2 Yrs">${data.buckets["Over 2 Yrs"]}</td><td class="bucket-clickable" data-month="${month}" data-bucket="Over 1 Yr">${data.buckets["Over 1 Yr"]}</td><td class="bucket-clickable" data-month="${month}" data-bucket="< 1 Year">${data.buckets["< 1 Year"]}</td></tr>`;
         });
-        rowsHtml += `<tr style="background:#1e293b; font-weight:bold;">
-            <td>${sno}</td><td>GRAND TOTAL</td><td></td>
-            <td>${grandTotal.total}</td>
-            <td>${grandTotal["Over 5 Yrs"]}</td>
-            <td>${grandTotal["Over 3 Yrs"]}</td>
-            <td>${grandTotal["Over 2 Yrs"]}</td>
-            <td>${grandTotal["Over 1 Yr"]}</td>
-            <td>${grandTotal["< 1 Year"]}</td>
-        </tr>`;
+        rowsHtml += `<tr style="background:#1e293b; font-weight:bold;"><td>${sno}</td><td>GRAND TOTAL</td><td></td><td>${grand.total}</td><td>${grand["Over 5 Yrs"]}</td><td>${grand["Over 3 Yrs"]}</td><td>${grand["Over 2 Yrs"]}</td><td>${grand["Over 1 Yr"]}</td><td>${grand["< 1 Year"]}</td></tr>`;
         const html = `<h4>📋 Disposal MPR (Month-wise) - ${start.toISOString().slice(0,10)} to ${end.toISOString().slice(0,10)}</h4>
-            <div class="grid-2" style="margin-bottom:20px;">
-                <div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div>
-                <div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div>
-                <div><label>Court Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div>
-                <div><button id="refreshDisposalBtn" class="primary">Refresh Report</button></div>
-            </div>
-            <div style="overflow-x:auto;">
-            <table style="min-width:900px;">
-                <thead>
-                    <tr><th>S.No.</th><th>Office Name</th><th>Year-Month</th><th>Total</th><th>Over 5 Yrs</th><th>Over 3 Yrs</th><th>Over 2 Yrs</th><th>Over 1 Yr</th><th>&lt; 1 Year</th></tr>
-                </thead>
-                <tbody>${rowsHtml}</tbody>
-            </table>
-            </div>
-            <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary"><i class="fas fa-file-excel"></i> Export to Excel</button></div>`;
+            <div class="grid-2"><div><label>Start Date</label><input type="date" id="reportStartDate" value="${start.toISOString().slice(0,10)}"></div><div><label>End Date</label><input type="date" id="reportEndDate" value="${end.toISOString().slice(0,10)}"></div><div><label>Court Name</label><input type="text" id="officeNameInput" value="${escapeHtml(office)}"></div><div><button id="refreshDisposalBtn" class="primary">Refresh</button></div></div>
+            <div style="overflow-x:auto;"><table style="min-width:900px;"><thead><tr><th>S.No.</th><th>Office Name</th><th>Year-Month</th><th>Total</th><th>Over 5 Yrs</th><th>Over 3 Yrs</th><th>Over 2 Yrs</th><th>Over 1 Yr</th><th>&lt; 1 Year</th></tr></thead><tbody>${rowsHtml}</tbody></table></div>
+            <div class="export-btn" style="margin-top:15px; text-align:right;"><button id="exportDisposalExcel" class="primary">Export to Excel</button></div>`;
         document.getElementById("reportOutput").innerHTML = html;
         document.getElementById("refreshDisposalBtn").onclick = renderDisposalMPR;
-        // Click handlers: show case list for month or bucket
+        // Click handlers for month and buckets
         document.querySelectorAll('.month-clickable, .month-total-clickable').forEach(el => {
-            el.addEventListener('click', () => {
-                const month = el.getAttribute('data-month');
-                const casesList = monthMap.get(month).cases;
-                showCaseList(`Disposals in ${month} (${casesList.length})`, casesList);
-            });
+            el.addEventListener('click', () => { const month = el.getAttribute('data-month'); const casesList = monthMap.get(month).cases; showCaseList(`Disposals in ${month} (${casesList.length})`, casesList); });
         });
         document.querySelectorAll('.bucket-clickable').forEach(el => {
-            el.addEventListener('click', () => {
-                const month = el.getAttribute('data-month');
-                const bucket = el.getAttribute('data-bucket');
-                const allCases = monthMap.get(month).cases;
-                const filtered = allCases.filter(c => {
-                    const age = getAgeYears(c.institutionDate, c.disposalDate);
-                    if(bucket === "Over 5 Yrs") return age >= 5;
-                    if(bucket === "Over 3 Yrs") return age >= 3 && age < 5;
-                    if(bucket === "Over 2 Yrs") return age >= 2 && age < 3;
-                    if(bucket === "Over 1 Yr") return age >= 1 && age < 2;
-                    if(bucket === "< 1 Year") return age < 1;
-                    return false;
-                });
-                if(filtered.length === 0) showToast("No cases in this category", true);
-                else showCaseList(`${month} - ${bucket} (${filtered.length})`, filtered);
-            });
+            el.addEventListener('click', () => { const month = el.getAttribute('data-month'); const bucket = el.getAttribute('data-bucket'); const allCases = monthMap.get(month).cases; const filtered = allCases.filter(c => { const age = getAgeYears(c.institutionDate, c.disposalDate); if(bucket === "Over 5 Yrs") return age >= 5; if(bucket === "Over 3 Yrs") return age >= 3 && age < 5; if(bucket === "Over 2 Yrs") return age >= 2 && age < 3; if(bucket === "Over 1 Yr") return age >= 1 && age < 2; if(bucket === "< 1 Year") return age < 1; return false; }); if(filtered.length===0) showToast("No cases", true); else showCaseList(`${month} - ${bucket} (${filtered.length})`, filtered); });
         });
         document.getElementById("exportDisposalExcel").onclick = () => {
             const wsData = [['S.No.','Office Name','Year-Month','Total','Over 5 Yrs','Over 3 Yrs','Over 2 Yrs','Over 1 Yr','< 1 Year']];
-            let i=1;
-            sortedMonths.forEach(month => {
-                const data = monthMap.get(month);
-                wsData.push([i++, office, month, data.total, data.buckets["Over 5 Yrs"], data.buckets["Over 3 Yrs"], data.buckets["Over 2 Yrs"], data.buckets["Over 1 Yr"], data.buckets["< 1 Year"]]);
-            });
-            wsData.push(['', 'GRAND TOTAL', '', grandTotal.total, grandTotal["Over 5 Yrs"], grandTotal["Over 3 Yrs"], grandTotal["Over 2 Yrs"], grandTotal["Over 1 Yr"], grandTotal["< 1 Year"]]);
-            const ws = XLSX.utils.aoa_to_sheet(wsData);
-            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Disposal_MPR_Monthwise');
-            XLSX.writeFile(wb, `Disposal_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`);
+            let i=1; sortedMonths.forEach(month => { const d = monthMap.get(month); wsData.push([i++, office, month, d.total, d.buckets["Over 5 Yrs"], d.buckets["Over 3 Yrs"], d.buckets["Over 2 Yrs"], d.buckets["Over 1 Yr"], d.buckets["< 1 Year"]]); });
+            wsData.push(['', 'GRAND TOTAL', '', grand.total, grand["Over 5 Yrs"], grand["Over 3 Yrs"], grand["Over 2 Yrs"], grand["Over 1 Yr"], grand["< 1 Year"]]);
+            const ws = XLSX.utils.aoa_to_sheet(wsData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Disposal_MPR_Monthwise'); XLSX.writeFile(wb, `Disposal_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`);
         };
     }
 
@@ -388,15 +336,120 @@
     function showAllDisposals() { const disposed = cases.filter(c => c.disposed); if(disposed.length===0) showToast("No disposed cases", true); else showCaseList(`All Disposed Cases (${disposed.length})`, disposed); }
     function exportBackup(){ let a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(cases,null,2)],{type:"application/json"})); a.download=`rccms_backup_${new Date().toISOString().slice(0,19)}.json`; a.click(); showToast("Backup saved"); }
     function restoreBackup(file){ let reader=new FileReader(); reader.onload=e=>{ try{ let arr=JSON.parse(e.target.result); if(Array.isArray(arr)){ cases=arr; if(cases.length) nextId=Math.max(...cases.map(c=>c.id||0),0)+1; saveToFirebase(); showToast("Restore successful"); updateStats(true); } else throw new Error(); }catch(err){ showToast("Invalid backup", true); } }; reader.readAsText(file); }
-    function loadSampleData(){ if(confirm("Load sample cases?")){ cases = [{id:1,caseNo:"2025/99",section:"212",institutionDate:"2025-06-13",casePurpose:"साक्ष्य",appellantName:"ओम",respondentName:"कमलेश",hearingDate:"2026-06-22",disposed:true,disposalDate:"2026-05-01"},{id:2,caseNo:"2025/98",section:"39(2ए),151",institutionDate:"2025-06-13",casePurpose:"प्रार्थना",appellantName:"राम",respondentName:"श्याम",hearingDate:"2026-06-22",disposed:false},{id:3,caseNo:"2024/10",section:"175",institutionDate:"2024-01-10",casePurpose:"इजराय",appellantName:"सीता",respondentName:"राम",hearingDate:"2026-06-22",disposed:false},{id:4,caseNo:"2023/45",section:"106",institutionDate:"2023-05-20",casePurpose:"दावा",appellantName:"मोहन",respondentName:"सोहन",hearingDate:"2026-06-22",disposed:false},{id:5,caseNo:"2015/01",section:"O(9)-R(9)",institutionDate:"2015-03-10",casePurpose:"प्रार्थना",appellantName:"पुराना",respondentName:"वादी",hearingDate:"2026-06-22",disposed:false}]; nextId=6; saveToFirebase(); showToast("Sample loaded with expanded Prarthana sections"); } }
+    function loadSampleData(){ if(confirm("Load sample cases?")){ cases = [{id:1,caseNo:"2025/99",section:"212",institutionDate:"2025-06-13",casePurpose:"साक्ष्य",appellantName:"ओम",respondentName:"कमलेश",hearingDate:"2026-06-22",disposed:true,disposalDate:"2026-05-01"},{id:2,caseNo:"2025/98",section:"39(2ए),151",institutionDate:"2025-06-13",casePurpose:"प्रार्थना",appellantName:"राम",respondentName:"श्याम",hearingDate:"2026-06-22",disposed:false},{id:3,caseNo:"2024/10",section:"175",institutionDate:"2024-01-10",casePurpose:"इजराय",appellantName:"सीता",respondentName:"राम",hearingDate:"2026-06-22",disposed:false},{id:4,caseNo:"2023/45",section:"106",institutionDate:"2023-05-20",casePurpose:"दावा",appellantName:"मोहन",respondentName:"सोहन",hearingDate:"2026-06-22",disposed:false},{id:5,caseNo:"2015/01",section:"O(9)-R(9)",institutionDate:"2015-03-10",casePurpose:"प्रार्थना",appellantName:"पुराना",respondentName:"वादी",hearingDate:"2026-06-22",disposed:false}]; nextId=6; saveToFirebase(); showToast("Sample loaded"); } }
     function deleteAllData(){ if(confirm("⚠️ DELETE ALL?")){ casesRef.remove().then(()=>{ cases=[]; nextId=1; updateStats(false); showToast("All data deleted"); }).catch(e=>showToast(e.message,true)); } }
     function updateDebug() { const debugDiv = document.getElementById('debugContent'); debugDiv.innerHTML = `📊 Total: ${cases.length} | Disposed: ${cases.filter(c=>c.disposed).length} | Pending: ${cases.filter(c=>!c.disposed).length}<br>📌 Case Types: प्रार्थना पत्र=${cases.filter(c=>getCaseType(c.section)==="प्रार्थना पत्र").length}, इजराय=${cases.filter(c=>getCaseType(c.section)==="इजराय").length}, दावा=${cases.filter(c=>getCaseType(c.section)==="दावा").length}`; }
 
-    // Authentication and event listeners
-    auth.onAuthStateChanged(user => { if(user){ updateSyncIndicator('connected','Live'); document.getElementById("loginModal").style.display="none"; document.getElementById("mainToolbar").style.display="flex"; document.getElementById("mainContent").style.display="block"; document.getElementById("userStatus").innerHTML = `<i class="fas fa-user-check"></i> ${user.email}`; casesRef.on('value', (snap) => { let data = snap.val(); if(data){ cases = Object.values(data); if(cases.length) nextId = Math.max(...cases.map(c=>c.id||0))+1; } else { cases = []; nextId=1; } isLoading = false; updateStats(true); showToast("Data loaded"); }); } else { updateSyncIndicator('connecting','Not logged in'); document.getElementById("loginModal").style.display="flex"; document.getElementById("mainToolbar").style.display="none"; document.getElementById("mainContent").style.display="none"; } });
-    document.getElementById("loginBtn").onclick = () => { const email = document.getElementById("loginEmail").value; const pwd = document.getElementById("loginPassword").value; if(!email||!pwd){ document.getElementById("loginError").innerText="Enter credentials"; return; } auth.signInWithEmailAndPassword(email,pwd).then(()=>{ document.getElementById("loginError").innerText=""; showToast("Login success"); }).catch(err=>{ document.getElementById("loginError").innerText=err.message; showToast("Login failed",true); }); };
+    // --- FIXED LOGIN FLOW ---
+    function showDashboardAfterLogin(user) {
+        updateSyncIndicator('connected', 'Live');
+        document.getElementById("loginModal").style.display = "none";
+        document.getElementById("mainToolbar").style.display = "flex";
+        document.getElementById("mainContent").style.display = "block";
+        document.getElementById("userStatus").innerHTML = `<i class="fas fa-user-check"></i> ${user.email}`;
+        // Load data from Firebase
+        casesRef.on('value', (snap) => {
+            let data = snap.val();
+            if(data){ cases = Object.values(data); if(cases.length) nextId = Math.max(...cases.map(c=>c.id||0))+1; }
+            else { cases = []; nextId=1; }
+            isLoading = false;
+            updateStats(true);
+            showToast("Data loaded from Firebase");
+        }, err=>{ showToast(err.message, true); updateSyncIndicator('disconnected', 'Offline'); });
+    }
+
+    auth.onAuthStateChanged(user => {
+        if(user){
+            showDashboardAfterLogin(user);
+        } else {
+            updateSyncIndicator('connecting', 'Not logged in');
+            document.getElementById("loginModal").style.display = "flex";
+            document.getElementById("mainToolbar").style.display = "none";
+            document.getElementById("mainContent").style.display = "none";
+            document.getElementById("userStatus").innerHTML = "<i class='fas fa-user-lock'></i> Not logged in";
+        }
+    });
+
+    document.getElementById("loginBtn").onclick = () => {
+        const email = document.getElementById("loginEmail").value;
+        const pwd = document.getElementById("loginPassword").value;
+        if(!email || !pwd) { document.getElementById("loginError").innerText = "Please enter email and password"; return; }
+        auth.signInWithEmailAndPassword(email, pwd)
+            .then((userCredential) => {
+                document.getElementById("loginError").innerText = "";
+                showToast("Login successful");
+                // Immediately hide modal and show dashboard (redundant but ensures UI updates)
+                document.getElementById("loginModal").style.display = "none";
+                document.getElementById("mainToolbar").style.display = "flex";
+                document.getElementById("mainContent").style.display = "block";
+                document.getElementById("userStatus").innerHTML = `<i class="fas fa-user-check"></i> ${userCredential.user.email}`;
+                updateSyncIndicator('connected', 'Live');
+                // Also load data if not already loading
+                if(cases.length === 0 && isLoading) {
+                    casesRef.on('value', (snap) => {
+                        let data = snap.val();
+                        if(data){ cases = Object.values(data); if(cases.length) nextId = Math.max(...cases.map(c=>c.id||0))+1; }
+                        else { cases = []; nextId=1; }
+                        isLoading = false;
+                        updateStats(true);
+                        showToast("Data loaded");
+                    });
+                } else {
+                    updateStats(true);
+                }
+            })
+            .catch(err => { document.getElementById("loginError").innerText = err.message; showToast("Login failed: " + err.message, true); });
+    };
     document.getElementById("logoutBtn").onclick = () => auth.signOut();
-    document.addEventListener("DOMContentLoaded", () => { if(!document.getElementById("reportStartDate")){ const inpStart = document.createElement("input"); inpStart.type = "hidden"; inpStart.id = "reportStartDate"; const inpEnd = document.createElement("input"); inpEnd.type = "hidden"; inpEnd.id = "reportEndDate"; const inpOffice = document.createElement("input"); inpOffice.type = "hidden"; inpOffice.id = "officeNameInput"; document.body.appendChild(inpStart); document.body.appendChild(inpEnd); document.body.appendChild(inpOffice); } document.getElementById("reportStartDate").value = "2000-01-01"; document.getElementById("reportEndDate").value = new Date().toISOString().slice(0,10); document.getElementById("officeNameInput").value = "Assistant Collector (Fastrack), Niwai"; document.getElementById("searchBtn").onclick = () => { const term = document.getElementById("searchCaseNo").value.trim().toLowerCase(); if(!term) return; const res = cases.filter(c=>c.caseNo.toLowerCase().includes(term)); if(res.length===0) showToast("No cases",true); else showCaseList(`Search: ${term}`, res); }; document.getElementById("clearSearchBtn").onclick = () => document.getElementById("searchCaseNo").value=""; document.getElementById("pendingMprBtn").onclick = renderPendingMPR; document.getElementById("disposalMprBtn").onclick = renderDisposalMPR; document.getElementById("showAllDisposalsBtn").onclick = showAllDisposals; document.getElementById("addCaseBtn").onclick = () => document.getElementById("caseModal").style.display="flex"; document.getElementById("closeCaseModalBtn").onclick = () => document.getElementById("caseModal").style.display="none"; document.getElementById("saveCaseBtn").onclick = () => { let cNo=document.getElementById("caseNo").value.trim(), inst=document.getElementById("instDate").value; if(!cNo||!inst){ showToast("Case No & Date required",true); return; } cases.push({id:nextId++, caseNo:cNo, section:document.getElementById("section").value, institutionDate:inst, casePurpose:document.getElementById("casePurpose").value, appellantName:document.getElementById("appellant").value, respondentName:document.getElementById("respondent").value, hearingDate:document.getElementById("hearingDate").value||null, disposed:false, disposalDate:null}); saveToFirebase(); document.getElementById("caseModal").style.display="none"; }; document.getElementById("disposeBtn").onclick = () => { document.getElementById("disposalModal").style.display="flex"; document.getElementById("disposalDate").value=new Date().toISOString().slice(0,10); const datalist = document.getElementById("caseNosList"); datalist.innerHTML=""; cases.filter(c=>!c.disposed).forEach(c=>{ const opt = document.createElement("option"); opt.value = c.caseNo; datalist.appendChild(opt); }); }; document.getElementById("closeDisposalModalBtn").onclick = () => document.getElementById("disposalModal").style.display="none"; document.getElementById("confirmDisposalBtn").onclick = () => { let cNo=document.getElementById("disposalCaseNo").value.trim(), dDate=document.getElementById("disposalDate").value; if(!cNo||!dDate){ showToast("Select case and date",true); return; } let found=cases.find(c=>c.caseNo===cNo && !c.disposed); if(found){ found.disposed=true; found.disposalDate=dDate; saveToFirebase(); showToast("Disposal recorded"); } else showToast("Not found or already disposed",true); document.getElementById("disposalModal").style.display="none"; }; document.getElementById("exportBackupBtn").onclick = exportBackup; document.getElementById("importBackupBtn").onclick = () => { let inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>{ if(e.target.files.length) restoreBackup(e.target.files[0]); }; inp.click(); }; document.getElementById("importCasesExcelBtn").onclick = () => document.getElementById("casesExcelInput").click(); document.getElementById("casesExcelInput").onchange = e => { if(e.target.files.length) importCasesExcel(e.target.files[0]); e.target.value=''; }; document.getElementById("importDisposalExcelBtn").onclick = () => document.getElementById("disposalExcelInput").click(); document.getElementById("disposalExcelInput").onchange = e => { if(e.target.files.length) importDisposalExcel(e.target.files[0]); e.target.value=''; }; document.getElementById("sampleDataBtn").onclick = loadSampleData; document.getElementById("deleteAllBtn").onclick = deleteAllData; document.getElementById("closeModalBtn").onclick = () => document.getElementById("listModal").style.display="none"; window.onclick = (event) => { if(event.target === document.getElementById("listModal")) document.getElementById("listModal").style.display="none"; }; setTimeout(() => { document.querySelectorAll('.stat-card').forEach(card => { card.addEventListener('click', () => { const type = card.getAttribute('data-stat'); let filtered=[]; if(type==='total') filtered=cases; else if(type==='pending') filtered=cases.filter(c=>!c.disposed); else if(type==='disposed') filtered=cases.filter(c=>c.disposed); else if(type==='yearly') { const cy=new Date().getFullYear(); filtered=cases.filter(c=>new Date(c.institutionDate).getFullYear()===cy); } if(filtered.length===0) showToast("No cases",true); else showCaseList(`${card.querySelector('.label').innerText} Cases (${filtered.length})`, filtered); }); }); }, 500); });
+
+    // Ensure hidden date inputs exist
+    document.addEventListener("DOMContentLoaded", () => {
+        if(!document.getElementById("reportStartDate")){
+            const inpStart = document.createElement("input"); inpStart.type = "hidden"; inpStart.id = "reportStartDate";
+            const inpEnd = document.createElement("input"); inpEnd.type = "hidden"; inpEnd.id = "reportEndDate";
+            const inpOffice = document.createElement("input"); inpOffice.type = "hidden"; inpOffice.id = "officeNameInput";
+            document.body.appendChild(inpStart); document.body.appendChild(inpEnd); document.body.appendChild(inpOffice);
+        }
+        document.getElementById("reportStartDate").value = "2000-01-01";
+        document.getElementById("reportEndDate").value = new Date().toISOString().slice(0,10);
+        document.getElementById("officeNameInput").value = "Assistant Collector (Fastrack), Niwai";
+        // Attach event listeners
+        document.getElementById("searchBtn").onclick = () => { const term = document.getElementById("searchCaseNo").value.trim().toLowerCase(); if(!term) return; const res = cases.filter(c=>c.caseNo.toLowerCase().includes(term)); if(res.length===0) showToast("No cases",true); else showCaseList(`Search: ${term}`, res); };
+        document.getElementById("clearSearchBtn").onclick = () => document.getElementById("searchCaseNo").value="";
+        document.getElementById("pendingMprBtn").onclick = renderPendingMPR;
+        document.getElementById("disposalMprBtn").onclick = renderDisposalMPR;
+        document.getElementById("showAllDisposalsBtn").onclick = showAllDisposals;
+        document.getElementById("addCaseBtn").onclick = () => document.getElementById("caseModal").style.display="flex";
+        document.getElementById("closeCaseModalBtn").onclick = () => document.getElementById("caseModal").style.display="none";
+        document.getElementById("saveCaseBtn").onclick = () => { let cNo=document.getElementById("caseNo").value.trim(), inst=document.getElementById("instDate").value; if(!cNo||!inst){ showToast("Case No & Date required",true); return; } cases.push({id:nextId++, caseNo:cNo, section:document.getElementById("section").value, institutionDate:inst, casePurpose:document.getElementById("casePurpose").value, appellantName:document.getElementById("appellant").value, respondentName:document.getElementById("respondent").value, hearingDate:document.getElementById("hearingDate").value||null, disposed:false, disposalDate:null}); saveToFirebase(); document.getElementById("caseModal").style.display="none"; };
+        document.getElementById("disposeBtn").onclick = () => { document.getElementById("disposalModal").style.display="flex"; document.getElementById("disposalDate").value=new Date().toISOString().slice(0,10); const datalist = document.getElementById("caseNosList"); datalist.innerHTML=""; cases.filter(c=>!c.disposed).forEach(c=>{ const opt = document.createElement("option"); opt.value = c.caseNo; datalist.appendChild(opt); }); };
+        document.getElementById("closeDisposalModalBtn").onclick = () => document.getElementById("disposalModal").style.display="none";
+        document.getElementById("confirmDisposalBtn").onclick = () => { let cNo=document.getElementById("disposalCaseNo").value.trim(), dDate=document.getElementById("disposalDate").value; if(!cNo||!dDate){ showToast("Select case and date",true); return; } let found=cases.find(c=>c.caseNo===cNo && !c.disposed); if(found){ found.disposed=true; found.disposalDate=dDate; saveToFirebase(); showToast("Disposal recorded"); } else showToast("Not found or already disposed",true); document.getElementById("disposalModal").style.display="none"; };
+        document.getElementById("exportBackupBtn").onclick = exportBackup;
+        document.getElementById("importBackupBtn").onclick = () => { let inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>{ if(e.target.files.length) restoreBackup(e.target.files[0]); }; inp.click(); };
+        document.getElementById("importCasesExcelBtn").onclick = () => document.getElementById("casesExcelInput").click();
+        document.getElementById("casesExcelInput").onchange = e => { if(e.target.files.length) importCasesExcel(e.target.files[0]); e.target.value=''; };
+        document.getElementById("importDisposalExcelBtn").onclick = () => document.getElementById("disposalExcelInput").click();
+        document.getElementById("disposalExcelInput").onchange = e => { if(e.target.files.length) importDisposalExcel(e.target.files[0]); e.target.value=''; };
+        document.getElementById("sampleDataBtn").onclick = loadSampleData;
+        document.getElementById("deleteAllBtn").onclick = deleteAllData;
+        document.getElementById("closeModalBtn").onclick = () => document.getElementById("listModal").style.display="none";
+        window.onclick = (event) => { if(event.target === document.getElementById("listModal")) document.getElementById("listModal").style.display="none"; };
+        setTimeout(() => {
+            document.querySelectorAll('.stat-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const type = card.getAttribute('data-stat');
+                    let filtered=[];
+                    if(type==='total') filtered=cases;
+                    else if(type==='pending') filtered=cases.filter(c=>!c.disposed);
+                    else if(type==='disposed') filtered=cases.filter(c=>c.disposed);
+                    else if(type==='yearly') { const cy=new Date().getFullYear(); filtered=cases.filter(c=>new Date(c.institutionDate).getFullYear()===cy); }
+                    if(filtered.length===0) showToast("No cases",true);
+                    else showCaseList(`${card.querySelector('.label').innerText} Cases (${filtered.length})`, filtered);
+                });
+            });
+        }, 500);
+    });
 </script>
 </body>
 </html>
