@@ -65,6 +65,16 @@
         input, select { width: 100%; padding: 12px 16px; background: rgba(0,0,0,0.5); border: 1px solid rgba(212, 175, 55, 0.5); border-radius: 28px; font-size: 0.9rem; color: white; }
         .debug-panel { background: rgba(0,0,0,0.6); border-radius: 16px; padding: 12px; margin-top: 20px; font-size: 0.75rem; font-family: monospace; color: #a0b3d9; border-left: 3px solid #d4af37; }
         .case-type-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 0.7rem; font-weight: bold; background: #1e3a5f; color: #d4af37; }
+        .purpose-tools { display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:16px; }
+        .purpose-tools label { display:inline-flex; align-items:center; gap:8px; margin:0; font-weight:500; color:#e2e8f0; cursor:pointer; }
+        .purpose-tools input[type=checkbox] { width:auto; accent-color:#d4af37; }
+        .purpose-tools .hint { color:#a0b3d9; font-size:0.8rem; flex:1; min-width:200px; }
+        #purposeTable td.num, #purposeTable th.num { text-align:center; }
+        #purposeTable tr.total-row td { background:rgba(212,175,55,0.12); font-weight:700; }
+        #purposeSection.flash .dashboard-card { animation: flashGold 1.2s ease; }
+        @keyframes flashGold { 0%,100% { box-shadow:none; } 40% { box-shadow:0 0 0 3px #d4af37; } }
+        #modalTable th { position: sticky; top: 0; background: #0b1424; z-index: 1; color:#d4af37; }
+        #modalTable td, #modalTable th { padding: 8px 10px; border-bottom: 1px solid rgba(212,175,55,0.2); text-align:left; font-size:0.85rem; }
     </style>
 </head>
 <body>
@@ -94,6 +104,7 @@
         <button id="pendingMprBtn" class="primary"><i class="fas fa-chart-line"></i> Pending MPR (Case Type)</button>
         <button id="disposalMprBtn" class="primary"><i class="fas fa-chart-bar"></i> Disposal MPR (Case Type)</button>
         <button id="showAllDisposalsBtn" class="primary"><i class="fas fa-list"></i> Show All Disposed</button>
+        <button id="purposeReportBtn" class="primary"><i class="fas fa-bullseye"></i> Purpose Report</button>
         <button id="sampleDataBtn"><i class="fas fa-chart-simple"></i> Sample</button>
         <button id="deleteAllBtn" class="danger"><i class="fas fa-trash-alt"></i> Delete All</button>
         <button id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
@@ -146,6 +157,24 @@
             </div>
         </div>
 
+        <div class="dashboard-row" id="purposeSection">
+            <div class="dashboard-card" style="flex-basis:100%;">
+                <h3><i class="fas fa-bullseye"></i> Case Purpose-wise Report (वाद उद्देश्य)</h3>
+                <div class="purpose-tools">
+                    <label><input type="checkbox" id="purposeMergeChk" checked> Merge spelling variants</label>
+                    <span class="hint">Click any count to open the case list — Excel / PDF download is inside.</span>
+                    <button id="purposeExcelBtn" class="primary"><i class="fas fa-file-excel"></i> Summary Excel</button>
+                    <button id="purposePdfBtn" class="primary"><i class="fas fa-file-pdf"></i> Summary PDF</button>
+                </div>
+                <div class="data-table">
+                    <table id="purposeTable">
+                        <thead><tr><th>#</th><th>Case Purpose</th><th class="num">Pending</th><th class="num">Disposed</th><th class="num">Total</th><th>Pending Share</th></tr></thead>
+                        <tbody id="purposeBody"><tr><td colspan="6">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div class="report-section" style="margin-top: 30px;">
             <div id="reportOutput" class="report-output">
                 <p style="text-align:center; color:#a0b3d9;">Click Pending MPR or Disposal MPR to generate case-type wise reports.</p>
@@ -170,7 +199,7 @@
     </div>
 </div>
 
-<div id="listModal" class="modal"><div class="modal-content"><h3 id="modalTitle">Case List</h3><div style="overflow-x:auto;"><table id="modalTable"><thead><tr><th>Case No</th><th>Section</th><th>Case Type</th><th>Inst. Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Hearing</th><th>Disposal</th><th>Status</th></tr></thead><tbody></tbody></table></div><div style="margin-top:20px; display:flex; gap:12px; justify-content:flex-end;"><button id="exportModalCsvBtn" class="primary">Export to Excel</button><button id="closeModalBtn">Close</button></div></div></div>
+<div id="listModal" class="modal"><div class="modal-content"><h3 id="modalTitle">Case List</h3><div id="modalCount" style="color:#a0b3d9; margin-bottom:12px; font-size:0.85rem;"></div><div style="overflow-x:auto;"><table id="modalTable"><thead><tr><th>Case No</th><th>Section</th><th>Case Type</th><th>Inst. Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Hearing</th><th>Disposal</th><th>Status</th></tr></thead><tbody></tbody></table></div><div style="margin-top:20px; display:flex; gap:12px; justify-content:flex-end;"><button id="exportModalCsvBtn" class="primary"><i class="fas fa-file-excel"></i> Download Excel</button><button id="exportModalPdfBtn" class="primary"><i class="fas fa-file-pdf"></i> Download PDF</button><button id="closeModalBtn">Close</button></div></div></div>
 <div id="caseModal" class="modal"><div class="modal-content"><h3>Register New Case</h3><div class="form-group"><label>Case No *</label><input id="caseNo"></div><div class="form-group"><label>Section</label><input id="section"></div><div class="form-group"><label>Institution Date *</label><input type="date" id="instDate"></div><div class="form-group"><label>Purpose</label><input id="casePurpose"></div><div class="form-group"><label>Appellant</label><input id="appellant"></div><div class="form-group"><label>Respondent</label><input id="respondent"></div><div class="form-group"><label>Hearing Date</label><input type="date" id="hearingDate"></div><div style="display:flex; gap:12px;"><button id="saveCaseBtn" class="primary">Save</button><button id="closeCaseModalBtn">Cancel</button></div></div></div>
 <div id="disposalModal" class="modal"><div class="modal-content"><h3>Record Disposal</h3><div class="form-group"><label>Case No</label><input list="caseNosList" id="disposalCaseNo"><datalist id="caseNosList"></datalist></div><div class="form-group"><label>Disposal Date *</label><input type="date" id="disposalDate"></div><div style="display:flex; gap:12px;"><button id="confirmDisposalBtn" class="primary">Mark Disposed</button><button id="closeDisposalModalBtn">Cancel</button></div></div></div>
 
@@ -242,7 +271,7 @@
         let yearMap = new Map();
         cases.forEach(c => { let y = new Date(c.institutionDate).getFullYear(); if(!isNaN(y)){ let cur = yearMap.get(y) || { filed:0, disposed:0 }; cur.filed++; yearMap.set(y, cur); } if(c.disposed && c.disposalDate){ let dy = new Date(c.disposalDate).getFullYear(); let cur = yearMap.get(dy) || { filed:0, disposed:0 }; cur.disposed++; yearMap.set(dy, cur); } });
         let years = Array.from(yearMap.keys()).sort();
-        let yearHtml = ''; years.forEach(y => { let data = yearMap.get(y); let clearance = data.filed ? ((data.disposed / data.filed) * 100).toFixed(1) : 0; yearHtml += `</td><td>${y}</td><td>${data.filed}</td><td>${data.disposed}</td><td>${clearance}%</td></tr>`; });
+        let yearHtml = ''; years.forEach(y => { let data = yearMap.get(y); let clearance = data.filed ? ((data.disposed / data.filed) * 100).toFixed(1) : 0; yearHtml += `<tr><td>${y}</td><td>${data.filed}</td><td>${data.disposed}</td><td>${clearance}%</td></tr>`; });
         document.getElementById("yearTableBody").innerHTML = yearHtml || '<tr><td colspan="4">No data</td></tr>';
         
         // Section-wise
@@ -251,14 +280,19 @@
         let sorted = Array.from(secMap.entries()).sort((a,b)=>b[1]-a[1]); let maxCount = sorted.length ? sorted[0][1] : 1;
         let secHtml = ''; sorted.forEach(([sec,count]) => { let percent = (count/maxCount)*100; secHtml += `<tr><td>${escapeHtml(sec)}</td><td>${count}</td><td><div class="progress-bar-container"><div class="progress-bar" style="width:${percent}%;"></div></div></td></tr>`; });
         document.getElementById("sectionTableBody").innerHTML = secHtml || '<tr><td colspan="3">No data</td></tr>';
+        renderPurposeCard();
     }
 
     function showCaseList(title, caseArray) {
         const modal = document.getElementById('listModal'); document.getElementById('modalTitle').innerText = title;
+        document.getElementById('modalCount').innerText = `Total: ${caseArray.length} case(s)`;
         const tbody = document.querySelector('#modalTable tbody'); tbody.innerHTML = '';
         caseArray.forEach(c => { const row = tbody.insertRow(); row.insertCell(0).innerText = c.caseNo; row.insertCell(1).innerText = c.section || ''; row.insertCell(2).innerText = getCaseType(c.section); row.insertCell(3).innerText = formatDate(c.institutionDate); row.insertCell(4).innerText = c.casePurpose || ''; row.insertCell(5).innerText = c.appellantName || ''; row.insertCell(6).innerText = c.respondentName || ''; row.insertCell(7).innerText = c.hearingDate ? formatDate(c.hearingDate) : '-'; row.insertCell(8).innerText = c.disposalDate ? formatDate(c.disposalDate) : '-'; row.insertCell(9).innerText = c.disposed ? 'Disposed' : 'Pending'; });
         modal.style.display = 'flex';
-        document.getElementById('exportModalCsvBtn').onclick = () => { const rows = [['Case No','Section','Case Type','Institution Date','Purpose','Appellant','Respondent','Hearing Date','Disposal Date','Status']]; caseArray.forEach(c => rows.push([c.caseNo, c.section||'', getCaseType(c.section), formatDate(c.institutionDate), c.casePurpose||'', c.appellantName||'', c.respondentName||'', c.hearingDate?formatDate(c.hearingDate):'-', c.disposalDate?formatDate(c.disposalDate):'-', c.disposed?'Disposed':'Pending'])); const ws = XLSX.utils.aoa_to_sheet(rows); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Cases'); XLSX.writeFile(wb, `${title.replace(/\s/g,'_')}.xlsx`); };
+        const headers = ['S.No.','Case No','Section','Case Type','Institution Date','Purpose','Appellant','Respondent','Hearing Date','Disposal Date','Status'];
+        const rows = caseArray.map((c, i) => [i + 1, c.caseNo, c.section || '', getCaseType(c.section), formatDate(c.institutionDate), c.casePurpose || '', c.appellantName || '', c.respondentName || '', c.hearingDate ? formatDate(c.hearingDate) : '-', c.disposalDate ? formatDate(c.disposalDate) : '-', c.disposed ? 'Disposed' : 'Pending']);
+        document.getElementById('exportModalCsvBtn').onclick = () => { const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]); ws['!cols'] = [6,18,14,14,14,24,22,22,13,13,10].map(w => ({wch:w})); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Cases'); XLSX.writeFile(wb, `${safeFileName(title)}.xlsx`); };
+        document.getElementById('exportModalPdfBtn').onclick = () => printAsPdf(title, headers, rows, `Total: ${caseArray.length} case(s)`);
     }
 
     // ----- PENDING MPR (Case Type Wise with Age Buckets) -----
@@ -335,7 +369,45 @@
     function importDisposalExcel(file){ const reader = new FileReader(); reader.onload = e => { const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type:'array'}); const sheet = workbook.Sheets[workbook.SheetNames[0]]; const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:""}); processDisposalRows(rows); }; reader.readAsArrayBuffer(file); }
     function processDisposalRows(rows) { if(rows.length < 2) return; let headerRow = rows[0].map(c=>String(c||"").trim().toLowerCase()); let idxCase = headerRow.findIndex(h => h.includes("case no") || h === "caseno"); let idxDisposal = headerRow.findIndex(h => h.includes("disposal date") || h.includes("disposal")); if(idxCase === -1 || idxDisposal === -1) return; let updated = 0; for(let i=1; i<rows.length; i++) { const row = rows[i]; let caseNo = row[idxCase] ? String(row[idxCase]).trim() : ""; let dispRaw = row[idxDisposal] ? String(row[idxDisposal]).trim() : ""; if(!caseNo || !dispRaw) continue; let dispDate = parseDateAny(dispRaw); if(!dispDate) continue; let existing = cases.find(c => c.caseNo === caseNo); if(existing && !existing.disposed) { existing.disposed = true; existing.disposalDate = dispDate; updated++; } } saveToFirebase(); showToast(`Disposal import: ${updated} updated`); updateStats(true); }
     function importCasesExcel(file){ let reader = new FileReader(); reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); }; reader.readAsArrayBuffer(file); }
-    function processCaseRows(rows){ if(rows.length<2) return; let headers = rows[0].map(c=>String(c||"").trim().toLowerCase()); let idxCase = headers.findIndex(h=>h.includes("case no")||h==="caseno"); let idxInst = headers.findIndex(h=>h.includes("institution")||h.includes("inst date")); if(idxCase===-1||idxInst===-1) return; let idxSec = headers.findIndex(h=>h.includes("section")); let imported=0; for(let i=1;i<rows.length;i++){ let row = rows[i]; let caseNo = row[idxCase] ? String(row[idxCase]).trim() : ""; let instRaw = row[idxInst] ? String(row[idxInst]).trim() : ""; if(!caseNo || !instRaw) continue; let instDate = parseDateAny(instRaw); if(!instDate) continue; if(cases.some(c=>c.caseNo===caseNo)) continue; cases.push({id:nextId++, caseNo, section:(idxSec!==-1&&row[idxSec])?String(row[idxSec]).trim():"", institutionDate:instDate, casePurpose:"", appellantName:"", respondentName:"", hearingDate:null, disposed:false, disposalDate:null}); imported++; } saveToFirebase(); showToast(`Imported ${imported} cases`); }
+    function processCaseRows(rows){
+        if(rows.length<2){ showToast("File is empty", true); return; }
+        const headers = rows[0].map(c=>String(c||"").trim().toLowerCase());
+        const find = (...keys) => headers.findIndex(h => keys.some(k => h.includes(k)));
+        const idxCase = find("case no","caseno"), idxInst = find("institution","inst date");
+        if(idxCase===-1||idxInst===-1){ showToast("Case No / Institution Date column not found", true); return; }
+        const idxSec = find("section"), idxPur = find("purpose"), idxApp = find("appellant"), idxRes = find("respondent"), idxHear = find("hearing");
+        const clean = v => (v===undefined||v===null) ? "" : String(v).replace(/\s+/g," ").trim();
+        const byNo = new Map(cases.map(c=>[c.caseNo, c]));
+        let added=0, updated=0, skipped=0;
+        for(let i=1;i<rows.length;i++){
+            const row = rows[i];
+            const caseNo = clean(row[idxCase]), instRaw = clean(row[idxInst]);
+            if(!caseNo || !instRaw){ skipped++; continue; }
+            const instDate = parseDateAny(instRaw);
+            if(!instDate){ skipped++; continue; }
+            const section = idxSec!==-1 ? clean(row[idxSec]) : "";
+            const purpose = idxPur!==-1 ? clean(row[idxPur]) : "";
+            const appellant = idxApp!==-1 ? clean(row[idxApp]) : "";
+            const respondent = idxRes!==-1 ? clean(row[idxRes]) : "";
+            const hearing = idxHear!==-1 ? parseDateAny(clean(row[idxHear])) : null;
+            const ex = byNo.get(caseNo);
+            if(ex){
+                // Existing case: refresh the fields that change (purpose, parties, hearing); never touch disposal status.
+                if(purpose) ex.casePurpose = purpose;
+                if(appellant) ex.appellantName = appellant;
+                if(respondent) ex.respondentName = respondent;
+                if(hearing) ex.hearingDate = hearing;
+                if(!ex.section && section) ex.section = section;
+                if(!ex.institutionDate) ex.institutionDate = instDate;
+                updated++;
+            } else {
+                const rec = {id:nextId++, caseNo, section, institutionDate:instDate, casePurpose:purpose, appellantName:appellant, respondentName:respondent, hearingDate:hearing, disposed:false, disposalDate:null};
+                cases.push(rec); byNo.set(caseNo, rec); added++;
+            }
+        }
+        saveToFirebase();
+        showToast(`Import done: ${added} new, ${updated} updated, ${skipped} skipped`);
+    }
     function showAllDisposals() { const disposed = cases.filter(c => c.disposed); if(disposed.length===0) showToast("No disposed cases", true); else showCaseList(`All Disposed Cases (${disposed.length})`, disposed); }
     function exportBackup(){ let a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(cases,null,2)],{type:"application/json"})); a.download=`rccms_backup_${new Date().toISOString().slice(0,19)}.json`; a.click(); showToast("Backup saved"); }
     function restoreBackup(file){ let reader=new FileReader(); reader.onload=e=>{ try{ let arr=JSON.parse(e.target.result); if(Array.isArray(arr)){ cases=arr; if(cases.length) nextId=Math.max(...cases.map(c=>c.id||0),0)+1; saveToFirebase(); showToast("Restore successful"); updateStats(true); } else throw new Error(); }catch(err){ showToast("Invalid backup", true); } }; reader.readAsText(file); }
@@ -343,11 +415,125 @@
     function deleteAllData(){ if(confirm("⚠️ DELETE ALL?")){ casesRef.remove().then(()=>{ cases=[]; nextId=1; updateStats(false); showToast("All data deleted"); }).catch(e=>showToast(e.message,true)); } }
     function updateDebug() { const debugDiv = document.getElementById('debugContent'); debugDiv.innerHTML = `📊 Total: ${cases.length} | Disposed: ${cases.filter(c=>c.disposed).length} | Pending: ${cases.filter(c=>!c.disposed).length}<br>📌 Case Types: प्रार्थना पत्र=${cases.filter(c=>getCaseType(c.section)==="प्रार्थना पत्र").length}, इजराय=${cases.filter(c=>getCaseType(c.section)==="इजराय").length}, दावा=${cases.filter(c=>getCaseType(c.section)==="दावा").length}`; }
 
+    // ===== CASE PURPOSE WISE REPORT =====
+    const PURPOSE_BLANK = 'उद्देश्य दर्ज नहीं (Blank)';
+    // Spelling variants that are merged into one purpose when "Merge spelling variants" is ticked.
+    // Left side = as typed in the data, right side = merged name. Edit this list to suit your office.
+    const PURPOSE_ALIASES = {
+        'TALBI': 'तलबी',
+        'तलवी': 'तलबी',
+        'जवाब प्रार्थना पत्र': 'जबाब प्रार्थना पत्र',
+        'संसोधित उनवान': 'संशोधित शीर्षक'
+    };
+    const PURPOSE_ALIAS_LOOKUP = {};
+    Object.keys(PURPOSE_ALIASES).forEach(k => { PURPOSE_ALIAS_LOOKUP[k.toLowerCase()] = PURPOSE_ALIASES[k]; });
+    let purposeGroups = [];
+
+    function normPurpose(raw, merge) {
+        const s = String(raw || '').replace(/\s+/g, ' ').trim();
+        if (!s) return PURPOSE_BLANK;
+        return merge && PURPOSE_ALIAS_LOOKUP[s.toLowerCase()] ? PURPOSE_ALIAS_LOOKUP[s.toLowerCase()] : s;
+    }
+    function safeFileName(s) { return String(s).replace(/[\\\/:*?"<>|]+/g, '-').replace(/\s+/g, '_').slice(0, 120); }
+
+    function buildPurposeGroups() {
+        const merge = document.getElementById('purposeMergeChk') ? document.getElementById('purposeMergeChk').checked : true;
+        const map = new Map();
+        cases.forEach(c => {
+            const name = normPurpose(c.casePurpose, merge);
+            if (!map.has(name)) map.set(name, { name, pending: [], disposed: [], all: [] });
+            const g = map.get(name);
+            g.all.push(c); (c.disposed ? g.disposed : g.pending).push(c);
+        });
+        return Array.from(map.values()).sort((a, b) => (b.pending.length - a.pending.length) || (b.all.length - a.all.length) || a.name.localeCompare(b.name, 'hi'));
+    }
+
+    function renderPurposeCard() {
+        const body = document.getElementById('purposeBody'); if (!body) return;
+        purposeGroups = buildPurposeGroups();
+        if (!purposeGroups.length) { body.innerHTML = '<tr><td colspan="6">No data</td></tr>'; return; }
+        const maxPending = Math.max(1, ...purposeGroups.map(g => g.pending.length));
+        let tp = 0, td = 0, tt = 0, html = '';
+        purposeGroups.forEach((g, i) => {
+            tp += g.pending.length; td += g.disposed.length; tt += g.all.length;
+            const cell = (n, st) => n ? `<td class="num"><span class="clickable" data-i="${i}" data-s="${st}">${n}</span></td>` : `<td class="num">0</td>`;
+            html += `<tr><td>${i + 1}</td><td>${escapeHtml(g.name)}</td>${cell(g.pending.length, 'pending')}${cell(g.disposed.length, 'disposed')}${cell(g.all.length, 'all')}<td style="min-width:120px;"><div class="progress-bar-container"><div class="progress-bar" style="width:${(g.pending.length / maxPending) * 100}%;"></div></div></td></tr>`;
+        });
+        html += `<tr class="total-row"><td></td><td>GRAND TOTAL</td><td class="num">${tp}</td><td class="num">${td}</td><td class="num">${tt}</td><td></td></tr>`;
+        body.innerHTML = html;
+    }
+
+    function openPurposeCases(i, status) {
+        const g = purposeGroups[i]; if (!g) return;
+        const list = g[status];
+        const label = status === 'pending' ? 'Pending' : status === 'disposed' ? 'Disposed' : 'All';
+        if (!list.length) { showToast('No cases', true); return; }
+        showCaseList(`${g.name} - ${label} (${list.length})`, list);
+    }
+
+    function purposeSummaryRows() {
+        const rows = purposeGroups.map((g, i) => [i + 1, g.name, g.pending.length, g.disposed.length, g.all.length]);
+        rows.push(['', 'GRAND TOTAL', purposeGroups.reduce((s, g) => s + g.pending.length, 0), purposeGroups.reduce((s, g) => s + g.disposed.length, 0), purposeGroups.reduce((s, g) => s + g.all.length, 0)]);
+        return rows;
+    }
+    function exportPurposeSummaryExcel() {
+        if (!purposeGroups.length) { showToast('No data', true); return; }
+        const ws = XLSX.utils.aoa_to_sheet([['S.No.', 'Case Purpose', 'Pending', 'Disposed', 'Total'], ...purposeSummaryRows()]);
+        ws['!cols'] = [{wch:6},{wch:38},{wch:10},{wch:10},{wch:10}];
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Purpose_Report');
+        XLSX.writeFile(wb, `Case_Purpose_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    }
+    function exportPurposeSummaryPdf() {
+        if (!purposeGroups.length) { showToast('No data', true); return; }
+        printAsPdf('Case Purpose-wise Report', ['S.No.', 'Case Purpose', 'Pending', 'Disposed', 'Total'], purposeSummaryRows(), `As on ${new Date().toLocaleDateString('en-GB')}`);
+    }
+
+    // PDF: renders a clean printable table and opens the browser's print dialog -> choose "Save as PDF".
+    // (This keeps Hindi text perfectly shaped, which jsPDF-style libraries cannot do without a custom font.)
+    function printAsPdf(title, headers, rows, subtitle) {
+        const officeEl = document.getElementById('officeNameInput');
+        const office = (officeEl && officeEl.value) || 'RCCMS';
+        const html = `<!DOCTYPE html><html lang="hi"><head><meta charset="UTF-8"><title>${escapeHtml(safeFileName(title))}</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+@page { size: A4 landscape; margin: 10mm; }
+body { font-family: 'Noto Sans Devanagari','Mangal','Nirmala UI',Arial,sans-serif; color:#000; font-size:10.5px; }
+h2, h3 { text-align:center; margin:2px 0; }
+h3 { font-weight:600; font-size:13px; }
+.sub { text-align:center; color:#333; margin-bottom:6px; }
+table { width:100%; border-collapse:collapse; margin-top:6px; }
+th, td { border:1px solid #444; padding:4px 5px; text-align:left; vertical-align:top; }
+th { background:#e6e6e6; }
+thead { display: table-header-group; }
+tr { page-break-inside: avoid; }
+</style></head><body>
+<h2>${escapeHtml(office)}</h2>
+<h3>${escapeHtml(title)}</h3>
+<div class="sub">${escapeHtml(subtitle || '')} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString('en-GB')}</div>
+<table><thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+<tbody>${rows.map(r => `<tr>${r.map(v => `<td>${escapeHtml(v === null || v === undefined ? '' : v)}</td>`).join('')}</tr>`).join('')}</tbody></table>
+</body></html>`;
+        const f = document.createElement('iframe');
+        f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
+        document.body.appendChild(f);
+        const w = f.contentWindow; w.document.open(); w.document.write(html); w.document.close();
+        let fired = false;
+        const go = () => { try { w.focus(); w.print(); } catch (e) { showToast('Print failed: ' + e.message, true); } setTimeout(() => f.remove(), 60000); };
+        const fire = () => { if (fired) return; fired = true; const ready = (w.document.fonts && w.document.fonts.ready) ? w.document.fonts.ready : Promise.resolve(); ready.then(() => setTimeout(go, 300)); };
+        f.onload = fire; setTimeout(fire, 3000);
+        showToast('In the print dialog choose "Save as PDF"');
+    }
+
     // Authentication and event listeners (fixed login flow)
     auth.onAuthStateChanged(user => { if(user){ updateSyncIndicator('connected','Live'); document.getElementById("loginModal").style.display="none"; document.getElementById("mainToolbar").style.display="flex"; document.getElementById("mainContent").style.display="block"; document.getElementById("userStatus").innerHTML = `<i class="fas fa-user-check"></i> ${user.email}`; casesRef.on('value', (snap) => { let data = snap.val(); if(data){ cases = Object.values(data); if(cases.length) nextId = Math.max(...cases.map(c=>c.id||0))+1; } else { cases = []; nextId=1; } isLoading = false; updateStats(true); showToast("Data loaded"); }); } else { updateSyncIndicator('connecting','Not logged in'); document.getElementById("loginModal").style.display="flex"; document.getElementById("mainToolbar").style.display="none"; document.getElementById("mainContent").style.display="none"; document.getElementById("userStatus").innerHTML = "<i class='fas fa-user-lock'></i> Not logged in"; } });
     document.getElementById("loginBtn").onclick = () => { const email = document.getElementById("loginEmail").value; const pwd = document.getElementById("loginPassword").value; if(!email||!pwd){ document.getElementById("loginError").innerText="Enter credentials"; return; } auth.signInWithEmailAndPassword(email,pwd).then(()=>{ document.getElementById("loginError").innerText=""; showToast("Login success"); }).catch(err=>{ document.getElementById("loginError").innerText=err.message; showToast("Login failed",true); }); };
     document.getElementById("logoutBtn").onclick = () => auth.signOut();
-    document.addEventListener("DOMContentLoaded", () => { if(!document.getElementById("reportStartDate")){ const inpStart = document.createElement("input"); inpStart.type = "hidden"; inpStart.id = "reportStartDate"; const inpEnd = document.createElement("input"); inpEnd.type = "hidden"; inpEnd.id = "reportEndDate"; const inpOffice = document.createElement("input"); inpOffice.type = "hidden"; inpOffice.id = "officeNameInput"; document.body.appendChild(inpStart); document.body.appendChild(inpEnd); document.body.appendChild(inpOffice); } document.getElementById("reportStartDate").value = "2000-01-01"; document.getElementById("reportEndDate").value = new Date().toISOString().slice(0,10); document.getElementById("officeNameInput").value = "राजस्व मंडल, निवाई"; document.getElementById("searchBtn").onclick = () => { const term = document.getElementById("searchCaseNo").value.trim().toLowerCase(); if(!term) return; const res = cases.filter(c=>c.caseNo.toLowerCase().includes(term)); if(res.length===0) showToast("No cases",true); else showCaseList(`Search: ${term}`, res); }; document.getElementById("clearSearchBtn").onclick = () => document.getElementById("searchCaseNo").value=""; document.getElementById("pendingMprBtn").onclick = renderPendingMPR; document.getElementById("disposalMprBtn").onclick = renderDisposalMPR; document.getElementById("showAllDisposalsBtn").onclick = showAllDisposals; document.getElementById("addCaseBtn").onclick = () => document.getElementById("caseModal").style.display="flex"; document.getElementById("closeCaseModalBtn").onclick = () => document.getElementById("caseModal").style.display="none"; document.getElementById("saveCaseBtn").onclick = () => { let cNo=document.getElementById("caseNo").value.trim(), inst=document.getElementById("instDate").value; if(!cNo||!inst){ showToast("Case No & Date required",true); return; } cases.push({id:nextId++, caseNo:cNo, section:document.getElementById("section").value, institutionDate:inst, casePurpose:document.getElementById("casePurpose").value, appellantName:document.getElementById("appellant").value, respondentName:document.getElementById("respondent").value, hearingDate:document.getElementById("hearingDate").value||null, disposed:false, disposalDate:null}); saveToFirebase(); document.getElementById("caseModal").style.display="none"; }; document.getElementById("disposeBtn").onclick = () => { document.getElementById("disposalModal").style.display="flex"; document.getElementById("disposalDate").value=new Date().toISOString().slice(0,10); const datalist = document.getElementById("caseNosList"); datalist.innerHTML=""; cases.filter(c=>!c.disposed).forEach(c=>{ const opt = document.createElement("option"); opt.value = c.caseNo; datalist.appendChild(opt); }); }; document.getElementById("closeDisposalModalBtn").onclick = () => document.getElementById("disposalModal").style.display="none"; document.getElementById("confirmDisposalBtn").onclick = () => { let cNo=document.getElementById("disposalCaseNo").value.trim(), dDate=document.getElementById("disposalDate").value; if(!cNo||!dDate){ showToast("Select case and date",true); return; } let found=cases.find(c=>c.caseNo===cNo && !c.disposed); if(found){ found.disposed=true; found.disposalDate=dDate; saveToFirebase(); showToast("Disposal recorded"); } else showToast("Not found or already disposed",true); document.getElementById("disposalModal").style.display="none"; }; document.getElementById("exportBackupBtn").onclick = exportBackup; document.getElementById("importBackupBtn").onclick = () => { let inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>{ if(e.target.files.length) restoreBackup(e.target.files[0]); }; inp.click(); }; document.getElementById("importCasesExcelBtn").onclick = () => document.getElementById("casesExcelInput").click(); document.getElementById("casesExcelInput").onchange = e => { if(e.target.files.length) importCasesExcel(e.target.files[0]); e.target.value=''; }; document.getElementById("importDisposalExcelBtn").onclick = () => document.getElementById("disposalExcelInput").click(); document.getElementById("disposalExcelInput").onchange = e => { if(e.target.files.length) importDisposalExcel(e.target.files[0]); e.target.value=''; }; document.getElementById("sampleDataBtn").onclick = loadSampleData; document.getElementById("deleteAllBtn").onclick = deleteAllData; document.getElementById("closeModalBtn").onclick = () => document.getElementById("listModal").style.display="none"; window.onclick = (event) => { if(event.target === document.getElementById("listModal")) document.getElementById("listModal").style.display="none"; }; setTimeout(() => { document.querySelectorAll('.stat-card').forEach(card => { card.addEventListener('click', () => { const type = card.getAttribute('data-stat'); let filtered=[]; if(type==='total') filtered=cases; else if(type==='pending') filtered=cases.filter(c=>!c.disposed); else if(type==='disposed') filtered=cases.filter(c=>c.disposed); else if(type==='yearly') { const cy=new Date().getFullYear(); filtered=cases.filter(c=>new Date(c.institutionDate).getFullYear()===cy); } if(filtered.length===0) showToast("No cases",true); else showCaseList(`${card.querySelector('.label').innerText} Cases (${filtered.length})`, filtered); }); }); }, 500); });
+    document.addEventListener("DOMContentLoaded", () => { if(!document.getElementById("reportStartDate")){ const inpStart = document.createElement("input"); inpStart.type = "hidden"; inpStart.id = "reportStartDate"; const inpEnd = document.createElement("input"); inpEnd.type = "hidden"; inpEnd.id = "reportEndDate"; const inpOffice = document.createElement("input"); inpOffice.type = "hidden"; inpOffice.id = "officeNameInput"; document.body.appendChild(inpStart); document.body.appendChild(inpEnd); document.body.appendChild(inpOffice); } document.getElementById("reportStartDate").value = "2000-01-01"; document.getElementById("reportEndDate").value = new Date().toISOString().slice(0,10); document.getElementById("officeNameInput").value = "राजस्व मंडल, निवाई"; document.getElementById("searchBtn").onclick = () => { const term = document.getElementById("searchCaseNo").value.trim().toLowerCase(); if(!term) return; const res = cases.filter(c=>c.caseNo.toLowerCase().includes(term)); if(res.length===0) showToast("No cases",true); else showCaseList(`Search: ${term}`, res); }; document.getElementById("clearSearchBtn").onclick = () => document.getElementById("searchCaseNo").value=""; document.getElementById("pendingMprBtn").onclick = renderPendingMPR; document.getElementById("disposalMprBtn").onclick = renderDisposalMPR; document.getElementById("showAllDisposalsBtn").onclick = showAllDisposals;
+        document.getElementById("purposeReportBtn").onclick = () => { const s = document.getElementById("purposeSection"); s.scrollIntoView({behavior:'smooth', block:'start'}); s.classList.remove('flash'); void s.offsetWidth; s.classList.add('flash'); };
+        document.getElementById("purposeMergeChk").onchange = renderPurposeCard;
+        document.getElementById("purposeExcelBtn").onclick = exportPurposeSummaryExcel;
+        document.getElementById("purposePdfBtn").onclick = exportPurposeSummaryPdf;
+        document.getElementById("purposeBody").addEventListener('click', e => { const el = e.target.closest('.clickable'); if (el) openPurposeCases(+el.dataset.i, el.dataset.s); }); document.getElementById("addCaseBtn").onclick = () => document.getElementById("caseModal").style.display="flex"; document.getElementById("closeCaseModalBtn").onclick = () => document.getElementById("caseModal").style.display="none"; document.getElementById("saveCaseBtn").onclick = () => { let cNo=document.getElementById("caseNo").value.trim(), inst=document.getElementById("instDate").value; if(!cNo||!inst){ showToast("Case No & Date required",true); return; } cases.push({id:nextId++, caseNo:cNo, section:document.getElementById("section").value, institutionDate:inst, casePurpose:document.getElementById("casePurpose").value, appellantName:document.getElementById("appellant").value, respondentName:document.getElementById("respondent").value, hearingDate:document.getElementById("hearingDate").value||null, disposed:false, disposalDate:null}); saveToFirebase(); document.getElementById("caseModal").style.display="none"; }; document.getElementById("disposeBtn").onclick = () => { document.getElementById("disposalModal").style.display="flex"; document.getElementById("disposalDate").value=new Date().toISOString().slice(0,10); const datalist = document.getElementById("caseNosList"); datalist.innerHTML=""; cases.filter(c=>!c.disposed).forEach(c=>{ const opt = document.createElement("option"); opt.value = c.caseNo; datalist.appendChild(opt); }); }; document.getElementById("closeDisposalModalBtn").onclick = () => document.getElementById("disposalModal").style.display="none"; document.getElementById("confirmDisposalBtn").onclick = () => { let cNo=document.getElementById("disposalCaseNo").value.trim(), dDate=document.getElementById("disposalDate").value; if(!cNo||!dDate){ showToast("Select case and date",true); return; } let found=cases.find(c=>c.caseNo===cNo && !c.disposed); if(found){ found.disposed=true; found.disposalDate=dDate; saveToFirebase(); showToast("Disposal recorded"); } else showToast("Not found or already disposed",true); document.getElementById("disposalModal").style.display="none"; }; document.getElementById("exportBackupBtn").onclick = exportBackup; document.getElementById("importBackupBtn").onclick = () => { let inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>{ if(e.target.files.length) restoreBackup(e.target.files[0]); }; inp.click(); }; document.getElementById("importCasesExcelBtn").onclick = () => document.getElementById("casesExcelInput").click(); document.getElementById("casesExcelInput").onchange = e => { if(e.target.files.length) importCasesExcel(e.target.files[0]); e.target.value=''; }; document.getElementById("importDisposalExcelBtn").onclick = () => document.getElementById("disposalExcelInput").click(); document.getElementById("disposalExcelInput").onchange = e => { if(e.target.files.length) importDisposalExcel(e.target.files[0]); e.target.value=''; }; document.getElementById("sampleDataBtn").onclick = loadSampleData; document.getElementById("deleteAllBtn").onclick = deleteAllData; document.getElementById("closeModalBtn").onclick = () => document.getElementById("listModal").style.display="none"; window.onclick = (event) => { if(event.target === document.getElementById("listModal")) document.getElementById("listModal").style.display="none"; }; setTimeout(() => { document.querySelectorAll('.stat-card').forEach(card => { card.addEventListener('click', () => { const type = card.getAttribute('data-stat'); let filtered=[]; if(type==='total') filtered=cases; else if(type==='pending') filtered=cases.filter(c=>!c.disposed); else if(type==='disposed') filtered=cases.filter(c=>c.disposed); else if(type==='yearly') { const cy=new Date().getFullYear(); filtered=cases.filter(c=>new Date(c.institutionDate).getFullYear()===cy); } if(filtered.length===0) showToast("No cases",true); else showCaseList(`${card.querySelector('.label').innerText} Cases (${filtered.length})`, filtered); }); }); }, 500); });
 </script>
 </body>
 </html>
