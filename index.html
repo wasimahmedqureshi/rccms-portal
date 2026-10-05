@@ -180,6 +180,44 @@
         #hearingSection, #purposeSection { scroll-margin-top: 90px; }
         #hearingSection.flash .dashboard-card { animation: flashRing 1.2s ease; }
 
+        /* ===================== HEARING CALENDAR ===================== */
+        .cal-head { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+        .cal-nav, .cal-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .cal-nav select { width: auto; min-width: 120px; padding: 9px 12px; font-weight: 600; color: var(--navy); }
+        .cal-nav #calYearSel { min-width: 96px; }
+        .cal-summary { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+        .cal-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 999px; background: #f1f5f9; color: var(--text-2); font-size: .82rem; font-weight: 500; }
+        .cal-chip b { color: var(--navy); font-weight: 800; font-size: .95rem; font-variant-numeric: tabular-nums; }
+        .cal-chip.ok { background: var(--accent-soft); border: 1px solid var(--accent-line); }
+        .cal-chip.warn { background: var(--warn-bg); color: var(--warn-text); }
+        .cal-chip.warn b { color: var(--warn-text); }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+        .cal-dow { text-align: center; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 8px 0; }
+        .cal-dow.sun { color: #b91c1c; }
+        .cal-day { min-height: 96px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; justify-content: space-between; transition: box-shadow .15s, transform .15s, border-color .15s; min-width: 0; }
+        .cal-day.empty { background: transparent; border-color: transparent; }
+        .cal-day .cal-num { font-weight: 600; font-size: .85rem; color: var(--text-2); width: 26px; height: 26px; display: inline-grid; place-items: center; border-radius: 50%; }
+        .cal-day.sun .cal-num { color: #b91c1c; }
+        .cal-day.today { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(20,184,166,.35); }
+        .cal-day.today .cal-num { background: var(--accent-strong); color: #fff; }
+        .cal-day.selected { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,.35); }
+        .cal-day.has { cursor: pointer; background: #f0fdfa; border-color: var(--accent-line); }
+        .cal-day.has.past { background: #fffbeb; border-color: #fde68a; }
+        .cal-day.has:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+        .cal-day:focus-visible { outline: 3px solid rgba(20,184,166,.5); outline-offset: 1px; }
+        .cal-count { align-self: flex-end; min-width: 44px; padding: 6px 12px; border-radius: 999px; text-align: center; font-size: 1.3rem; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+        .cal-count.lvl1 { background: #ccfbf1; color: #0f766e; }
+        .cal-count.lvl2 { background: #99f6e4; color: #115e59; }
+        .cal-count.lvl3 { background: #2dd4bf; color: #134e4a; }
+        .cal-count.lvl4 { background: #0d9488; color: #fff; }
+        .cal-day.past .cal-count.lvl1 { background: #fef3c7; color: #92400e; }
+        .cal-day.past .cal-count.lvl2 { background: #fde68a; color: #78350f; }
+        .cal-day.past .cal-count.lvl3 { background: #fbbf24; color: #78350f; }
+        .cal-day.past .cal-count.lvl4 { background: #d97706; color: #fff; }
+        .cal-legend { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); font-size: .78rem; color: var(--muted); }
+        .cal-legend span { display: inline-flex; align-items: center; gap: 6px; }
+        .cal-legend i.sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
         /* ===================== MPR REPORTS ===================== */
         .report-output { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-card); padding: 26px; overflow-x: auto; }
         .report-output h4 { font-size: 1.05rem; font-weight: 700; color: var(--navy); margin-bottom: 20px; letter-spacing: -0.005em; }
@@ -255,6 +293,11 @@
             .stat-card, .dashboard-card { grid-column: 1 / -1; }
             .hearing-kpis { grid-template-columns: 1fr 1fr; gap: 12px; }
             .hearing-picker { padding: 16px; }
+            .cal-grid { gap: 4px; }
+            .cal-day { min-height: 62px; padding: 4px 5px; border-radius: 8px; }
+            .cal-day .cal-num { width: 22px; height: 22px; font-size: .75rem; }
+            .cal-count { min-width: 30px; padding: 4px 7px; font-size: .95rem; }
+            .cal-dow { font-size: .62rem; letter-spacing: 0; }
             .stats-grid, .dashboard-row { gap: 16px; }
             .stat-card { padding: 20px; }
             .toolbar { padding: 6px 16px; }
@@ -346,6 +389,32 @@
 
         <div class="section-title">Hearing Schedule</div>
         <div class="dashboard-row" id="hearingSection">
+            <div class="dashboard-card span-12" id="calendarCard">
+                <h3><i class="fas fa-calendar-alt"></i> Hearing Calendar (पेशी कैलेंडर) - Month-wise</h3>
+                <div class="cal-head">
+                    <div class="cal-nav">
+                        <button id="calPrev" title="Previous month"><i class="fas fa-chevron-left"></i></button>
+                        <select id="calMonthSel" aria-label="Month"></select>
+                        <select id="calYearSel" aria-label="Year"></select>
+                        <button id="calNext" title="Next month"><i class="fas fa-chevron-right"></i></button>
+                        <button id="calTodayBtn" class="soft">This Month</button>
+                    </div>
+                    <div class="cal-tools">
+                        <button id="calMonthView" class="primary"><i class="fas fa-list"></i> View all cases</button>
+                        <button id="calExcelBtn" class="soft"><i class="fas fa-file-excel"></i> Excel</button>
+                        <button id="calPdfBtn" class="soft"><i class="fas fa-file-pdf"></i> PDF</button>
+                    </div>
+                </div>
+                <div class="cal-summary" id="calSummary"></div>
+                <div class="cal-grid" id="calGrid"></div>
+                <div class="cal-legend">
+                    <span><b style="color:var(--navy)">Number</b> = pending cases fixed for that date. Click a date to see its cases.</span>
+                    <span><i class="sw" style="background:#2dd4bf"></i> Upcoming hearing</span>
+                    <span><i class="sw" style="background:#fbbf24"></i> Date passed, case still pending</span>
+                    <span><i class="sw" style="background:#fff; border:2px solid var(--accent)"></i> Today</span>
+                    <span><i class="sw" style="background:#fff; border:2px solid #2563eb"></i> Selected date</span>
+                </div>
+            </div>
             <div class="dashboard-card span-12">
                 <h3><i class="fas fa-calendar-day"></i> Next Hearing Date-wise Cases (अगली पेशी तिथि)</h3>
 
@@ -888,6 +957,7 @@ tr { page-break-inside: avoid; }
         const today = isoToday(), tomorrow = isoAdd(today, 1), weekEnd = isoAdd(today, 6);
         if (!filter.value) filter.value = today;
         const sel = filter.value;
+        renderHearingCalendar();
 
         document.getElementById('hkToday').innerText = hearingCases('date', today).length;
         document.getElementById('hkTodaySub').innerText = isoFmt(today);
@@ -929,7 +999,86 @@ tr { page-break-inside: avoid; }
         hearingRows.push(['Total', '', total]);
     }
 
-    function setHearingDate(iso) { document.getElementById('hearingFilterDate').value = iso; renderHearingSection(); }
+    function setHearingDate(iso) { document.getElementById('hearingFilterDate').value = iso; syncCalToDate(iso); renderHearingSection(); }
+
+    // ---- Month-wise calendar: number of pending cases fixed on each date ----
+    const CAL_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const CAL_DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const calState = { y: null, m: null };
+    function syncCalToDate(iso) { const p = iso.split('-').map(Number); calState.y = p[0]; calState.m = p[1] - 1; }
+    function pendingHearingCounts() { const o = {}; cases.forEach(c => { if (c.disposed) return; const h = hearingISO(c); if (h) o[h] = (o[h] || 0) + 1; }); return o; }
+    function calLvl(n) { return n >= 10 ? 4 : n >= 6 ? 3 : n >= 3 ? 2 : 1; }
+    function calBounds() {
+        const mm = String(calState.m + 1).padStart(2, '0');
+        const dim = new Date(Date.UTC(calState.y, calState.m + 1, 0)).getUTCDate();
+        return { first: `${calState.y}-${mm}-01`, last: `${calState.y}-${mm}-${String(dim).padStart(2, '0')}`, dim, mm };
+    }
+    function calMonthData() {
+        const b = calBounds(), counts = pendingHearingCounts(), today = isoToday(), days = [];
+        let total = 0, dates = 0, pastTotal = 0;
+        for (let d = 1; d <= b.dim; d++) {
+            const iso = `${calState.y}-${b.mm}-${String(d).padStart(2, '0')}`, n = counts[iso] || 0;
+            days.push({ d, iso, n });
+            if (n) { total += n; dates++; if (iso < today) pastTotal += n; }
+        }
+        return { b, days, total, dates, pastTotal, counts };
+    }
+    function renderHearingCalendar() {
+        const grid = document.getElementById('calGrid'); if (!grid) return;
+        const today = isoToday(); if (calState.y === null) syncCalToDate(today);
+        const { b, days, total, dates, pastTotal, counts } = calMonthData();
+        const sel = (document.getElementById('hearingFilterDate') || {}).value || '';
+
+        // month / year pickers
+        const ys = Object.keys(counts).map(k => +k.slice(0, 4)), ty = +today.slice(0, 4);
+        const minY = Math.min(calState.y, ty, ...ys), maxY = Math.max(calState.y, ty + 1, ...ys);
+        document.getElementById('calMonthSel').innerHTML = CAL_MONTHS.map((m, i) => `<option value="${i}"${i === calState.m ? ' selected' : ''}>${m}</option>`).join('');
+        let yo = ''; for (let y = minY; y <= maxY; y++) yo += `<option value="${y}"${y === calState.y ? ' selected' : ''}>${y}</option>`;
+        document.getElementById('calYearSel').innerHTML = yo;
+
+        // summary chips + month button
+        document.getElementById('calSummary').innerHTML =
+            `<span class="cal-chip ok"><b>${total}</b> pending case(s) in ${CAL_MONTHS[calState.m]} ${calState.y}</span>` +
+            `<span class="cal-chip"><b>${dates}</b> hearing date(s)</span>` +
+            (pastTotal ? `<span class="cal-chip warn"><b>${pastTotal}</b> date passed, still pending</span>` : '');
+        const mv = document.getElementById('calMonthView'); mv.disabled = total === 0; mv.innerHTML = `<i class="fas fa-list"></i> View all ${total} case(s)`;
+
+        // grid
+        const lead = new Date(Date.UTC(calState.y, calState.m, 1)).getUTCDay();
+        let html = CAL_DOW.map((n, i) => `<div class="cal-dow${i === 0 ? ' sun' : ''}">${n}</div>`).join('');
+        for (let i = 0; i < lead; i++) html += '<div class="cal-day empty"></div>';
+        days.forEach(x => {
+            const dow = (lead + x.d - 1) % 7;
+            const cls = ['cal-day', dow === 0 ? 'sun' : '', x.iso === today ? 'today' : '', x.iso === sel ? 'selected' : '', x.n ? 'has' : '', x.n && x.iso < today ? 'past' : ''].filter(Boolean).join(' ');
+            const attrs = x.n ? ` tabindex="0" role="button" title="${x.n} pending case(s) on ${isoFmt(x.iso)}"` : '';
+            html += `<div class="${cls}" data-date="${x.iso}" data-n="${x.n}"${attrs}><span class="cal-num">${x.d}</span>${x.n ? `<span class="cal-count lvl${calLvl(x.n)}">${x.n}</span>` : ''}</div>`;
+        });
+        grid.innerHTML = html;
+    }
+    function calShift(delta) { let m = calState.m + delta, y = calState.y; if (m < 0) { m = 11; y--; } if (m > 11) { m = 0; y++; } calState.m = m; calState.y = y; renderHearingCalendar(); }
+    function calOpenDay(el) { const d = el.dataset.date; setHearingDate(d); if (+el.dataset.n > 0) openHearingDate(d); }
+    function calViewMonth() {
+        const b = calBounds(), list = hearingCases('range', b.first, b.last);
+        showHearingCases(`Hearings in ${CAL_MONTHS[calState.m]} ${calState.y} - ${list.length} cases`, list);
+    }
+    function calExportExcel() {
+        const { days, total } = calMonthData(), rows = days.filter(x => x.n).map(x => [isoFmt(x.iso), HDAY_EN[isoDow(x.iso)], x.n]);
+        if (!rows.length) { showToast('No hearings in this month', true); return; }
+        rows.push(['Total', '', total]);
+        const ws = XLSX.utils.aoa_to_sheet([['Next Hearing Date', 'Day', 'Pending Cases'], ...rows]); ws['!cols'] = [{wch:18},{wch:14},{wch:14}];
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, CAL_MONTHS[calState.m].slice(0, 3) + '_' + calState.y);
+        XLSX.writeFile(wb, `Hearing_Calendar_${CAL_MONTHS[calState.m]}_${calState.y}.xlsx`);
+    }
+    function calExportPdf() {
+        const { days, total, dates } = calMonthData();
+        if (!total) { showToast('No hearings in this month', true); return; }
+        const lead = new Date(Date.UTC(calState.y, calState.m, 1)).getUTCDay(), cells = [];
+        for (let i = 0; i < lead; i++) cells.push('');
+        days.forEach(x => cells.push(x.n ? `${x.d}  -  ${x.n} case(s)` : String(x.d)));
+        while (cells.length % 7) cells.push('');
+        const rows = []; for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
+        printAsPdf(`Hearing Calendar - ${CAL_MONTHS[calState.m]} ${calState.y}`, CAL_DOW, rows, `${total} pending case(s) on ${dates} hearing date(s)`);
+    }
 
     function exportHearingExcel() {
         if (!hearingRows.length) { showToast('No data', true); return; }
@@ -979,7 +1128,17 @@ tr { page-break-inside: avoid; }
         document.getElementById("purposeMergeChk").onchange = renderPurposeCard;
         // ---- Next Hearing Date wiring ----
         document.getElementById("hearingReportBtn").onclick = () => { const s = document.getElementById("hearingSection"); s.scrollIntoView({behavior:'smooth', block:'start'}); s.classList.remove('flash'); void s.offsetWidth; s.classList.add('flash'); };
-        document.getElementById("hearingFilterDate").onchange = renderHearingSection;
+        document.getElementById("hearingFilterDate").onchange = () => { const v = document.getElementById("hearingFilterDate").value; if (v) syncCalToDate(v); renderHearingSection(); };
+        document.getElementById("calPrev").onclick = () => calShift(-1);
+        document.getElementById("calNext").onclick = () => calShift(1);
+        document.getElementById("calTodayBtn").onclick = () => { syncCalToDate(isoToday()); renderHearingCalendar(); };
+        document.getElementById("calMonthSel").onchange = e => { calState.m = +e.target.value; renderHearingCalendar(); };
+        document.getElementById("calYearSel").onchange = e => { calState.y = +e.target.value; renderHearingCalendar(); };
+        document.getElementById("calMonthView").onclick = calViewMonth;
+        document.getElementById("calExcelBtn").onclick = calExportExcel;
+        document.getElementById("calPdfBtn").onclick = calExportPdf;
+        document.getElementById("calGrid").addEventListener('click', e => { const el = e.target.closest('.cal-day[data-date]'); if (el) calOpenDay(el); });
+        document.getElementById("calGrid").addEventListener('keydown', e => { if (e.key !== 'Enter' && e.key !== ' ') return; const el = e.target.closest('.cal-day.has'); if (el) { e.preventDefault(); calOpenDay(el); } });
         document.getElementById("hearingTodayBtn").onclick = () => setHearingDate(isoToday());
         document.getElementById("hearingTomorrowBtn").onclick = () => setHearingDate(isoAdd(isoToday(), 1));
         document.getElementById("hearingPrevDay").onclick = () => setHearingDate(isoAdd(document.getElementById("hearingFilterDate").value || isoToday(), -1));
