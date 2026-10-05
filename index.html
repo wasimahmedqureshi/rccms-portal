@@ -138,6 +138,48 @@
         #purposeSection.flash .dashboard-card { animation: flashRing 1.2s ease; }
         @keyframes flashRing { 0%,100% { box-shadow: var(--shadow-card); } 40% { box-shadow: 0 0 0 4px rgba(20,184,166,.55), var(--shadow-card); } }
 
+        /* ===================== NEXT HEARING DATE ===================== */
+        .hearing-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
+        .hearing-kpi { background: #f8fafc; border: 1px solid var(--line); border-left: 4px solid var(--line-strong); border-radius: var(--radius-sm); padding: 16px 18px; cursor: pointer; transition: background .15s, box-shadow .15s, transform .15s; }
+        .hearing-kpi:hover { background: #fff; box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+        .hearing-kpi[data-hk="today"] { border-left-color: var(--accent); }
+        .hearing-kpi[data-hk="tomorrow"] { border-left-color: #2563eb; }
+        .hearing-kpi[data-hk="week"] { border-left-color: #6366f1; }
+        .hearing-kpi[data-hk="overdue"] { border-left-color: #d97706; }
+        .hearing-kpi .hk-num { font-size: 1.9rem; font-weight: 800; letter-spacing: -0.03em; color: var(--navy); line-height: 1.15; font-variant-numeric: tabular-nums; }
+        .hearing-kpi .hk-label { font-size: .82rem; font-weight: 600; color: var(--text-2); margin-top: 2px; }
+        .hearing-kpi .hk-sub { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+        .hearing-grid { display: grid; grid-template-columns: 5fr 7fr; gap: 24px; align-items: start; }
+        .hearing-picker { background: #f8fafc; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 22px; }
+        .hearing-picker .hp-title, .hearing-list-head .hp-title { font-size: .95rem; font-weight: 700; color: var(--navy); margin-bottom: 14px; }
+        .hearing-stepper { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+        .hearing-stepper input { flex: 1; }
+        .hearing-quick { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+        .hearing-result { background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--shadow-card); padding: 22px; text-align: center; }
+        .hearing-result .hr-count { font-size: 3.2rem; font-weight: 800; letter-spacing: -0.04em; color: var(--accent-strong); line-height: 1.1; cursor: pointer; font-variant-numeric: tabular-nums; }
+        .hearing-result .hr-count.zero { color: var(--muted); cursor: default; }
+        .hearing-result .hr-label { font-size: .82rem; color: var(--muted); margin-top: 2px; }
+        .hearing-result .hr-date { font-size: .98rem; font-weight: 700; color: var(--navy); margin: 10px 0 14px; }
+        .hearing-list-head { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        .hearing-list-head .hp-title { margin: 0; }
+        .hearing-list-tools { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+        .hearing-list-tools label { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: .82rem; font-weight: 500; color: var(--text-2); cursor: pointer; text-transform: none; letter-spacing: 0; }
+        .hearing-list-tools input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); padding: 0; }
+        #hearingTable th.num, #hearingTable td.num { text-align: center; }
+        #hearingTable tbody tr[data-date] { cursor: pointer; }
+        #hearingTable td:first-child { font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; }
+        #hearingTable tr.hrow-today td { background: #ccfbf1; }
+        #hearingTable tr.hrow-selected td { background: #e0f2fe; }
+        #hearingTable tr.hrow-past td { color: var(--muted); }
+        #hearingTable tr.hrow-past td:first-child { color: var(--muted); font-weight: 500; }
+        #hearingTable tr.total-row td { background: #e2e8f0; font-weight: 700; color: var(--navy); border-top: 2px solid var(--navy); }
+        .hpill { display: inline-block; min-width: 52px; padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: .85rem; text-align: center; cursor: pointer; background: var(--accent-soft); color: var(--accent-strong); border: 1px solid var(--accent-line); transition: transform .12s, box-shadow .12s; font-variant-numeric: tabular-nums; }
+        .hpill:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(15,23,42,.18); }
+        .hearing-current { background: #f8fafc; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 18px; font-size: .84rem; color: var(--text-2); min-height: 20px; }
+        .hearing-current:empty { display: none; }
+        #hearingSection, #purposeSection { scroll-margin-top: 90px; }
+        #hearingSection.flash .dashboard-card { animation: flashRing 1.2s ease; }
+
         /* ===================== MPR REPORTS ===================== */
         .report-output { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-card); padding: 26px; overflow-x: auto; }
         .report-output h4 { font-size: 1.05rem; font-weight: 700; color: var(--navy); margin-bottom: 20px; letter-spacing: -0.005em; }
@@ -205,12 +247,14 @@
 
         /* ===================== RESPONSIVE ===================== */
         @media (max-width: 1200px) { .dashboard-card { grid-column: span 6; } .dashboard-row > .dashboard-card:nth-child(3) { grid-column: 1 / -1; } }
-        @media (max-width: 1000px) { .stat-card { grid-column: span 6; } }
+        @media (max-width: 1000px) { .stat-card { grid-column: span 6; } .hearing-kpis { grid-template-columns: repeat(2, 1fr); } .hearing-kpi:last-child { grid-column: 1 / -1; } .hearing-grid { grid-template-columns: 1fr; } }
         @media (max-width: 760px) {
             .container { padding: 20px 14px 48px; }
             .header { position: static; }
             .header-inner { padding: 12px 14px; }
             .stat-card, .dashboard-card { grid-column: 1 / -1; }
+            .hearing-kpis { grid-template-columns: 1fr 1fr; gap: 12px; }
+            .hearing-picker { padding: 16px; }
             .stats-grid, .dashboard-row { gap: 16px; }
             .stat-card { padding: 20px; }
             .toolbar { padding: 6px 16px; }
@@ -255,6 +299,7 @@
                 <button id="disposeBtn"><i class="fas fa-check-double"></i> Record Disposal</button>
                 <button id="importCasesExcelBtn"><i class="fas fa-file-excel"></i> Import Cases</button>
                 <button id="importDisposalExcelBtn"><i class="fas fa-file-excel"></i> Import Disposal</button>
+                <button id="nextHearingBtn"><i class="fas fa-calendar-check"></i> Next Hearing Date</button>
             </div>
         </div>
         <div class="tool-group">
@@ -264,6 +309,7 @@
                 <button id="disposalMprBtn" class="soft"><i class="fas fa-chart-bar"></i> Disposal MPR (Case Type)</button>
                 <button id="showAllDisposalsBtn" class="soft"><i class="fas fa-list"></i> Show All Disposed</button>
                 <button id="purposeReportBtn" class="soft"><i class="fas fa-bullseye"></i> Purpose Report</button>
+                <button id="hearingReportBtn" class="soft"><i class="fas fa-calendar-day"></i> Hearing Dates</button>
             </div>
         </div>
         <div class="tool-group">
@@ -296,6 +342,59 @@
             <div class="stat-card" data-stat="pending" title="Click to view cases"><div class="stat-icon"><i class="fas fa-hourglass-half"></i></div><div><div class="number" id="pendingCount">0</div><div class="label">Pending Cases</div></div></div>
             <div class="stat-card" data-stat="disposed" title="Click to view cases"><div class="stat-icon"><i class="fas fa-check-circle"></i></div><div><div class="number" id="disposedCount">0</div><div class="label">Disposed</div></div></div>
             <div class="stat-card" data-stat="yearly" title="Click to view cases"><div class="stat-icon"><i class="fas fa-calendar-plus"></i></div><div><div class="number" id="yearlyFiling">0</div><div class="label">Filed This Year</div></div></div>
+        </div>
+
+        <div class="section-title">Hearing Schedule</div>
+        <div class="dashboard-row" id="hearingSection">
+            <div class="dashboard-card span-12">
+                <h3><i class="fas fa-calendar-day"></i> Next Hearing Date-wise Cases (अगली पेशी तिथि)</h3>
+
+                <div class="hearing-kpis">
+                    <div class="hearing-kpi" data-hk="today"><div class="hk-num" id="hkToday">0</div><div class="hk-label">Today</div><div class="hk-sub" id="hkTodaySub">-</div></div>
+                    <div class="hearing-kpi" data-hk="tomorrow"><div class="hk-num" id="hkTomorrow">0</div><div class="hk-label">Tomorrow</div><div class="hk-sub" id="hkTomorrowSub">-</div></div>
+                    <div class="hearing-kpi" data-hk="week"><div class="hk-num" id="hkWeek">0</div><div class="hk-label">Next 7 Days</div><div class="hk-sub" id="hkWeekSub">-</div></div>
+                    <div class="hearing-kpi" data-hk="overdue"><div class="hk-num" id="hkOverdue">0</div><div class="hk-label">Date Passed</div><div class="hk-sub">Pending, hearing date over</div></div>
+                    <div class="hearing-kpi" data-hk="nodate"><div class="hk-num" id="hkNoDate">0</div><div class="hk-label">No Hearing Date</div><div class="hk-sub">Pending, date not set</div></div>
+                </div>
+
+                <div class="hearing-grid">
+                    <div class="hearing-picker">
+                        <div class="hp-title">Cases on a specific date</div>
+                        <div class="hearing-stepper">
+                            <button id="hearingPrevDay" title="Previous day"><i class="fas fa-chevron-left"></i></button>
+                            <input type="date" id="hearingFilterDate">
+                            <button id="hearingNextDay" title="Next day"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                        <div class="hearing-quick">
+                            <button id="hearingTodayBtn" class="soft">Today</button>
+                            <button id="hearingTomorrowBtn" class="soft">Tomorrow</button>
+                        </div>
+                        <div class="hearing-result">
+                            <div class="hr-count zero" id="hearingResultCount">0</div>
+                            <div class="hr-label">pending case(s) fixed for</div>
+                            <div class="hr-date" id="hearingResultDate">Select a date</div>
+                            <button id="hearingViewBtn" class="primary"><i class="fas fa-list"></i> View Cases</button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="hearing-list-head">
+                            <div class="hp-title">Hearing dates and number of cases</div>
+                            <div class="hearing-list-tools">
+                                <label><input type="checkbox" id="hearingPastChk"> Include past dates</label>
+                                <button id="hearingExcelBtn" class="soft"><i class="fas fa-file-excel"></i> Excel</button>
+                                <button id="hearingPdfBtn" class="soft"><i class="fas fa-file-pdf"></i> PDF</button>
+                            </div>
+                        </div>
+                        <div class="data-table" style="max-height:430px;">
+                            <table id="hearingTable">
+                                <thead><tr><th>Hearing Date</th><th>Day</th><th class="num">Cases</th></tr></thead>
+                                <tbody id="hearingBody"><tr><td colspan="3">Loading...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div class="section-title">Analytics</div>
@@ -408,6 +507,16 @@
     </div>
 </div>
 
+<div id="hearingModal" class="modal">
+    <div class="modal-content">
+        <h3><i class="fas fa-calendar-check"></i> Next Hearing Date</h3>
+        <div class="form-group"><label>Case No</label><input list="hearingCaseNosList" id="hearingCaseNo" autocomplete="off"><datalist id="hearingCaseNosList"></datalist></div>
+        <div class="hearing-current" id="hearingCurrentInfo"></div>
+        <div class="form-group"><label>Next Hearing Date *</label><input type="date" id="hearingNewDate"></div>
+        <div class="modal-actions"><button id="closeHearingModalBtn">Cancel</button><button id="saveHearingBtn" class="primary">Save</button></div>
+    </div>
+</div>
+
 <div id="disposalModal" class="modal">
     <div class="modal-content">
         <h3><i class="fas fa-clipboard-check"></i> Record Disposal</h3>
@@ -495,6 +604,7 @@
         let secHtml = ''; sorted.forEach(([sec,count]) => { let percent = (count/maxCount)*100; secHtml += `<tr><td>${escapeHtml(sec)}</td><td>${count}</td><td><div class="progress-bar-container"><div class="progress-bar" style="width:${percent}%;"></div></div></td></tr>`; });
         document.getElementById("sectionTableBody").innerHTML = secHtml || '<tr><td colspan="3">No data</td></tr>';
         renderPurposeCard();
+        renderHearingSection();
     }
 
     function showCaseList(title, caseArray) {
@@ -738,6 +848,128 @@ tr { page-break-inside: avoid; }
         showToast('In the print dialog choose "Save as PDF"');
     }
 
+    // ===== NEXT HEARING DATE (अगली पेशी) =====
+    // Hearing dates are stored as 'YYYY-MM-DD'. All date maths below is done on the string / UTC parts
+    // so the IST-vs-UTC shift bug can never move a case to the wrong day.
+    const HDAY_EN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const HDAY_HI = ['रविवार','सोमवार','मंगलवार','बुधवार','गुरुवार','शुक्रवार','शनिवार'];
+    function isoToday() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+    function isoAdd(iso, n) { const p = iso.split('-').map(Number); return new Date(Date.UTC(p[0], p[1] - 1, p[2] + n)).toISOString().slice(0, 10); }
+    function isoFmt(iso) { if (!iso) return '-'; const p = iso.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+    function isoDow(iso) { const p = iso.split('-').map(Number); return new Date(Date.UTC(p[0], p[1] - 1, p[2])).getUTCDay(); }
+    function hearingISO(c) { const s = c && c.hearingDate ? String(c.hearingDate).slice(0, 10) : ''; return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : ''; }
+    const cmpCaseNo = (a, b) => String(a.caseNo).localeCompare(String(b.caseNo), undefined, { numeric: true });
+
+    // Pending cases only: a disposed case has no "next" hearing.
+    function hearingCases(kind, a, b) {
+        const today = isoToday();
+        let list = cases.filter(c => {
+            if (c.disposed) return false;
+            const h = hearingISO(c);
+            if (kind === 'date') return h === a;
+            if (kind === 'range') return h && h >= a && h <= b;
+            if (kind === 'overdue') return h && h < today;
+            if (kind === 'nodate') return !h;
+            return false;
+        });
+        return list.sort((x, y) => (hearingISO(x) < hearingISO(y) ? -1 : hearingISO(x) > hearingISO(y) ? 1 : cmpCaseNo(x, y)));
+    }
+    function hearingDayLabel(iso) { const d = isoDow(iso); return `${HDAY_EN[d]} / ${HDAY_HI[d]}`; }
+    function showHearingCases(title, list) { if (!list.length) { showToast('No cases', true); return; } showCaseList(title, list); }
+    function openHearingDate(iso) {
+        const list = hearingCases('date', iso);
+        showHearingCases(`Next Hearing ${isoFmt(iso)} (${HDAY_EN[isoDow(iso)]}) - ${list.length} cases`, list);
+    }
+
+    let hearingRows = []; // rows currently shown in the table (for Excel / PDF)
+
+    function renderHearingSection() {
+        const filter = document.getElementById('hearingFilterDate'); if (!filter) return;
+        const today = isoToday(), tomorrow = isoAdd(today, 1), weekEnd = isoAdd(today, 6);
+        if (!filter.value) filter.value = today;
+        const sel = filter.value;
+
+        document.getElementById('hkToday').innerText = hearingCases('date', today).length;
+        document.getElementById('hkTodaySub').innerText = isoFmt(today);
+        document.getElementById('hkTomorrow').innerText = hearingCases('date', tomorrow).length;
+        document.getElementById('hkTomorrowSub').innerText = isoFmt(tomorrow);
+        document.getElementById('hkWeek').innerText = hearingCases('range', today, weekEnd).length;
+        document.getElementById('hkWeekSub').innerText = `${isoFmt(today)} - ${isoFmt(weekEnd)}`;
+        document.getElementById('hkOverdue').innerText = hearingCases('overdue').length;
+        document.getElementById('hkNoDate').innerText = hearingCases('nodate').length;
+
+        // Result tile for the chosen date
+        const cnt = document.getElementById('hearingResultCount'), dt = document.getElementById('hearingResultDate'), vb = document.getElementById('hearingViewBtn');
+        if (!sel) { cnt.innerText = '-'; cnt.classList.add('zero'); dt.innerText = 'Select a date'; vb.disabled = true; }
+        else {
+            const n = hearingCases('date', sel).length;
+            cnt.innerText = n; cnt.classList.toggle('zero', n === 0); vb.disabled = n === 0;
+            dt.innerText = `${isoFmt(sel)} · ${hearingDayLabel(sel)}` + (sel === today ? ' (Today)' : sel === tomorrow ? ' (Tomorrow)' : '');
+        }
+
+        // Date-wise table
+        const counts = {};
+        cases.forEach(c => { if (c.disposed) return; const h = hearingISO(c); if (h) counts[h] = (counts[h] || 0) + 1; });
+        const showPast = document.getElementById('hearingPastChk').checked;
+        const upcoming = Object.keys(counts).filter(d => d >= today).sort();
+        const past = showPast ? Object.keys(counts).filter(d => d < today).sort().reverse() : [];
+        const dates = upcoming.concat(past);
+        hearingRows = dates.map(d => [isoFmt(d), HDAY_EN[isoDow(d)], counts[d]]);
+        const body = document.getElementById('hearingBody');
+        if (!dates.length) { body.innerHTML = `<tr><td colspan="3" class="empty-state">${showPast ? 'No hearing dates found' : 'No upcoming hearing dates. Tick "Include past dates" to see older ones.'}</td></tr>`; return; }
+        let total = 0, html = '';
+        dates.forEach(d => {
+            total += counts[d];
+            const cls = [d < today ? 'hrow-past' : '', d === today ? 'hrow-today' : '', d === sel ? 'hrow-selected' : ''].filter(Boolean).join(' ');
+            const tag = d === today ? ' <span class="status-badge status-disposed" style="margin-left:6px;">Today</span>' : d === tomorrow ? ' <span class="type-chip" style="margin-left:6px;">Tomorrow</span>' : '';
+            html += `<tr data-date="${d}" class="${cls}"><td>${isoFmt(d)}${tag}</td><td>${HDAY_EN[isoDow(d)]}</td><td class="num"><span class="hpill" data-hd="${d}">${counts[d]}</span></td></tr>`;
+        });
+        html += `<tr class="total-row"><td>Total</td><td></td><td class="num">${total}</td></tr>`;
+        body.innerHTML = html;
+        hearingRows.push(['Total', '', total]);
+    }
+
+    function setHearingDate(iso) { document.getElementById('hearingFilterDate').value = iso; renderHearingSection(); }
+
+    function exportHearingExcel() {
+        if (!hearingRows.length) { showToast('No data', true); return; }
+        const ws = XLSX.utils.aoa_to_sheet([['Next Hearing Date', 'Day', 'Pending Cases'], ...hearingRows]);
+        ws['!cols'] = [{wch:18},{wch:14},{wch:14}];
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Hearing_Dates');
+        XLSX.writeFile(wb, `Next_Hearing_Dates_${isoToday()}.xlsx`);
+    }
+    function exportHearingPdf() {
+        if (!hearingRows.length) { showToast('No data', true); return; }
+        printAsPdf('Next Hearing Date-wise Cases', ['Next Hearing Date', 'Day', 'Pending Cases'], hearingRows, `As on ${isoFmt(isoToday())}`);
+    }
+
+    // ---- Update the next hearing date of a pending case ----
+    function openNextHearingModal() {
+        const dl = document.getElementById('hearingCaseNosList'); dl.innerHTML = '';
+        cases.filter(c => !c.disposed).sort(cmpCaseNo).forEach(c => { const o = document.createElement('option'); o.value = c.caseNo; dl.appendChild(o); });
+        document.getElementById('hearingCaseNo').value = '';
+        document.getElementById('hearingNewDate').value = '';
+        document.getElementById('hearingCurrentInfo').innerText = '';
+        document.getElementById('hearingModal').style.display = 'flex';
+    }
+    function showHearingCurrent() {
+        const box = document.getElementById('hearingCurrentInfo');
+        const c = cases.find(x => x.caseNo === document.getElementById('hearingCaseNo').value.trim() && !x.disposed);
+        if (!c) { box.innerText = ''; return; }
+        const h = hearingISO(c);
+        box.innerText = `Current hearing date: ${h ? isoFmt(h) : 'not set'}` + (c.casePurpose ? `  |  Purpose: ${c.casePurpose}` : '') + ((c.appellantName || c.respondentName) ? `  |  ${c.appellantName || '-'} vs ${c.respondentName || '-'}` : '');
+    }
+    function saveNextHearing() {
+        const cNo = document.getElementById('hearingCaseNo').value.trim(), d = document.getElementById('hearingNewDate').value;
+        if (!cNo || !d) { showToast('Select case and next hearing date', true); return; }
+        const c = cases.find(x => x.caseNo === cNo && !x.disposed);
+        if (!c) { showToast('Not found or already disposed', true); return; }
+        c.hearingDate = d; saveToFirebase();
+        document.getElementById('hearingModal').style.display = 'none';
+        showToast(`Next hearing set: ${cNo} → ${isoFmt(d)}`);
+        setHearingDate(d);
+    }
+
     // Authentication and event listeners (fixed login flow)
     auth.onAuthStateChanged(user => { if(user){ updateSyncIndicator('connected','Live'); document.getElementById("loginModal").style.display="none"; document.getElementById("mainToolbar").style.display="flex"; document.getElementById("mainContent").style.display="block"; document.getElementById("userStatus").innerHTML = `<i class="fas fa-user-check"></i> ${user.email}`; casesRef.on('value', (snap) => { let data = snap.val(); if(data){ cases = Object.values(data); if(cases.length) nextId = Math.max(...cases.map(c=>c.id||0))+1; } else { cases = []; nextId=1; } isLoading = false; updateStats(true); showToast("Data loaded"); }); } else { updateSyncIndicator('connecting','Not logged in'); document.getElementById("loginModal").style.display="flex"; document.getElementById("mainToolbar").style.display="none"; document.getElementById("mainContent").style.display="none"; document.getElementById("userStatus").innerHTML = "<i class='fas fa-user-lock'></i> Not logged in"; } });
     document.getElementById("loginBtn").onclick = () => { const email = document.getElementById("loginEmail").value; const pwd = document.getElementById("loginPassword").value; if(!email||!pwd){ document.getElementById("loginError").innerText="Enter credentials"; return; } auth.signInWithEmailAndPassword(email,pwd).then(()=>{ document.getElementById("loginError").innerText=""; showToast("Login success"); }).catch(err=>{ document.getElementById("loginError").innerText=err.message; showToast("Login failed",true); }); };
@@ -745,6 +977,35 @@ tr { page-break-inside: avoid; }
     document.addEventListener("DOMContentLoaded", () => { if(!document.getElementById("reportStartDate")){ const inpStart = document.createElement("input"); inpStart.type = "hidden"; inpStart.id = "reportStartDate"; const inpEnd = document.createElement("input"); inpEnd.type = "hidden"; inpEnd.id = "reportEndDate"; const inpOffice = document.createElement("input"); inpOffice.type = "hidden"; inpOffice.id = "officeNameInput"; document.body.appendChild(inpStart); document.body.appendChild(inpEnd); document.body.appendChild(inpOffice); } document.getElementById("reportStartDate").value = "2000-01-01"; document.getElementById("reportEndDate").value = new Date().toISOString().slice(0,10); document.getElementById("officeNameInput").value = "राजस्व मंडल, निवाई"; document.getElementById("searchBtn").onclick = () => { const term = document.getElementById("searchCaseNo").value.trim().toLowerCase(); if(!term) return; const res = cases.filter(c=>c.caseNo.toLowerCase().includes(term)); if(res.length===0) showToast("No cases",true); else showCaseList(`Search: ${term}`, res); }; document.getElementById("clearSearchBtn").onclick = () => document.getElementById("searchCaseNo").value=""; document.getElementById("pendingMprBtn").onclick = renderPendingMPR; document.getElementById("disposalMprBtn").onclick = renderDisposalMPR; document.getElementById("showAllDisposalsBtn").onclick = showAllDisposals;
         document.getElementById("purposeReportBtn").onclick = () => { const s = document.getElementById("purposeSection"); s.scrollIntoView({behavior:'smooth', block:'start'}); s.classList.remove('flash'); void s.offsetWidth; s.classList.add('flash'); };
         document.getElementById("purposeMergeChk").onchange = renderPurposeCard;
+        // ---- Next Hearing Date wiring ----
+        document.getElementById("hearingReportBtn").onclick = () => { const s = document.getElementById("hearingSection"); s.scrollIntoView({behavior:'smooth', block:'start'}); s.classList.remove('flash'); void s.offsetWidth; s.classList.add('flash'); };
+        document.getElementById("hearingFilterDate").onchange = renderHearingSection;
+        document.getElementById("hearingTodayBtn").onclick = () => setHearingDate(isoToday());
+        document.getElementById("hearingTomorrowBtn").onclick = () => setHearingDate(isoAdd(isoToday(), 1));
+        document.getElementById("hearingPrevDay").onclick = () => setHearingDate(isoAdd(document.getElementById("hearingFilterDate").value || isoToday(), -1));
+        document.getElementById("hearingNextDay").onclick = () => setHearingDate(isoAdd(document.getElementById("hearingFilterDate").value || isoToday(), 1));
+        document.getElementById("hearingViewBtn").onclick = () => { const d = document.getElementById("hearingFilterDate").value; if (d) openHearingDate(d); };
+        document.getElementById("hearingResultCount").onclick = () => { const d = document.getElementById("hearingFilterDate").value; if (d) openHearingDate(d); };
+        document.getElementById("hearingPastChk").onchange = renderHearingSection;
+        document.getElementById("hearingExcelBtn").onclick = exportHearingExcel;
+        document.getElementById("hearingPdfBtn").onclick = exportHearingPdf;
+        document.getElementById("hearingBody").addEventListener('click', e => {
+            const pill = e.target.closest('.hpill'); if (pill) { openHearingDate(pill.dataset.hd); return; }
+            const tr = e.target.closest('tr[data-date]'); if (tr) setHearingDate(tr.dataset.date);
+        });
+        document.querySelectorAll('.hearing-kpi').forEach(k => k.addEventListener('click', () => {
+            const t = isoToday(), kind = k.dataset.hk; let list, title;
+            if (kind === 'today') { openHearingDate(t); return; }
+            if (kind === 'tomorrow') { openHearingDate(isoAdd(t, 1)); return; }
+            if (kind === 'week') { list = hearingCases('range', t, isoAdd(t, 6)); title = `Hearings in Next 7 Days (${isoFmt(t)} - ${isoFmt(isoAdd(t, 6))}) - ${list.length} cases`; }
+            else if (kind === 'overdue') { list = hearingCases('overdue'); title = `Pending - Hearing Date Passed - ${list.length} cases`; }
+            else { list = hearingCases('nodate'); title = `Pending - No Hearing Date - ${list.length} cases`; }
+            showHearingCases(title, list);
+        }));
+        document.getElementById("nextHearingBtn").onclick = openNextHearingModal;
+        document.getElementById("hearingCaseNo").addEventListener('input', showHearingCurrent);
+        document.getElementById("closeHearingModalBtn").onclick = () => document.getElementById("hearingModal").style.display = "none";
+        document.getElementById("saveHearingBtn").onclick = saveNextHearing;
         document.getElementById("purposeExcelBtn").onclick = exportPurposeSummaryExcel;
         document.getElementById("purposePdfBtn").onclick = exportPurposeSummaryPdf;
         document.getElementById("purposeBody").addEventListener('click', e => { const el = e.target.closest('.clickable'); if (el) openPurposeCases(+el.dataset.i, el.dataset.s); }); document.getElementById("addCaseBtn").onclick = () => document.getElementById("caseModal").style.display="flex"; document.getElementById("closeCaseModalBtn").onclick = () => document.getElementById("caseModal").style.display="none"; document.getElementById("saveCaseBtn").onclick = () => { let cNo=document.getElementById("caseNo").value.trim(), inst=document.getElementById("instDate").value; if(!cNo||!inst){ showToast("Case No & Date required",true); return; } cases.push({id:nextId++, caseNo:cNo, section:document.getElementById("section").value, institutionDate:inst, casePurpose:document.getElementById("casePurpose").value, appellantName:document.getElementById("appellant").value, respondentName:document.getElementById("respondent").value, hearingDate:document.getElementById("hearingDate").value||null, disposed:false, disposalDate:null}); saveToFirebase(); document.getElementById("caseModal").style.display="none"; }; document.getElementById("disposeBtn").onclick = () => { document.getElementById("disposalModal").style.display="flex"; document.getElementById("disposalDate").value=new Date().toISOString().slice(0,10); const datalist = document.getElementById("caseNosList"); datalist.innerHTML=""; cases.filter(c=>!c.disposed).forEach(c=>{ const opt = document.createElement("option"); opt.value = c.caseNo; datalist.appendChild(opt); }); }; document.getElementById("closeDisposalModalBtn").onclick = () => document.getElementById("disposalModal").style.display="none"; document.getElementById("confirmDisposalBtn").onclick = () => { let cNo=document.getElementById("disposalCaseNo").value.trim(), dDate=document.getElementById("disposalDate").value; if(!cNo||!dDate){ showToast("Select case and date",true); return; } let found=cases.find(c=>c.caseNo===cNo && !c.disposed); if(found){ found.disposed=true; found.disposalDate=dDate; saveToFirebase(); showToast("Disposal recorded"); } else showToast("Not found or already disposed",true); document.getElementById("disposalModal").style.display="none"; }; document.getElementById("exportBackupBtn").onclick = exportBackup; document.getElementById("importBackupBtn").onclick = () => { let inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>{ if(e.target.files.length) restoreBackup(e.target.files[0]); }; inp.click(); }; document.getElementById("importCasesExcelBtn").onclick = () => document.getElementById("casesExcelInput").click(); document.getElementById("casesExcelInput").onchange = e => { if(e.target.files.length) importCasesExcel(e.target.files[0]); e.target.value=''; }; document.getElementById("importDisposalExcelBtn").onclick = () => document.getElementById("disposalExcelInput").click(); document.getElementById("disposalExcelInput").onchange = e => { if(e.target.files.length) importDisposalExcel(e.target.files[0]); e.target.value=''; }; document.getElementById("sampleDataBtn").onclick = loadSampleData; document.getElementById("deleteAllBtn").onclick = deleteAllData; document.getElementById("closeModalBtn").onclick = () => document.getElementById("listModal").style.display="none"; window.onclick = (event) => { if(event.target === document.getElementById("listModal")) document.getElementById("listModal").style.display="none"; }; setTimeout(() => { document.querySelectorAll('.stat-card').forEach(card => { card.addEventListener('click', () => { const type = card.getAttribute('data-stat'); let filtered=[]; if(type==='total') filtered=cases; else if(type==='pending') filtered=cases.filter(c=>!c.disposed); else if(type==='disposed') filtered=cases.filter(c=>c.disposed); else if(type==='yearly') { const cy=new Date().getFullYear(); filtered=cases.filter(c=>new Date(c.institutionDate).getFullYear()===cy); } if(filtered.length===0) showToast("No cases",true); else showCaseList(`${card.querySelector('.label').innerText} Cases (${filtered.length})`, filtered); }); }); }, 500); });
