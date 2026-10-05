@@ -193,11 +193,10 @@
         .cal-chip.warn b { color: var(--warn-text); }
         .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
         .cal-dow { text-align: center; font-size: .72rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 8px 0; }
-        .cal-dow.sun { color: #b91c1c; }
+        .cal-dow.off { color: #b91c1c; }
         .cal-day { min-height: 96px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; display: flex; flex-direction: column; justify-content: space-between; transition: box-shadow .15s, transform .15s, border-color .15s; min-width: 0; }
         .cal-day.empty { background: transparent; border-color: transparent; }
         .cal-day .cal-num { font-weight: 600; font-size: .85rem; color: var(--text-2); width: 26px; height: 26px; display: inline-grid; place-items: center; border-radius: 50%; }
-        .cal-day.sun .cal-num { color: #b91c1c; }
         .cal-day.today { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(20,184,166,.35); }
         .cal-day.today .cal-num { background: var(--accent-strong); color: #fff; }
         .cal-day.selected { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,.35); }
@@ -217,6 +216,28 @@
         .cal-legend { display: flex; flex-wrap: wrap; gap: 8px 22px; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); font-size: .78rem; color: var(--muted); }
         .cal-legend span { display: inline-flex; align-items: center; gap: 6px; }
         .cal-legend i.sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+
+        /* ---- RED DAYS: Government holidays and weekly offs (as marked red in the official calendar) ---- */
+        .cal-top { display: flex; align-items: flex-start; gap: 6px; min-width: 0; }
+        .cal-hol { font-size: .66rem; line-height: 1.25; font-weight: 600; color: #b91c1c; padding-top: 3px; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .cal-day.off, .cal-day.has.off, .cal-day.has.past.off { background: #fff5f5; border-color: #fecaca; }
+        .cal-day.holiday, .cal-day.has.holiday, .cal-day.has.past.holiday { background: #fee2e2; border-color: #f87171; }
+        .cal-day.off .cal-num { color: #b91c1c; font-weight: 700; }
+        .cal-day.today.off { border-color: var(--accent); }
+        .cal-day.selected.off { border-color: #2563eb; }
+        .cal-day.today.off .cal-num { background: #b91c1c; color: #fff; }
+        .cal-chip.red { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .cal-chip.red b { color: #991b1b; }
+        .cal-holidays { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 16px; }
+        .cal-holidays:empty { display: none; }
+        .cal-hol-title { font-size: .78rem; font-weight: 700; color: #991b1b; margin-right: 4px; }
+        .cal-hol-item { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; border-radius: 999px; padding: 3px 12px; font-size: .78rem; font-weight: 500; }
+        .cal-hol-item b { font-weight: 700; }
+        .off-tag { display: inline-block; margin-left: 6px; padding: 1px 9px; border-radius: 999px; background: #fee2e2; color: #991b1b; font-size: .72rem; font-weight: 700; vertical-align: middle; }
+        .hearing-result .hr-date.is-off { color: #b91c1c; }
+        .off-text { color: #b91c1c !important; font-weight: 600; }
+        .hearing-note { color: #b91c1c; font-size: .82rem; font-weight: 600; margin: -6px 0 16px; }
+        .hearing-note:empty { display: none; }
 
         /* ===================== MPR REPORTS ===================== */
         .report-output { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-card); padding: 26px; overflow-x: auto; }
@@ -298,6 +319,7 @@
             .cal-day .cal-num { width: 22px; height: 22px; font-size: .75rem; }
             .cal-count { min-width: 30px; padding: 4px 7px; font-size: .95rem; }
             .cal-dow { font-size: .62rem; letter-spacing: 0; }
+            .cal-hol { display: none; }
             .stats-grid, .dashboard-row { gap: 16px; }
             .stat-card { padding: 20px; }
             .toolbar { padding: 6px 16px; }
@@ -407,10 +429,12 @@
                 </div>
                 <div class="cal-summary" id="calSummary"></div>
                 <div class="cal-grid" id="calGrid"></div>
+                <div class="cal-holidays" id="calHolidays"></div>
                 <div class="cal-legend">
                     <span><b style="color:var(--navy)">Number</b> = pending cases fixed for that date. Click a date to see its cases.</span>
                     <span><i class="sw" style="background:#2dd4bf"></i> Upcoming hearing</span>
                     <span><i class="sw" style="background:#fbbf24"></i> Date passed, case still pending</span>
+                    <span><i class="sw" style="background:#fee2e2; border:2px solid #f87171"></i> <b style="color:#b91c1c">Red</b> = Govt. holiday / Sat-Sun off</span>
                     <span><i class="sw" style="background:#fff; border:2px solid var(--accent)"></i> Today</span>
                     <span><i class="sw" style="background:#fff; border:2px solid #2563eb"></i> Selected date</span>
                 </div>
@@ -582,6 +606,7 @@
         <div class="form-group"><label>Case No</label><input list="hearingCaseNosList" id="hearingCaseNo" autocomplete="off"><datalist id="hearingCaseNosList"></datalist></div>
         <div class="hearing-current" id="hearingCurrentInfo"></div>
         <div class="form-group"><label>Next Hearing Date *</label><input type="date" id="hearingNewDate"></div>
+        <div class="hearing-note" id="hearingDateNote"></div>
         <div class="modal-actions"><button id="closeHearingModalBtn">Cancel</button><button id="saveHearingBtn" class="primary">Save</button></div>
     </div>
 </div>
@@ -883,7 +908,8 @@
 
     // PDF: renders a clean printable table and opens the browser's print dialog -> choose "Save as PDF".
     // (This keeps Hindi text perfectly shaped, which jsPDF-style libraries cannot do without a custom font.)
-    function printAsPdf(title, headers, rows, subtitle) {
+    function printAsPdf(title, headers, rows, subtitle, opts) {
+        opts = opts || {};
         const officeEl = document.getElementById('officeNameInput');
         const office = (officeEl && officeEl.value) || 'RCCMS';
         const html = `<!DOCTYPE html><html lang="hi"><head><meta charset="UTF-8"><title>${escapeHtml(safeFileName(title))}</title>
@@ -897,14 +923,16 @@ h3 { font-weight:600; font-size:13px; }
 table { width:100%; border-collapse:collapse; margin-top:6px; }
 th, td { border:1px solid #444; padding:4px 5px; text-align:left; vertical-align:top; }
 th { background:#e6e6e6; }
+th.red { color:#c00000; }
+td.red { color:#c00000; font-weight:700; background:#fff0f0; }
 thead { display: table-header-group; }
 tr { page-break-inside: avoid; }
 </style></head><body>
 <h2>${escapeHtml(office)}</h2>
 <h3>${escapeHtml(title)}</h3>
 <div class="sub">${escapeHtml(subtitle || '')} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString('en-GB')}</div>
-<table><thead><tr>${headers.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr></thead>
-<tbody>${rows.map(r => `<tr>${r.map(v => `<td>${escapeHtml(v === null || v === undefined ? '' : v)}</td>`).join('')}</tr>`).join('')}</tbody></table>
+<table><thead><tr>${headers.map((h, ci) => `<th${opts.redCols && opts.redCols.includes(ci) ? ' class="red"' : ''}>${escapeHtml(h)}</th>`).join('')}</tr></thead>
+<tbody>${rows.map((r, ri) => `<tr>${r.map((v, ci) => `<td${opts.redCell && opts.redCell(ri, ci, v) ? ' class="red"' : ''}>${escapeHtml(v === null || v === undefined ? '' : v)}</td>`).join('')}</tr>`).join('')}</tbody></table>
 </body></html>`;
         const f = document.createElement('iframe');
         f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;';
@@ -950,6 +978,29 @@ tr { page-break-inside: avoid; }
         showHearingCases(`Next Hearing ${isoFmt(iso)} (${HDAY_EN[isoDow(iso)]}) - ${list.length} cases`, list);
     }
 
+    // ===== GOVERNMENT HOLIDAYS (shown in RED) =====
+    // Taken from the Rajasthan Government calendar (days marked in red), Oct - Dec 2026.
+    // To add more months / years later, just add lines here:  'YYYY-MM-DD': 'Holiday name'
+    const GOV_HOLIDAYS = {
+        '2026-10-02': 'महात्मा गांधी जयन्ती',
+        '2026-10-11': 'नवरात्रा स्थापना एवं महाराजा अग्रसेन जयन्ती',
+        '2026-10-19': 'दुर्गाष्टमी',
+        '2026-10-20': 'विजयादशमी',
+        '2026-11-08': 'दीपावली',
+        '2026-11-09': 'गोवर्धन पूजा',
+        '2026-11-11': 'भाई दूज',
+        '2026-11-24': 'गुरूनानक जयन्ती',
+        '2026-12-25': 'क्रिसमस डे'
+    };
+    const WEEKLY_OFF_DOWS = [0, 6]; // Sunday and Saturday are red in the official calendar (set to [0] if Saturday is a working day)
+    function dayOff(iso) {
+        if (!iso) return null;
+        if (GOV_HOLIDAYS[iso]) return { kind: 'holiday', name: GOV_HOLIDAYS[iso] };
+        const d = isoDow(iso);
+        return WEEKLY_OFF_DOWS.includes(d) ? { kind: 'weekend', name: d === 0 ? 'Sunday' : 'Saturday' } : null;
+    }
+    function dayOffLabel(iso) { const o = dayOff(iso); return !o ? '' : o.kind === 'holiday' ? `Govt. Holiday: ${o.name}` : 'Weekly Off'; }
+
     let hearingRows = []; // rows currently shown in the table (for Excel / PDF)
 
     function renderHearingSection() {
@@ -970,11 +1021,13 @@ tr { page-break-inside: avoid; }
 
         // Result tile for the chosen date
         const cnt = document.getElementById('hearingResultCount'), dt = document.getElementById('hearingResultDate'), vb = document.getElementById('hearingViewBtn');
-        if (!sel) { cnt.innerText = '-'; cnt.classList.add('zero'); dt.innerText = 'Select a date'; vb.disabled = true; }
+        if (!sel) { cnt.innerText = '-'; cnt.classList.add('zero'); dt.innerText = 'Select a date'; dt.classList.remove('is-off'); vb.disabled = true; }
         else {
             const n = hearingCases('date', sel).length;
             cnt.innerText = n; cnt.classList.toggle('zero', n === 0); vb.disabled = n === 0;
-            dt.innerText = `${isoFmt(sel)} · ${hearingDayLabel(sel)}` + (sel === today ? ' (Today)' : sel === tomorrow ? ' (Tomorrow)' : '');
+            const offSel = dayOff(sel);
+            dt.innerHTML = escapeHtml(`${isoFmt(sel)} · ${hearingDayLabel(sel)}` + (sel === today ? ' (Today)' : sel === tomorrow ? ' (Tomorrow)' : '')) + (offSel ? ` <span class="off-tag">${escapeHtml(dayOffLabel(sel))}</span>` : '');
+            dt.classList.toggle('is-off', !!offSel);
         }
 
         // Date-wise table
@@ -984,19 +1037,20 @@ tr { page-break-inside: avoid; }
         const upcoming = Object.keys(counts).filter(d => d >= today).sort();
         const past = showPast ? Object.keys(counts).filter(d => d < today).sort().reverse() : [];
         const dates = upcoming.concat(past);
-        hearingRows = dates.map(d => [isoFmt(d), HDAY_EN[isoDow(d)], counts[d]]);
+        hearingRows = dates.map(d => [isoFmt(d), HDAY_EN[isoDow(d)], counts[d], dayOffLabel(d)]);
         const body = document.getElementById('hearingBody');
         if (!dates.length) { body.innerHTML = `<tr><td colspan="3" class="empty-state">${showPast ? 'No hearing dates found' : 'No upcoming hearing dates. Tick "Include past dates" to see older ones.'}</td></tr>`; return; }
         let total = 0, html = '';
         dates.forEach(d => {
             total += counts[d];
-            const cls = [d < today ? 'hrow-past' : '', d === today ? 'hrow-today' : '', d === sel ? 'hrow-selected' : ''].filter(Boolean).join(' ');
+            const off = dayOff(d), oc = off ? ' class="off-text"' : '';
+            const cls = [d < today ? 'hrow-past' : '', d === today ? 'hrow-today' : '', d === sel ? 'hrow-selected' : '', off ? 'hrow-off' : ''].filter(Boolean).join(' ');
             const tag = d === today ? ' <span class="status-badge status-disposed" style="margin-left:6px;">Today</span>' : d === tomorrow ? ' <span class="type-chip" style="margin-left:6px;">Tomorrow</span>' : '';
-            html += `<tr data-date="${d}" class="${cls}"><td>${isoFmt(d)}${tag}</td><td>${HDAY_EN[isoDow(d)]}</td><td class="num"><span class="hpill" data-hd="${d}">${counts[d]}</span></td></tr>`;
+            html += `<tr data-date="${d}" class="${cls}"><td${oc}>${isoFmt(d)}${tag}</td><td${oc}>${HDAY_EN[isoDow(d)]}${off && off.kind === 'holiday' ? ' · ' + escapeHtml(off.name) : ''}</td><td class="num"><span class="hpill" data-hd="${d}">${counts[d]}</span></td></tr>`;
         });
         html += `<tr class="total-row"><td>Total</td><td></td><td class="num">${total}</td></tr>`;
         body.innerHTML = html;
-        hearingRows.push(['Total', '', total]);
+        hearingRows.push(['Total', '', total, '']);
     }
 
     function setHearingDate(iso) { document.getElementById('hearingFilterDate').value = iso; syncCalToDate(iso); renderHearingSection(); }
@@ -1037,21 +1091,26 @@ tr { page-break-inside: avoid; }
         document.getElementById('calYearSel').innerHTML = yo;
 
         // summary chips + month button
+        const hols = days.filter(x => GOV_HOLIDAYS[x.iso]), offCases = days.reduce((s, x) => s + (x.n && dayOff(x.iso) ? x.n : 0), 0);
         document.getElementById('calSummary').innerHTML =
             `<span class="cal-chip ok"><b>${total}</b> pending case(s) in ${CAL_MONTHS[calState.m]} ${calState.y}</span>` +
             `<span class="cal-chip"><b>${dates}</b> hearing date(s)</span>` +
-            (pastTotal ? `<span class="cal-chip warn"><b>${pastTotal}</b> date passed, still pending</span>` : '');
+            (pastTotal ? `<span class="cal-chip warn"><b>${pastTotal}</b> date passed, still pending</span>` : '') +
+            (hols.length ? `<span class="cal-chip red"><b>${hols.length}</b> Govt. holiday(s)</span>` : '') +
+            (offCases ? `<span class="cal-chip red"><b>${offCases}</b> case(s) fixed on a holiday / weekly off</span>` : '');
+        document.getElementById('calHolidays').innerHTML = hols.length ? `<span class="cal-hol-title">अवकाश / Holidays:</span>` + hols.map(x => `<span class="cal-hol-item"><b>${x.d} ${CAL_MONTHS[calState.m].slice(0, 3)}</b> (${HDAY_EN[isoDow(x.iso)].slice(0, 3)}) · ${escapeHtml(GOV_HOLIDAYS[x.iso])}</span>`).join('') : '';
         const mv = document.getElementById('calMonthView'); mv.disabled = total === 0; mv.innerHTML = `<i class="fas fa-list"></i> View all ${total} case(s)`;
 
         // grid
         const lead = new Date(Date.UTC(calState.y, calState.m, 1)).getUTCDay();
-        let html = CAL_DOW.map((n, i) => `<div class="cal-dow${i === 0 ? ' sun' : ''}">${n}</div>`).join('');
+        let html = CAL_DOW.map((n, i) => `<div class="cal-dow${WEEKLY_OFF_DOWS.includes(i) ? ' off' : ''}">${n}</div>`).join('');
         for (let i = 0; i < lead; i++) html += '<div class="cal-day empty"></div>';
         days.forEach(x => {
-            const dow = (lead + x.d - 1) % 7;
-            const cls = ['cal-day', dow === 0 ? 'sun' : '', x.iso === today ? 'today' : '', x.iso === sel ? 'selected' : '', x.n ? 'has' : '', x.n && x.iso < today ? 'past' : ''].filter(Boolean).join(' ');
-            const attrs = x.n ? ` tabindex="0" role="button" title="${x.n} pending case(s) on ${isoFmt(x.iso)}"` : '';
-            html += `<div class="${cls}" data-date="${x.iso}" data-n="${x.n}"${attrs}><span class="cal-num">${x.d}</span>${x.n ? `<span class="cal-count lvl${calLvl(x.n)}">${x.n}</span>` : ''}</div>`;
+            const off = dayOff(x.iso), isHol = !!(off && off.kind === 'holiday');
+            const cls = ['cal-day', off ? 'off' : '', isHol ? 'holiday' : '', x.iso === today ? 'today' : '', x.iso === sel ? 'selected' : '', x.n ? 'has' : '', x.n && x.iso < today ? 'past' : ''].filter(Boolean).join(' ');
+            const tip = [off ? dayOffLabel(x.iso) : '', x.n ? `${x.n} pending case(s) on ${isoFmt(x.iso)}` : ''].filter(Boolean).join(' | ');
+            const attrs = (x.n ? ' tabindex="0" role="button"' : '') + (tip ? ` title="${escapeHtml(tip)}"` : '');
+            html += `<div class="${cls}" data-date="${x.iso}" data-n="${x.n}"${attrs}><div class="cal-top"><span class="cal-num">${x.d}</span>${isHol ? `<span class="cal-hol">${escapeHtml(off.name)}</span>` : ''}</div>${x.n ? `<span class="cal-count lvl${calLvl(x.n)}">${x.n}</span>` : ''}</div>`;
         });
         grid.innerHTML = html;
     }
@@ -1062,34 +1121,37 @@ tr { page-break-inside: avoid; }
         showHearingCases(`Hearings in ${CAL_MONTHS[calState.m]} ${calState.y} - ${list.length} cases`, list);
     }
     function calExportExcel() {
-        const { days, total } = calMonthData(), rows = days.filter(x => x.n).map(x => [isoFmt(x.iso), HDAY_EN[isoDow(x.iso)], x.n]);
+        const { days, total } = calMonthData(), rows = days.filter(x => x.n).map(x => [isoFmt(x.iso), HDAY_EN[isoDow(x.iso)], x.n, dayOffLabel(x.iso)]);
         if (!rows.length) { showToast('No hearings in this month', true); return; }
-        rows.push(['Total', '', total]);
-        const ws = XLSX.utils.aoa_to_sheet([['Next Hearing Date', 'Day', 'Pending Cases'], ...rows]); ws['!cols'] = [{wch:18},{wch:14},{wch:14}];
+        rows.push(['Total', '', total, '']);
+        const ws = XLSX.utils.aoa_to_sheet([['Next Hearing Date', 'Day', 'Pending Cases', 'Holiday / Off'], ...rows]); ws['!cols'] = [{wch:18},{wch:14},{wch:14},{wch:44}];
         const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, CAL_MONTHS[calState.m].slice(0, 3) + '_' + calState.y);
         XLSX.writeFile(wb, `Hearing_Calendar_${CAL_MONTHS[calState.m]}_${calState.y}.xlsx`);
     }
     function calExportPdf() {
         const { days, total, dates } = calMonthData();
         if (!total) { showToast('No hearings in this month', true); return; }
-        const lead = new Date(Date.UTC(calState.y, calState.m, 1)).getUTCDay(), cells = [];
-        for (let i = 0; i < lead; i++) cells.push('');
-        days.forEach(x => cells.push(x.n ? `${x.d}  -  ${x.n} case(s)` : String(x.d)));
-        while (cells.length % 7) cells.push('');
-        const rows = []; for (let i = 0; i < cells.length; i += 7) rows.push(cells.slice(i, i + 7));
-        printAsPdf(`Hearing Calendar - ${CAL_MONTHS[calState.m]} ${calState.y}`, CAL_DOW, rows, `${total} pending case(s) on ${dates} hearing date(s)`);
+        const lead = new Date(Date.UTC(calState.y, calState.m, 1)).getUTCDay(), cells = [], reds = [];
+        for (let i = 0; i < lead; i++) { cells.push(''); reds.push(false); }
+        days.forEach(x => { const o = dayOff(x.iso); cells.push(String(x.d) + (o && o.kind === 'holiday' ? ` (${o.name})` : '') + (x.n ? `  -  ${x.n} case(s)` : '')); reds.push(!!o); });
+        while (cells.length % 7) { cells.push(''); reds.push(false); }
+        const rows = [], redRows = []; for (let i = 0; i < cells.length; i += 7) { rows.push(cells.slice(i, i + 7)); redRows.push(reds.slice(i, i + 7)); }
+        const hols = days.filter(x => GOV_HOLIDAYS[x.iso]).map(x => `${x.d} ${GOV_HOLIDAYS[x.iso]}`);
+        printAsPdf(`Hearing Calendar - ${CAL_MONTHS[calState.m]} ${calState.y}`, CAL_DOW, rows,
+            `${total} pending case(s) on ${dates} hearing date(s)` + (hols.length ? ` | Govt. holidays (red): ${hols.join(', ')}` : ' | Sat/Sun in red'),
+            { redCols: WEEKLY_OFF_DOWS, redCell: (ri, ci) => redRows[ri][ci] });
     }
 
     function exportHearingExcel() {
         if (!hearingRows.length) { showToast('No data', true); return; }
-        const ws = XLSX.utils.aoa_to_sheet([['Next Hearing Date', 'Day', 'Pending Cases'], ...hearingRows]);
-        ws['!cols'] = [{wch:18},{wch:14},{wch:14}];
+        const ws = XLSX.utils.aoa_to_sheet([['Next Hearing Date', 'Day', 'Pending Cases', 'Holiday / Off'], ...hearingRows]);
+        ws['!cols'] = [{wch:18},{wch:14},{wch:14},{wch:44}];
         const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Hearing_Dates');
         XLSX.writeFile(wb, `Next_Hearing_Dates_${isoToday()}.xlsx`);
     }
     function exportHearingPdf() {
         if (!hearingRows.length) { showToast('No data', true); return; }
-        printAsPdf('Next Hearing Date-wise Cases', ['Next Hearing Date', 'Day', 'Pending Cases'], hearingRows, `As on ${isoFmt(isoToday())}`);
+        printAsPdf('Next Hearing Date-wise Cases', ['Next Hearing Date', 'Day', 'Pending Cases', 'Holiday / Off'], hearingRows, `As on ${isoFmt(isoToday())}`, { redCell: (ri) => !!(hearingRows[ri] && hearingRows[ri][3]) });
     }
 
     // ---- Update the next hearing date of a pending case ----
@@ -1098,6 +1160,7 @@ tr { page-break-inside: avoid; }
         cases.filter(c => !c.disposed).sort(cmpCaseNo).forEach(c => { const o = document.createElement('option'); o.value = c.caseNo; dl.appendChild(o); });
         document.getElementById('hearingCaseNo').value = '';
         document.getElementById('hearingNewDate').value = '';
+        document.getElementById('hearingDateNote').innerText = '';
         document.getElementById('hearingCurrentInfo').innerText = '';
         document.getElementById('hearingModal').style.display = 'flex';
     }
@@ -1108,6 +1171,10 @@ tr { page-break-inside: avoid; }
         const h = hearingISO(c);
         box.innerText = `Current hearing date: ${h ? isoFmt(h) : 'not set'}` + (c.casePurpose ? `  |  Purpose: ${c.casePurpose}` : '') + ((c.appellantName || c.respondentName) ? `  |  ${c.appellantName || '-'} vs ${c.respondentName || '-'}` : '');
     }
+    function showHearingDateNote() {
+        const d = document.getElementById('hearingNewDate').value, o = dayOff(d);
+        document.getElementById('hearingDateNote').innerText = o ? `⚠ ${isoFmt(d)} is a ${o.kind === 'holiday' ? 'Government holiday (' + o.name + ')' : 'weekly off (' + o.name + ')'}` : '';
+    }
     function saveNextHearing() {
         const cNo = document.getElementById('hearingCaseNo').value.trim(), d = document.getElementById('hearingNewDate').value;
         if (!cNo || !d) { showToast('Select case and next hearing date', true); return; }
@@ -1115,7 +1182,7 @@ tr { page-break-inside: avoid; }
         if (!c) { showToast('Not found or already disposed', true); return; }
         c.hearingDate = d; saveToFirebase();
         document.getElementById('hearingModal').style.display = 'none';
-        showToast(`Next hearing set: ${cNo} → ${isoFmt(d)}`);
+        showToast(`Next hearing set: ${cNo} → ${isoFmt(d)}` + (dayOff(d) ? ` (${dayOffLabel(d)})` : ''));
         setHearingDate(d);
     }
 
@@ -1165,6 +1232,8 @@ tr { page-break-inside: avoid; }
         document.getElementById("hearingCaseNo").addEventListener('input', showHearingCurrent);
         document.getElementById("closeHearingModalBtn").onclick = () => document.getElementById("hearingModal").style.display = "none";
         document.getElementById("saveHearingBtn").onclick = saveNextHearing;
+        document.getElementById("hearingNewDate").addEventListener('input', showHearingDateNote);
+        document.getElementById("hearingNewDate").addEventListener('change', showHearingDateNote);
         document.getElementById("purposeExcelBtn").onclick = exportPurposeSummaryExcel;
         document.getElementById("purposePdfBtn").onclick = exportPurposeSummaryPdf;
         document.getElementById("purposeBody").addEventListener('click', e => { const el = e.target.closest('.clickable'); if (el) openPurposeCases(+el.dataset.i, el.dataset.s); }); document.getElementById("addCaseBtn").onclick = () => document.getElementById("caseModal").style.display="flex"; document.getElementById("closeCaseModalBtn").onclick = () => document.getElementById("caseModal").style.display="none"; document.getElementById("saveCaseBtn").onclick = () => { let cNo=document.getElementById("caseNo").value.trim(), inst=document.getElementById("instDate").value; if(!cNo||!inst){ showToast("Case No & Date required",true); return; } cases.push({id:nextId++, caseNo:cNo, section:document.getElementById("section").value, institutionDate:inst, casePurpose:document.getElementById("casePurpose").value, appellantName:document.getElementById("appellant").value, respondentName:document.getElementById("respondent").value, hearingDate:document.getElementById("hearingDate").value||null, disposed:false, disposalDate:null}); saveToFirebase(); document.getElementById("caseModal").style.display="none"; }; document.getElementById("disposeBtn").onclick = () => { document.getElementById("disposalModal").style.display="flex"; document.getElementById("disposalDate").value=new Date().toISOString().slice(0,10); const datalist = document.getElementById("caseNosList"); datalist.innerHTML=""; cases.filter(c=>!c.disposed).forEach(c=>{ const opt = document.createElement("option"); opt.value = c.caseNo; datalist.appendChild(opt); }); }; document.getElementById("closeDisposalModalBtn").onclick = () => document.getElementById("disposalModal").style.display="none"; document.getElementById("confirmDisposalBtn").onclick = () => { let cNo=document.getElementById("disposalCaseNo").value.trim(), dDate=document.getElementById("disposalDate").value; if(!cNo||!dDate){ showToast("Select case and date",true); return; } let found=cases.find(c=>c.caseNo===cNo && !c.disposed); if(found){ found.disposed=true; found.disposalDate=dDate; saveToFirebase(); showToast("Disposal recorded"); } else showToast("Not found or already disposed",true); document.getElementById("disposalModal").style.display="none"; }; document.getElementById("exportBackupBtn").onclick = exportBackup; document.getElementById("importBackupBtn").onclick = () => { let inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>{ if(e.target.files.length) restoreBackup(e.target.files[0]); }; inp.click(); }; document.getElementById("importCasesExcelBtn").onclick = () => document.getElementById("casesExcelInput").click(); document.getElementById("casesExcelInput").onchange = e => { if(e.target.files.length) importCasesExcel(e.target.files[0]); e.target.value=''; }; document.getElementById("importDisposalExcelBtn").onclick = () => document.getElementById("disposalExcelInput").click(); document.getElementById("disposalExcelInput").onchange = e => { if(e.target.files.length) importDisposalExcel(e.target.files[0]); e.target.value=''; }; document.getElementById("sampleDataBtn").onclick = loadSampleData; document.getElementById("deleteAllBtn").onclick = deleteAllData; document.getElementById("closeModalBtn").onclick = () => document.getElementById("listModal").style.display="none"; window.onclick = (event) => { if(event.target === document.getElementById("listModal")) document.getElementById("listModal").style.display="none"; }; setTimeout(() => { document.querySelectorAll('.stat-card').forEach(card => { card.addEventListener('click', () => { const type = card.getAttribute('data-stat'); let filtered=[]; if(type==='total') filtered=cases; else if(type==='pending') filtered=cases.filter(c=>!c.disposed); else if(type==='disposed') filtered=cases.filter(c=>c.disposed); else if(type==='yearly') { const cy=new Date().getFullYear(); filtered=cases.filter(c=>new Date(c.institutionDate).getFullYear()===cy); } if(filtered.length===0) showToast("No cases",true); else showCaseList(`${card.querySelector('.label').innerText} Cases (${filtered.length})`, filtered); }); }); }, 500); });
