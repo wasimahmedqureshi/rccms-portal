@@ -239,6 +239,18 @@
         .hearing-note { color: #b91c1c; font-size: .82rem; font-weight: 600; margin: -6px 0 16px; }
         .hearing-note:empty { display: none; }
 
+        /* ===================== IMPORT SUMMARY ===================== */
+        .modal-content.modal-mid { width: min(1040px, 100%); padding: 0; display: flex; flex-direction: column; overflow: hidden; max-height: 90vh; }
+        .imp-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 20px; }
+        .imp-kpi { background: #f8fafc; border: 1px solid var(--line); border-left: 4px solid var(--line-strong); border-radius: var(--radius-sm); padding: 14px 16px; }
+        .imp-kpi .n { font-size: 1.7rem; font-weight: 800; letter-spacing: -0.03em; color: var(--navy); line-height: 1.15; font-variant-numeric: tabular-nums; }
+        .imp-kpi .l { font-size: .78rem; font-weight: 600; color: var(--text-2); margin-top: 2px; }
+        .imp-kpi.ok { border-left-color: #16a34a; } .imp-kpi.new { border-left-color: var(--accent); } .imp-kpi.warn { border-left-color: #d97706; } .imp-kpi.bad { border-left-color: #dc2626; }
+        .imp-note { background: #f0fdfa; border: 1px solid var(--accent-line); color: var(--text-2); border-radius: var(--radius-sm); padding: 10px 14px; font-size: .86rem; margin-bottom: 10px; }
+        .imp-note.warn { background: var(--warn-bg); border-color: #fde68a; color: var(--warn-text); }
+        .imp-sub { font-size: .95rem; font-weight: 700; color: var(--navy); margin: 18px 0 10px; }
+        .dup-chip { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 6px; background: var(--warn-bg); color: var(--warn-text); font-size: .68rem; font-weight: 700; vertical-align: middle; }
+
         /* ===================== MPR REPORTS ===================== */
         .report-output { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow-card); padding: 26px; overflow-x: auto; }
         .report-output h4 { font-size: 1.05rem; font-weight: 700; color: var(--navy); margin-bottom: 20px; letter-spacing: -0.005em; }
@@ -374,6 +386,7 @@
                 <button id="disposalMprBtn" class="soft"><i class="fas fa-chart-bar"></i> Disposal MPR (Case Type)</button>
                 <button id="showAllDisposalsBtn" class="soft"><i class="fas fa-list"></i> Show All Disposed</button>
                 <button id="purposeReportBtn" class="soft"><i class="fas fa-bullseye"></i> Purpose Report</button>
+                <button id="duplicatesBtn" class="soft"><i class="fas fa-clone"></i> Duplicate Case Nos</button>
                 <button id="hearingReportBtn" class="soft"><i class="fas fa-calendar-day"></i> Hearing Dates</button>
             </div>
         </div>
@@ -600,6 +613,27 @@
     </div>
 </div>
 
+<div id="importModal" class="modal">
+    <div class="modal-content modal-mid">
+        <div class="modal-head">
+            <h3 id="importTitle"><i class="fas fa-file-import"></i> Import Summary</h3>
+            <div id="importSub" class="modal-count"></div>
+        </div>
+        <div class="modal-body">
+            <div class="imp-kpis" id="importKpis"></div>
+            <div id="importNotes"></div>
+            <div id="importIssuesWrap">
+                <div class="imp-sub" id="importIssuesTitle">Rows needing attention</div>
+                <div class="table-frame"><table id="importIssuesTable"><thead><tr><th>Excel Row</th><th>Case No</th><th>Section</th><th>Purpose / Note</th><th>Type</th><th>Reason</th></tr></thead><tbody></tbody></table></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button id="importReportExcelBtn" class="primary"><i class="fas fa-file-excel"></i> Download Report (Excel)</button>
+            <button id="closeImportModalBtn">Close</button>
+        </div>
+    </div>
+</div>
+
 <div id="hearingModal" class="modal">
     <div class="modal-content">
         <h3><i class="fas fa-calendar-check"></i> Next Hearing Date</h3>
@@ -660,7 +694,23 @@
     function animateCounter(element, target) { let current = 0, step = Math.max(1, Math.ceil(target / 50)); const interval = setInterval(() => { current += step; if(current >= target) { element.innerText = target; clearInterval(interval); } else element.innerText = current; }, 20); }
     function formatDate(iso){ return iso ? new Date(iso).toLocaleDateString('en-GB') : '-'; }
     function escapeHtml(str){ return str ? String(str).replace(/[&<>]/g,m=>m==='&'?'&amp;':m==='<'?'&lt;':'&gt;') : ''; }
-    function parseDateAny(d) { if(!d) return null; let s = String(d).trim(); if(!isNaN(s) && s.indexOf('-')===-1 && s.indexOf('/')===-1){ let n = parseFloat(s); if(n>1 && n<60000) return new Date((n-25569)*86400000).toISOString().slice(0,10); } let parts = s.split(/[-/]/); if(parts.length===3){ let dd,mm,yy; if(parts[0].length===4){ yy=parts[0]; mm=parts[1]; dd=parts[2]; } else { dd=parts[0]; mm=parts[1]; yy=parts[2]; } if(yy.length===2) yy='20'+yy; return `${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`; } let t = new Date(s); return isNaN(t) ? null : t.toISOString().slice(0,10); }
+    function parseDateAny(d) {
+        if (d === null || d === undefined || d === '') return null;
+        if (d instanceof Date) return isNaN(d) ? null : d.toISOString().slice(0, 10);
+        let s = String(d).trim(); if (!s) return null;
+        if (/^\d+(\.\d+)?$/.test(s)) { const n = parseFloat(s); return (n > 1 && n < 60000) ? new Date((n - 25569) * 86400000).toISOString().slice(0, 10) : null; }   // Excel serial date
+        s = s.replace(/^(\d{1,4}[-\/.]\d{1,2}[-\/.]\d{1,4})[T\s].*$/, '$1');                                                                               // drop a time part
+        const parts = s.split(/[-\/.]/).map(x => x.trim());
+        if (parts.length === 3 && parts.every(x => /^\d+$/.test(x))) {
+            let dd, mm, yy;
+            if (parts[0].length === 4) { yy = +parts[0]; mm = +parts[1]; dd = +parts[2]; } else { dd = +parts[0]; mm = +parts[1]; yy = +parts[2]; }
+            if (yy < 100) yy += 2000;
+            const t = new Date(Date.UTC(yy, mm - 1, dd));
+            if (mm < 1 || mm > 12 || dd < 1 || t.getUTCMonth() !== mm - 1 || yy < 1900) return null;   // rejects 31-02 etc.
+            return t.toISOString().slice(0, 10);
+        }
+        const t = new Date(s); return isNaN(t) ? null : t.toISOString().slice(0, 10);
+    }
     function saveToFirebase(){ if(isLoading) return; const obj = {}; cases.forEach(c => obj[c.id] = c); casesRef.set(obj).then(()=>showToast('✓ Data saved')).catch(e=>showToast(e.message, true)); }
     function getAgeMonths(instDate, asOnDate) { const inst = new Date(instDate); const asOn = new Date(asOnDate); if(isNaN(inst) || isNaN(asOn)) return 0; let months = (asOn.getFullYear() - inst.getFullYear()) * 12; months += asOn.getMonth() - inst.getMonth(); if(asOn.getDate() < inst.getDate()) months--; return Math.max(0, months); }
     function getAgeYears(instDate, asOnDate) { const inst = new Date(instDate); const asOn = new Date(asOnDate); if(isNaN(inst) || isNaN(asOn)) return 0; let years = asOn.getFullYear() - inst.getFullYear(); if(asOn.getMonth() < inst.getMonth() || (asOn.getMonth() === inst.getMonth() && asOn.getDate() < inst.getDate())) years--; return Math.max(0, years); }
@@ -705,7 +755,8 @@
         const modal = document.getElementById('listModal'); document.getElementById('modalTitle').innerText = title;
         document.getElementById('modalCount').innerText = `Total: ${caseArray.length} case(s)`;
         const tbody = document.querySelector('#modalTable tbody'); tbody.innerHTML = '';
-        caseArray.forEach(c => { const row = tbody.insertRow(); row.insertCell(0).innerText = c.caseNo; row.insertCell(1).innerText = c.section || ''; row.insertCell(2).innerHTML = `<span class="type-chip">${getCaseType(c.section)}</span>`; row.insertCell(3).innerText = formatDate(c.institutionDate); row.insertCell(4).innerText = c.casePurpose || ''; row.insertCell(5).innerText = c.appellantName || ''; row.insertCell(6).innerText = c.respondentName || ''; row.insertCell(7).innerText = c.hearingDate ? formatDate(c.hearingDate) : '-'; row.insertCell(8).innerText = c.disposalDate ? formatDate(c.disposalDate) : '-'; row.insertCell(9).innerHTML = c.disposed ? '<span class="status-badge status-disposed">Disposed</span>' : '<span class="status-badge status-pending">Pending</span>'; });
+        const dupSet = pendingDuplicateSet();
+        caseArray.forEach(c => { const row = tbody.insertRow(); row.insertCell(0).innerHTML = escapeHtml(c.caseNo) + (!c.disposed && dupSet.has(c.caseNo) ? '<span class="dup-chip" title="This Case No appears on more than one pending row">Dup</span>' : ''); row.insertCell(1).innerText = c.section || ''; row.insertCell(2).innerHTML = `<span class="type-chip">${getCaseType(c.section)}</span>`; row.insertCell(3).innerText = formatDate(c.institutionDate); row.insertCell(4).innerText = c.casePurpose || ''; row.insertCell(5).innerText = c.appellantName || ''; row.insertCell(6).innerText = c.respondentName || ''; row.insertCell(7).innerText = c.hearingDate ? formatDate(c.hearingDate) : '-'; row.insertCell(8).innerText = c.disposalDate ? formatDate(c.disposalDate) : '-'; row.insertCell(9).innerHTML = c.disposed ? '<span class="status-badge status-disposed">Disposed</span>' : '<span class="status-badge status-pending">Pending</span>'; });
         modal.style.display = 'flex';
         const headers = ['S.No.','Case No','Section','Case Type','Institution Date','Purpose','Appellant','Respondent','Hearing Date','Disposal Date','Status'];
         const rows = caseArray.map((c, i) => [i + 1, c.caseNo, c.section || '', getCaseType(c.section), formatDate(c.institutionDate), c.casePurpose || '', c.appellantName || '', c.respondentName || '', c.hearingDate ? formatDate(c.hearingDate) : '-', c.disposalDate ? formatDate(c.disposalDate) : '-', c.disposed ? 'Disposed' : 'Pending']);
@@ -784,54 +835,193 @@
     }
 
     // Import/Export functions (unchanged functionality)
-    function importDisposalExcel(file){ const reader = new FileReader(); reader.onload = e => { const data = new Uint8Array(e.target.result); const workbook = XLSX.read(data, {type:'array'}); const sheet = workbook.Sheets[workbook.SheetNames[0]]; const rows = XLSX.utils.sheet_to_json(sheet, {header:1, defval:""}); processDisposalRows(rows); }; reader.readAsArrayBuffer(file); }
-    function processDisposalRows(rows) { if(rows.length < 2) return; let headerRow = rows[0].map(c=>String(c||"").trim().toLowerCase()); let idxCase = headerRow.findIndex(h => h.includes("case no") || h === "caseno"); let idxDisposal = headerRow.findIndex(h => h.includes("disposal date") || h.includes("disposal")); if(idxCase === -1 || idxDisposal === -1) return; let updated = 0; for(let i=1; i<rows.length; i++) { const row = rows[i]; let caseNo = row[idxCase] ? String(row[idxCase]).trim() : ""; let dispRaw = row[idxDisposal] ? String(row[idxDisposal]).trim() : ""; if(!caseNo || !dispRaw) continue; let dispDate = parseDateAny(dispRaw); if(!dispDate) continue; let existing = cases.find(c => c.caseNo === caseNo); if(existing && !existing.disposed) { existing.disposed = true; existing.disposalDate = dispDate; updated++; } } saveToFirebase(); showToast(`Disposal import: ${updated} updated`); updateStats(true); }
-    function importCasesExcel(file){ let reader = new FileReader(); reader.onload = e => { let data = new Uint8Array(e.target.result); let wb = XLSX.read(data,{type:'array'}); let sheet = wb.Sheets[wb.SheetNames[0]]; let rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""}); processCaseRows(rows); }; reader.readAsArrayBuffer(file); }
-    function processCaseRows(rows){
-        if(rows.length<2){ showToast("File is empty", true); return; }
-        const headers = rows[0].map(c=>String(c||"").trim().toLowerCase());
-        const find = (...keys) => headers.findIndex(h => keys.some(k => h.includes(k)));
-        const idxCase = find("case no","caseno"), idxInst = find("institution","inst date");
-        if(idxCase===-1||idxInst===-1){ showToast("Case No / Institution Date column not found", true); return; }
-        const idxSec = find("section"), idxPur = find("purpose"), idxApp = find("appellant"), idxRes = find("respondent"), idxHear = find("hearing");
-        const clean = v => (v===undefined||v===null) ? "" : String(v).replace(/\s+/g," ").trim();
-        const byNo = new Map(cases.map(c=>[c.caseNo, c]));
-        let added=0, updated=0, skipped=0;
-        for(let i=1;i<rows.length;i++){
-            const row = rows[i];
-            const caseNo = clean(row[idxCase]), instRaw = clean(row[idxInst]);
-            if(!caseNo || !instRaw){ skipped++; continue; }
-            const instDate = parseDateAny(instRaw);
-            if(!instDate){ skipped++; continue; }
-            const section = idxSec!==-1 ? clean(row[idxSec]) : "";
-            const purpose = idxPur!==-1 ? clean(row[idxPur]) : "";
-            const appellant = idxApp!==-1 ? clean(row[idxApp]) : "";
-            const respondent = idxRes!==-1 ? clean(row[idxRes]) : "";
-            const hearing = idxHear!==-1 ? parseDateAny(clean(row[idxHear])) : null;
-            const ex = byNo.get(caseNo);
-            if(ex){
-                // Existing case: refresh the fields that change (purpose, parties, hearing); never touch disposal status.
-                if(purpose) ex.casePurpose = purpose;
-                if(appellant) ex.appellantName = appellant;
-                if(respondent) ex.respondentName = respondent;
-                if(hearing) ex.hearingDate = hearing;
-                if(!ex.section && section) ex.section = section;
-                if(!ex.institutionDate) ex.institutionDate = instDate;
-                updated++;
-            } else {
-                const rec = {id:nextId++, caseNo, section, institutionDate:instDate, casePurpose:purpose, appellantName:appellant, respondentName:respondent, hearingDate:hearing, disposed:false, disposalDate:null};
-                cases.push(rec); byNo.set(caseNo, rec); added++;
-            }
+    // =====================================================================================
+    //  EXCEL IMPORT  (every row of the file is accounted for: added, updated, or listed in the report)
+    // =====================================================================================
+    function readExcelFile(file, handler) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            try { const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' }); handler(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '', raw: true })); }
+            catch (err) { showToast('Could not read Excel file: ' + err.message, true); }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+    function importCasesExcel(file) { readExcelFile(file, processCaseRows); }
+    function importDisposalExcel(file) { readExcelFile(file, processDisposalRows); }
+
+    const cleanCell = v => (v === undefined || v === null) ? '' : String(v).replace(/\s+/g, ' ').trim();
+    const secKey = s => cleanCell(s).replace(/[\s()]/g, '').toLowerCase();
+    function headerIndex(rows) { const h = rows[0].map(c => cleanCell(c).toLowerCase()); return (...keys) => h.findIndex(x => keys.some(k => x.includes(k))); }
+    const rowIsBlank = row => row.every(v => cleanCell(v) === '');
+
+    // The same Case No can legitimately appear on several rows (e.g. a case entered twice). Rows are matched to saved
+    // cases by Case No + best fit on Section / dates, so re-importing a file never creates copies and never merges two rows.
+    function groupByCaseNo(list) { const m = new Map(); list.forEach(c => { if (!c || !c.caseNo) return; if (!m.has(c.caseNo)) m.set(c.caseNo, []); m.get(c.caseNo).push(c); }); return m; }
+    function pairByCaseNo(incoming, existingByNo, scoreFn) {
+        const claimed = new Set(), result = new Map(), groups = new Map();
+        incoming.forEach((r, i) => { if (!groups.has(r.caseNo)) groups.set(r.caseNo, []); groups.get(r.caseNo).push(i); });
+        groups.forEach((idxs, no) => {
+            const ex = existingByNo.get(no); if (!ex || !ex.length) return;
+            const pairs = [];
+            idxs.forEach(i => ex.forEach((e, j) => { const s = scoreFn(incoming[i], e); if (s >= 0) pairs.push({ i, j, e, s }); }));
+            pairs.sort((a, b) => b.s - a.s || a.i - b.i || a.j - b.j);
+            const used = new Set();
+            pairs.forEach(p => { if (used.has(p.i) || claimed.has(p.e)) return; used.add(p.i); claimed.add(p.e); result.set(p.i, p.e); });
+        });
+        return result;
+    }
+
+    function processCaseRows(rows) {
+        if (isLoading) { showToast('Data is still loading - please try again in a moment', true); return; }
+        if (!rows || rows.length < 2) { showToast('File is empty', true); return; }
+        const find = headerIndex(rows);
+        const idxCase = find('case no', 'caseno'), idxInst = find('institution', 'inst date');
+        if (idxCase === -1 || idxInst === -1) { showToast('Case No / Institution Date column not found in the first row', true); return; }
+        const idxSec = find('section'), idxPur = find('purpose'), idxApp = find('appellant'), idxRes = find('respondent'), idxHear = find('hearing');
+        const get = (row, i) => i === -1 ? '' : cleanCell(row[i]);
+
+        const incoming = [], issues = []; let dataRows = 0;
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i]; if (rowIsBlank(row)) continue; dataRows++;
+            const r = { row: i + 1, caseNo: get(row, idxCase), section: get(row, idxSec), purpose: get(row, idxPur), appellant: get(row, idxApp), respondent: get(row, idxRes) };
+            if (!r.caseNo) { issues.push({ ...r, kind: 'Skipped', reason: 'Case No is empty' }); continue; }
+            r.inst = parseDateAny(row[idxInst]);
+            if (!r.inst) { issues.push({ ...r, kind: 'Skipped', reason: `Institution Date missing or not a valid date (${get(row, idxInst) || 'blank'})` }); continue; }
+            if (r.inst > isoToday()) issues.push({ ...r, kind: 'Warning', reason: `Institution Date ${isoFmt(r.inst)} is in the future - please check the year` });
+            r.hearing = idxHear === -1 ? null : parseDateAny(row[idxHear]);
+            if (idxHear !== -1 && get(row, idxHear) && !r.hearing) issues.push({ ...r, kind: 'Warning', reason: `Hearing Date not understood (${get(row, idxHear)}) - kept without hearing date` });
+            incoming.push(r);
         }
-        saveToFirebase();
-        showToast(`Import done: ${added} new, ${updated} updated, ${skipped} skipped`);
+        const inFile = new Map(); incoming.forEach(r => inFile.set(r.caseNo, (inFile.get(r.caseNo) || 0) + 1));
+        const repeatedNos = [...inFile.values()].filter(n => n > 1).length, repeatedRows = [...inFile.values()].filter(n => n > 1).reduce((a, b) => a + b, 0);
+
+        const score = (r, e) => (secKey(e.section) === secKey(r.section) ? 4 : 0) + (e.institutionDate === r.inst ? 2 : 0) + (e.disposed ? 0 : 1) + (cleanCell(e.appellantName) === r.appellant ? 1 : 0) + (cleanCell(e.respondentName) === r.respondent ? 1 : 0);
+        const pairs = pairByCaseNo(incoming, groupByCaseNo(cases), score);   // Case No is the identity; Section / dates only decide which row goes with which when a Case No repeats
+        let added = 0, updated = 0, unchanged = 0;
+        incoming.forEach((r, i) => {
+            const ex = pairs.get(i);
+            if (ex) {
+                let changed = false;
+                if (ex.disposed) {   // already disposed in the portal: a pending list may be out of date, so only fill empty fields
+                    const fill = (k, v) => { if (v && !ex[k]) { ex[k] = v; changed = true; } };
+                    fill('casePurpose', r.purpose); fill('appellantName', r.appellant); fill('respondentName', r.respondent); fill('section', r.section); fill('institutionDate', r.inst);
+                } else {
+                    const set = (k, v) => { if (v && ex[k] !== v) { ex[k] = v; changed = true; } };
+                    set('casePurpose', r.purpose); set('appellantName', r.appellant); set('respondentName', r.respondent); set('hearingDate', r.hearing);
+                    if (!ex.section) set('section', r.section); if (!ex.institutionDate) set('institutionDate', r.inst);
+                }
+                changed ? updated++ : unchanged++;
+            } else {
+                cases.push({ id: nextId++, caseNo: r.caseNo, section: r.section, institutionDate: r.inst, casePurpose: r.purpose, appellantName: r.appellant, respondentName: r.respondent, hearingDate: r.hearing || null, disposed: false, disposalDate: null });
+                added++;
+            }
+        });
+        saveToFirebase(); updateStats(false);
+
+        const skipped = issues.filter(x => x.kind === 'Skipped').length, dupPending = pendingDuplicateSet().size;
+        const notes = [];
+        if (repeatedNos) notes.push({ warn: true, text: `${repeatedNos} Case No(s) appear on more than one row in this file (${repeatedRows} rows). All rows are kept as separate cases - use the "Duplicate Case Nos" button to review them (e.g. double entries).` });
+        showImportReport({
+            title: 'Cases Import Summary', sub: `${dataRows} data row(s) read from the Excel file`,
+            kpis: [['Rows in file', dataRows, ''], ['New cases added', added, 'new'], ['Existing cases updated', updated, updated ? 'ok' : ''], ['Already up to date', unchanged, ''], ['Skipped', skipped, skipped ? 'bad' : ''], ['Total cases in portal', cases.length, 'ok']],
+            notes, issues, filename: 'Cases_Import_Report'
+        });
+    }
+
+    function processDisposalRows(rows) {
+        if (isLoading) { showToast('Data is still loading - please try again in a moment', true); return; }
+        if (!rows || rows.length < 2) { showToast('File is empty', true); return; }
+        const find = headerIndex(rows);
+        const idxCase = find('case no', 'caseno'), idxDisp = find('disposal');
+        if (idxCase === -1 || idxDisp === -1) { showToast('Case No / Disposal Date column not found in the first row', true); return; }
+        const idxInst = find('institution', 'inst date'), idxSec = find('section'), idxPur = find('purpose'), idxApp = find('appellant'), idxRes = find('respondent');
+        const get = (row, i) => i === -1 ? '' : cleanCell(row[i]);
+
+        const incoming = [], issues = []; let dataRows = 0;
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i]; if (rowIsBlank(row)) continue; dataRows++;
+            const r = { row: i + 1, caseNo: get(row, idxCase), section: get(row, idxSec), purpose: get(row, idxPur), appellant: get(row, idxApp), respondent: get(row, idxRes) };
+            if (!r.caseNo) { issues.push({ ...r, kind: 'Skipped', reason: 'Case No is empty' }); continue; }
+            r.disp = parseDateAny(row[idxDisp]);
+            if (!r.disp) { issues.push({ ...r, kind: 'Skipped', reason: get(row, idxDisp) ? `Disposal Date not a valid date (${get(row, idxDisp)})` : 'No Disposal Date in file - add a date and re-import to count it' }); continue; }
+            r.inst = idxInst === -1 ? null : parseDateAny(row[idxInst]);
+            incoming.push(r);
+        }
+        const inFile = new Map(); incoming.forEach(r => inFile.set(r.caseNo + '|' + secKey(r.section), (inFile.get(r.caseNo + '|' + secKey(r.section)) || 0) + 1));
+
+        const score = (r, e) => (e.disposed && e.disposalDate === r.disp ? 8 : 0) + (secKey(e.section) === secKey(r.section) ? 4 : 0) + (e.disposed ? 0 : 1);   // a saved row with the same disposal date is the same row
+        const pairs = pairByCaseNo(incoming, groupByCaseNo(cases), score);
+        let marked = 0, added = 0, redated = 0, unchanged = 0;
+        incoming.forEach((r, i) => {
+            const ex = pairs.get(i); let instForCheck = r.inst;
+            if (ex) {
+                instForCheck = ex.institutionDate || r.inst;
+                if (!ex.disposed) { ex.disposed = true; ex.disposalDate = r.disp; marked++; }
+                else if (ex.disposalDate !== r.disp) { ex.disposalDate = r.disp; redated++; }
+                else unchanged++;
+                if (!ex.casePurpose && r.purpose) ex.casePurpose = r.purpose;
+                if (!ex.section && r.section) ex.section = r.section;
+                if (!ex.appellantName && r.appellant) ex.appellantName = r.appellant;
+                if (!ex.respondentName && r.respondent) ex.respondentName = r.respondent;
+                if (!ex.institutionDate && r.inst) ex.institutionDate = r.inst;
+                if (r.purpose) ex.disposalNote = r.purpose;
+            } else {
+                if (!r.inst) { issues.push({ ...r, kind: 'Skipped', reason: 'New case not in portal and Institution Date is missing - add the date and re-import' }); return; }
+                cases.push({ id: nextId++, caseNo: r.caseNo, section: r.section, institutionDate: r.inst, casePurpose: r.purpose, appellantName: r.appellant, respondentName: r.respondent, hearingDate: null, disposed: true, disposalDate: r.disp, disposalNote: r.purpose });
+                added++;
+            }
+            if (instForCheck && instForCheck > isoToday()) issues.push({ ...r, kind: 'Warning', reason: `Institution Date ${isoFmt(instForCheck)} is in the future - please check the year` });
+            else if (instForCheck && r.disp < instForCheck) issues.push({ ...r, kind: 'Warning', reason: `Disposal Date ${isoFmt(r.disp)} is before Institution Date ${isoFmt(instForCheck)} - imported as given, please verify` });
+        });
+        saveToFirebase(); updateStats(false);
+
+        const skipped = issues.filter(x => x.kind === 'Skipped'), noDate = skipped.filter(x => /No Disposal Date|Disposal Date not/.test(x.reason)).length;
+        const notes = [];
+        if (noDate) { const by = {}; skipped.filter(x => /No Disposal Date|Disposal Date not/.test(x.reason)).forEach(x => by[x.purpose || '(blank)'] = (by[x.purpose || '(blank)'] || 0) + 1); notes.push({ warn: true, text: `${noDate} row(s) have no disposal date, so they are NOT counted as disposed: ` + Object.entries(by).map(([k, v]) => `${k} (${v})`).join(', ') + '.' }); }
+        const sameKey = [...inFile.values()].filter(n => n > 1).length; if (sameKey) notes.push({ warn: false, text: `${sameKey} Case No + Section combination(s) appear on more than one row in the file; each row was kept as its own disposed case.` });
+        showImportReport({
+            title: 'Disposal Import Summary', sub: `${dataRows} data row(s) read from the Excel file`,
+            kpis: [['Rows in file', dataRows, ''], ['Existing cases marked disposed', marked, marked ? 'ok' : ''], ['New disposed cases added', added, 'new'], ['Disposal date corrected', redated, redated ? 'ok' : ''], ['Already up to date', unchanged, ''], ['Skipped', skipped.length, skipped.length ? 'bad' : ''], ['Total Disposed in portal', cases.filter(c => c.disposed).length, 'ok']],
+            notes, issues, filename: 'Disposal_Import_Report'
+        });
+    }
+
+    let lastImportIssues = [], lastImportFile = 'Import_Report';
+    function showImportReport(rep) {
+        lastImportIssues = rep.issues; lastImportFile = rep.filename;
+        document.getElementById('importTitle').innerHTML = `<i class="fas fa-file-import"></i> ${escapeHtml(rep.title)}`;
+        document.getElementById('importSub').innerText = rep.sub;
+        document.getElementById('importKpis').innerHTML = rep.kpis.map(k => `<div class="imp-kpi ${k[2]}"><div class="n">${k[1]}</div><div class="l">${escapeHtml(k[0])}</div></div>`).join('');
+        document.getElementById('importNotes').innerHTML = rep.notes.map(n => `<div class="imp-note${n.warn ? ' warn' : ''}">${escapeHtml(n.text)}</div>`).join('');
+        const wrap = document.getElementById('importIssuesWrap'), tb = document.querySelector('#importIssuesTable tbody'); tb.innerHTML = '';
+        const sorted = rep.issues.slice().sort((a, b) => (a.kind === b.kind ? a.row - b.row : a.kind === 'Skipped' ? -1 : 1));
+        document.getElementById('importIssuesTitle').innerText = sorted.length ? `Rows needing attention (${sorted.length})` : '';
+        wrap.style.display = sorted.length ? 'block' : 'none';
+        sorted.forEach(x => { const tr = tb.insertRow(); [x.row, x.caseNo, x.section, x.purpose].forEach((v, i) => { tr.insertCell(i).innerText = v === undefined || v === null ? '' : v; }); tr.insertCell(4).innerHTML = `<span class="status-badge ${x.kind === 'Skipped' ? 'status-pending' : 'type-chip'}" style="${x.kind === 'Skipped' ? 'background:#fee2e2;color:#991b1b;' : ''}">${x.kind}</span>`; tr.insertCell(5).innerText = x.reason; });
+        document.getElementById('importReportExcelBtn').style.display = sorted.length ? '' : 'none';
+        document.getElementById('importModal').style.display = 'flex';
+    }
+    function exportImportReport() {
+        if (!lastImportIssues.length) return;
+        const rows = lastImportIssues.slice().sort((a, b) => (a.kind === b.kind ? a.row - b.row : a.kind === 'Skipped' ? -1 : 1)).map(x => [x.row, x.caseNo, x.section, x.purpose, x.appellant, x.respondent, x.kind, x.reason]);
+        const ws = XLSX.utils.aoa_to_sheet([['Excel Row', 'Case No', 'Section', 'Purpose / Note', 'Appellant', 'Respondent', 'Type', 'Reason'], ...rows]);
+        ws['!cols'] = [{wch:10},{wch:18},{wch:16},{wch:34},{wch:22},{wch:22},{wch:10},{wch:70}];
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Report'); XLSX.writeFile(wb, `${lastImportFile}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    }
+
+    // Case Nos that appear on more than one PENDING row (probable double entries)
+    function pendingDuplicateSet() { const m = new Map(); cases.forEach(c => { if (c && !c.disposed && c.caseNo) m.set(c.caseNo, (m.get(c.caseNo) || 0) + 1); }); return new Set([...m].filter(([, n]) => n > 1).map(([k]) => k)); }
+    function showDuplicateCases() {
+        const dup = pendingDuplicateSet(); const list = cases.filter(c => !c.disposed && dup.has(c.caseNo)).sort((a, b) => cmpCaseNo(a, b) || secKey(a.section).localeCompare(secKey(b.section)));
+        if (!list.length) { showToast('No duplicate Case Nos among pending cases', true); return; }
+        showCaseList(`Duplicate Case Nos (pending): ${dup.size} numbers, ${list.length} rows`, list);
     }
     function showAllDisposals() { const disposed = cases.filter(c => c.disposed); if(disposed.length===0) showToast("No disposed cases", true); else showCaseList(`All Disposed Cases (${disposed.length})`, disposed); }
     function exportBackup(){ let a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(cases,null,2)],{type:"application/json"})); a.download=`rccms_backup_${new Date().toISOString().slice(0,19)}.json`; a.click(); showToast("Backup saved"); }
     function restoreBackup(file){ let reader=new FileReader(); reader.onload=e=>{ try{ let arr=JSON.parse(e.target.result); if(Array.isArray(arr)){ cases=arr; if(cases.length) nextId=Math.max(...cases.map(c=>c.id||0),0)+1; saveToFirebase(); showToast("Restore successful"); updateStats(true); } else throw new Error(); }catch(err){ showToast("Invalid backup", true); } }; reader.readAsText(file); }
     function loadSampleData(){ if(confirm("Load sample cases?")){ cases = [{id:1,caseNo:"2025/99",section:"212",institutionDate:"2025-06-13",casePurpose:"साक्ष्य",appellantName:"ओम",respondentName:"कमलेश",hearingDate:"2026-06-22",disposed:true,disposalDate:"2026-05-01"},{id:2,caseNo:"2025/98",section:"39(2ए),151",institutionDate:"2025-06-13",casePurpose:"प्रार्थना",appellantName:"राम",respondentName:"श्याम",hearingDate:"2026-06-22",disposed:false},{id:3,caseNo:"2024/10",section:"175",institutionDate:"2024-01-10",casePurpose:"इजराय",appellantName:"सीता",respondentName:"राम",hearingDate:"2026-06-22",disposed:false},{id:4,caseNo:"2023/45",section:"106",institutionDate:"2023-05-20",casePurpose:"दावा",appellantName:"मोहन",respondentName:"सोहन",hearingDate:"2026-06-22",disposed:false},{id:5,caseNo:"2015/01",section:"O(9)-R(9)",institutionDate:"2015-03-10",casePurpose:"प्रार्थना",appellantName:"पुराना",respondentName:"वादी",hearingDate:"2026-06-22",disposed:false}]; nextId=6; saveToFirebase(); showToast("Sample loaded with expanded Prarthana sections"); } }
     function deleteAllData(){ if(confirm("⚠️ DELETE ALL?")){ casesRef.remove().then(()=>{ cases=[]; nextId=1; updateStats(false); showToast("All data deleted"); }).catch(e=>showToast(e.message,true)); } }
-    function updateDebug() { const debugDiv = document.getElementById('debugContent'); debugDiv.innerHTML = `📊 Total: ${cases.length} | Disposed: ${cases.filter(c=>c.disposed).length} | Pending: ${cases.filter(c=>!c.disposed).length}<br>📌 Case Types: प्रार्थना पत्र=${cases.filter(c=>getCaseType(c.section)==="प्रार्थना पत्र").length}, इजराय=${cases.filter(c=>getCaseType(c.section)==="इजराय").length}, दावा=${cases.filter(c=>getCaseType(c.section)==="दावा").length}`; }
+    function updateDebug() { const debugDiv = document.getElementById('debugContent'); const dupN = pendingDuplicateSet().size; debugDiv.innerHTML = `🔁 Pending rows sharing a Case No: ${dupN} number(s)<br>📊 Total: ${cases.length} | Disposed: ${cases.filter(c=>c.disposed).length} | Pending: ${cases.filter(c=>!c.disposed).length}<br>📌 Case Types: प्रार्थना पत्र=${cases.filter(c=>getCaseType(c.section)==="प्रार्थना पत्र").length}, इजराय=${cases.filter(c=>getCaseType(c.section)==="इजराय").length}, दावा=${cases.filter(c=>getCaseType(c.section)==="दावा").length}`; }
 
     // ===== CASE PURPOSE WISE REPORT =====
     const PURPOSE_BLANK = 'उद्देश्य दर्ज नहीं (Blank)';
@@ -1187,7 +1377,7 @@ tr { page-break-inside: avoid; }
     }
 
     // Authentication and event listeners (fixed login flow)
-    auth.onAuthStateChanged(user => { if(user){ updateSyncIndicator('connected','Live'); document.getElementById("loginModal").style.display="none"; document.getElementById("mainToolbar").style.display="flex"; document.getElementById("mainContent").style.display="block"; document.getElementById("userStatus").innerHTML = `<i class="fas fa-user-check"></i> ${user.email}`; casesRef.on('value', (snap) => { let data = snap.val(); if(data){ cases = Object.values(data); if(cases.length) nextId = Math.max(...cases.map(c=>c.id||0))+1; } else { cases = []; nextId=1; } isLoading = false; updateStats(true); showToast("Data loaded"); }); } else { updateSyncIndicator('connecting','Not logged in'); document.getElementById("loginModal").style.display="flex"; document.getElementById("mainToolbar").style.display="none"; document.getElementById("mainContent").style.display="none"; document.getElementById("userStatus").innerHTML = "<i class='fas fa-user-lock'></i> Not logged in"; } });
+    auth.onAuthStateChanged(user => { if(user){ updateSyncIndicator('connected','Live'); document.getElementById("loginModal").style.display="none"; document.getElementById("mainToolbar").style.display="flex"; document.getElementById("mainContent").style.display="block"; document.getElementById("userStatus").innerHTML = `<i class="fas fa-user-check"></i> ${user.email}`; casesRef.on('value', (snap) => { let data = snap.val(); if(data){ cases = Object.values(data).filter(c => c && c.caseNo); if(cases.length) nextId = Math.max(...cases.map(c=>c.id||0))+1; } else { cases = []; nextId=1; } isLoading = false; updateStats(true); showToast("Data loaded"); }); } else { updateSyncIndicator('connecting','Not logged in'); document.getElementById("loginModal").style.display="flex"; document.getElementById("mainToolbar").style.display="none"; document.getElementById("mainContent").style.display="none"; document.getElementById("userStatus").innerHTML = "<i class='fas fa-user-lock'></i> Not logged in"; } });
     document.getElementById("loginBtn").onclick = () => { const email = document.getElementById("loginEmail").value; const pwd = document.getElementById("loginPassword").value; if(!email||!pwd){ document.getElementById("loginError").innerText="Enter credentials"; return; } auth.signInWithEmailAndPassword(email,pwd).then(()=>{ document.getElementById("loginError").innerText=""; showToast("Login success"); }).catch(err=>{ document.getElementById("loginError").innerText=err.message; showToast("Login failed",true); }); };
     document.getElementById("logoutBtn").onclick = () => auth.signOut();
     document.addEventListener("DOMContentLoaded", () => { if(!document.getElementById("reportStartDate")){ const inpStart = document.createElement("input"); inpStart.type = "hidden"; inpStart.id = "reportStartDate"; const inpEnd = document.createElement("input"); inpEnd.type = "hidden"; inpEnd.id = "reportEndDate"; const inpOffice = document.createElement("input"); inpOffice.type = "hidden"; inpOffice.id = "officeNameInput"; document.body.appendChild(inpStart); document.body.appendChild(inpEnd); document.body.appendChild(inpOffice); } document.getElementById("reportStartDate").value = "2000-01-01"; document.getElementById("reportEndDate").value = new Date().toISOString().slice(0,10); document.getElementById("officeNameInput").value = "राजस्व मंडल, निवाई"; document.getElementById("searchBtn").onclick = () => { const term = document.getElementById("searchCaseNo").value.trim().toLowerCase(); if(!term) return; const res = cases.filter(c=>c.caseNo.toLowerCase().includes(term)); if(res.length===0) showToast("No cases",true); else showCaseList(`Search: ${term}`, res); }; document.getElementById("clearSearchBtn").onclick = () => document.getElementById("searchCaseNo").value=""; document.getElementById("pendingMprBtn").onclick = renderPendingMPR; document.getElementById("disposalMprBtn").onclick = renderDisposalMPR; document.getElementById("showAllDisposalsBtn").onclick = showAllDisposals;
@@ -1229,6 +1419,9 @@ tr { page-break-inside: avoid; }
             showHearingCases(title, list);
         }));
         document.getElementById("nextHearingBtn").onclick = openNextHearingModal;
+        document.getElementById("duplicatesBtn").onclick = showDuplicateCases;
+        document.getElementById("importReportExcelBtn").onclick = exportImportReport;
+        document.getElementById("closeImportModalBtn").onclick = () => document.getElementById("importModal").style.display = "none";
         document.getElementById("hearingCaseNo").addEventListener('input', showHearingCurrent);
         document.getElementById("closeHearingModalBtn").onclick = () => document.getElementById("hearingModal").style.display = "none";
         document.getElementById("saveHearingBtn").onclick = saveNextHearing;
