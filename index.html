@@ -121,7 +121,7 @@
         .progress-bar-container { width: 100%; min-width: 90px; background: var(--line); border-radius: 999px; overflow: hidden; height: 8px; }
         .progress-bar { height: 100%; background: linear-gradient(90deg, #14b8a6, #0d9488); width: 0%; border-radius: 999px; transition: width .4s ease; }
 
-        /* ===================== PURPOSE REPORT ===================== */
+        /* ===================== PURPOSE / ADVOCATE REPORT ===================== */
         .purpose-tools { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; margin-bottom: 20px; padding: 14px 16px; background: #f8fafc; border-radius: var(--radius-sm); border: 1px solid var(--line); }
         .purpose-tools label { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: .85rem; font-weight: 500; color: var(--text-2); cursor: pointer; text-transform: none; letter-spacing: 0; }
         .purpose-tools input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--accent); padding: 0; }
@@ -135,8 +135,20 @@
         #purposeTable .clickable[data-s="pending"] { background: var(--warn-bg); color: var(--warn-text); }
         #purposeTable .clickable[data-s="disposed"] { background: var(--ok-bg); color: var(--ok-text); }
         #purposeTable .clickable[data-s="all"] { background: #e2e8f0; color: var(--navy); }
-        #purposeSection.flash .dashboard-card { animation: flashRing 1.2s ease; }
+        #purposeSection.flash .dashboard-card, #advocateSection.flash .dashboard-card, #hearingSection.flash .dashboard-card { animation: flashRing 1.2s ease; }
         @keyframes flashRing { 0%,100% { box-shadow: var(--shadow-card); } 40% { box-shadow: 0 0 0 4px rgba(20,184,166,.55), var(--shadow-card); } }
+
+        /* ===================== ADVOCATE REPORT ===================== */
+        #advocateTable th.num, #advocateTable td.num { text-align: center; }
+        #advocateTable td:nth-child(1) { color: var(--muted); width: 56px; }
+        #advocateTable td:nth-child(2) { font-weight: 600; color: var(--navy); }
+        #advocateTable tr.total-row td { background: #e2e8f0; font-weight: 700; color: var(--navy); border-top: 2px solid var(--navy); font-variant-numeric: tabular-nums; }
+        #advocateTable .clickable { display: inline-block; min-width: 52px; padding: 4px 12px; border-radius: 999px; font-weight: 700; font-size: .85rem; text-align: center; cursor: pointer; transition: transform .12s, box-shadow .12s; font-variant-numeric: tabular-nums; }
+        #advocateTable .clickable:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(15,23,42,.18); }
+        #advocateTable .clickable[data-s="pending"]  { background: var(--warn-bg); color: var(--warn-text); }
+        #advocateTable .clickable[data-s="disposed"] { background: var(--ok-bg);  color: var(--ok-text); }
+        #advocateTable .clickable[data-s="all"]      { background: #e2e8f0; color: var(--navy); }
+        #advocateSection { scroll-margin-top: 90px; }
 
         /* ===================== NEXT HEARING DATE ===================== */
         .hearing-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 24px; }
@@ -177,8 +189,7 @@
         .hpill:hover { transform: translateY(-1px); box-shadow: 0 2px 6px rgba(15,23,42,.18); }
         .hearing-current { background: #f8fafc; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 18px; font-size: .84rem; color: var(--text-2); min-height: 20px; }
         .hearing-current:empty { display: none; }
-        #hearingSection, #purposeSection { scroll-margin-top: 90px; }
-        #hearingSection.flash .dashboard-card { animation: flashRing 1.2s ease; }
+        #hearingSection { scroll-margin-top: 90px; }
 
         /* ===================== HEARING CALENDAR ===================== */
         .cal-head { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; justify-content: space-between; margin-bottom: 16px; }
@@ -300,7 +311,7 @@
         #modalTable { width: 100%; }
         #modalTable th { padding: 12px 12px; }
         #modalTable td { white-space: nowrap; padding: 11px 12px; font-size: .84rem; }
-        #modalTable td:nth-child(5), #modalTable td:nth-child(6), #modalTable td:nth-child(7) { white-space: normal; min-width: 110px; max-width: 200px; overflow-wrap: anywhere; line-height: 1.4; }
+        #modalTable td:nth-child(5), #modalTable td:nth-child(6), #modalTable td:nth-child(7), #modalTable td:nth-child(8) { white-space: normal; min-width: 110px; max-width: 200px; overflow-wrap: anywhere; line-height: 1.4; }
         #modalTable td:first-child { font-weight: 600; color: var(--navy); font-variant-numeric: tabular-nums; }
         #loginModal { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
         #loginModal .modal-content { width: min(420px, 100%); padding: 36px 32px; }
@@ -386,6 +397,7 @@
                 <button id="disposalMprBtn" class="soft"><i class="fas fa-chart-bar"></i> Disposal MPR (Case Type)</button>
                 <button id="showAllDisposalsBtn" class="soft"><i class="fas fa-list"></i> Show All Disposed</button>
                 <button id="purposeReportBtn" class="soft"><i class="fas fa-bullseye"></i> Purpose Report</button>
+                <button id="advocateReportBtn" class="soft"><i class="fas fa-user-tie"></i> Advocate Report</button>
                 <button id="duplicatesBtn" class="soft"><i class="fas fa-clone"></i> Duplicate Case Nos</button>
                 <button id="hearingReportBtn" class="soft"><i class="fas fa-calendar-day"></i> Hearing Dates</button>
             </div>
@@ -552,6 +564,33 @@
             </div>
         </div>
 
+        <div class="dashboard-row" id="advocateSection" style="margin-top:24px;">
+            <div class="dashboard-card span-12">
+                <h3><i class="fas fa-user-tie"></i> Appellant Advocate-wise Files (अधिवक्ता वार फाइलें)</h3>
+                <div class="purpose-tools">
+                    <label><input type="checkbox" id="advocateMergeChk" checked> Merge spelling variants</label>
+                    <span class="hint">Click any count to open that advocate's file list — Excel / PDF download is inside.</span>
+                    <button id="advocateExcelBtn" class="soft"><i class="fas fa-file-excel"></i> Summary Excel</button>
+                    <button id="advocatePdfBtn" class="soft"><i class="fas fa-file-pdf"></i> Summary PDF</button>
+                </div>
+                <div class="data-table" style="max-height:560px;">
+                    <table id="advocateTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Appellant Advocate</th>
+                                <th class="num">Pending</th>
+                                <th class="num">Disposed</th>
+                                <th class="num">Total Files</th>
+                                <th>Pending Share</th>
+                            </tr>
+                        </thead>
+                        <tbody id="advocateBody"><tr><td colspan="6">Loading...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div class="section-title">Monthly Progress Reports</div>
         <div class="report-section">
             <div id="reportOutput" class="report-output">
@@ -586,7 +625,16 @@
         </div>
         <div class="modal-body">
             <div class="table-frame">
-                <table id="modalTable"><thead><tr><th>Case No</th><th>Section</th><th>Case Type</th><th>Inst. Date</th><th>Purpose</th><th>Appellant</th><th>Respondent</th><th>Hearing</th><th>Disposal</th><th>Status</th></tr></thead><tbody></tbody></table>
+                <table id="modalTable">
+                    <thead>
+                        <tr>
+                            <th>Case No</th><th>Section</th><th>Case Type</th><th>Inst. Date</th>
+                            <th>Purpose</th><th>Appellant</th><th>Advocate</th>
+                            <th>Respondent</th><th>Hearing</th><th>Disposal</th><th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
         <div class="modal-footer">
@@ -607,6 +655,7 @@
             <div class="form-group"><label>Hearing Date</label><input type="date" id="hearingDate"></div>
             <div class="form-group span-2"><label>Purpose</label><input id="casePurpose"></div>
             <div class="form-group"><label>Appellant</label><input id="appellant"></div>
+            <div class="form-group"><label>Appellant Advocate</label><input id="appellantAdvocate" placeholder="Advocate for appellant"></div>
             <div class="form-group"><label>Respondent</label><input id="respondent"></div>
         </div>
         <div class="modal-actions"><button id="closeCaseModalBtn">Cancel</button><button id="saveCaseBtn" class="primary">Save</button></div>
@@ -675,7 +724,7 @@
     // ----- EXPANDED CASE TYPE MAPPING (प्रार्थना पत्र) -----
     const PRARTHANA_SECTIONS = [
         '212', '151', '39(2ए)', '39(2)', 'O(21)', '212(02)', 
-        '39(1)', 'O(9)-R(9)', '39(2A)', '39(2ए)'  // Added as requested
+        '39(1)', 'O(9)-R(9)', '39(2A)', '39(2ए)'
     ];
     function getCaseType(sectionStr) {
         if (!sectionStr) return "दावा";
@@ -698,15 +747,15 @@
         if (d === null || d === undefined || d === '') return null;
         if (d instanceof Date) return isNaN(d) ? null : d.toISOString().slice(0, 10);
         let s = String(d).trim(); if (!s) return null;
-        if (/^\d+(\.\d+)?$/.test(s)) { const n = parseFloat(s); return (n > 1 && n < 60000) ? new Date((n - 25569) * 86400000).toISOString().slice(0, 10) : null; }   // Excel serial date
-        s = s.replace(/^(\d{1,4}[-\/.]\d{1,2}[-\/.]\d{1,4})[T\s].*$/, '$1');                                                                               // drop a time part
+        if (/^\d+(\.\d+)?$/.test(s)) { const n = parseFloat(s); return (n > 1 && n < 60000) ? new Date((n - 25569) * 86400000).toISOString().slice(0, 10) : null; }
+        s = s.replace(/^(\d{1,4}[-\/.]\d{1,2}[-\/.]\d{1,4})[T\s].*$/, '$1');
         const parts = s.split(/[-\/.]/).map(x => x.trim());
         if (parts.length === 3 && parts.every(x => /^\d+$/.test(x))) {
             let dd, mm, yy;
             if (parts[0].length === 4) { yy = +parts[0]; mm = +parts[1]; dd = +parts[2]; } else { dd = +parts[0]; mm = +parts[1]; yy = +parts[2]; }
             if (yy < 100) yy += 2000;
             const t = new Date(Date.UTC(yy, mm - 1, dd));
-            if (mm < 1 || mm > 12 || dd < 1 || t.getUTCMonth() !== mm - 1 || yy < 1900) return null;   // rejects 31-02 etc.
+            if (mm < 1 || mm > 12 || dd < 1 || t.getUTCMonth() !== mm - 1 || yy < 1900) return null;
             return t.toISOString().slice(0, 10);
         }
         const t = new Date(s); return isNaN(t) ? null : t.toISOString().slice(0, 10);
@@ -748,6 +797,7 @@
         let secHtml = ''; sorted.forEach(([sec,count]) => { let percent = (count/maxCount)*100; secHtml += `<tr><td>${escapeHtml(sec)}</td><td>${count}</td><td><div class="progress-bar-container"><div class="progress-bar" style="width:${percent}%;"></div></div></td></tr>`; });
         document.getElementById("sectionTableBody").innerHTML = secHtml || '<tr><td colspan="3">No data</td></tr>';
         renderPurposeCard();
+        renderAdvocateCard();
         renderHearingSection();
     }
 
@@ -756,11 +806,24 @@
         document.getElementById('modalCount').innerText = `Total: ${caseArray.length} case(s)`;
         const tbody = document.querySelector('#modalTable tbody'); tbody.innerHTML = '';
         const dupSet = pendingDuplicateSet();
-        caseArray.forEach(c => { const row = tbody.insertRow(); row.insertCell(0).innerHTML = escapeHtml(c.caseNo) + (!c.disposed && dupSet.has(c.caseNo) ? '<span class="dup-chip" title="This Case No appears on more than one pending row">Dup</span>' : ''); row.insertCell(1).innerText = c.section || ''; row.insertCell(2).innerHTML = `<span class="type-chip">${getCaseType(c.section)}</span>`; row.insertCell(3).innerText = formatDate(c.institutionDate); row.insertCell(4).innerText = c.casePurpose || ''; row.insertCell(5).innerText = c.appellantName || ''; row.insertCell(6).innerText = c.respondentName || ''; row.insertCell(7).innerText = c.hearingDate ? formatDate(c.hearingDate) : '-'; row.insertCell(8).innerText = c.disposalDate ? formatDate(c.disposalDate) : '-'; row.insertCell(9).innerHTML = c.disposed ? '<span class="status-badge status-disposed">Disposed</span>' : '<span class="status-badge status-pending">Pending</span>'; });
+        caseArray.forEach(c => {
+            const row = tbody.insertRow();
+            row.insertCell(0).innerHTML = escapeHtml(c.caseNo) + (!c.disposed && dupSet.has(c.caseNo) ? '<span class="dup-chip" title="This Case No appears on more than one pending row">Dup</span>' : '');
+            row.insertCell(1).innerText = c.section || '';
+            row.insertCell(2).innerHTML = `<span class="type-chip">${getCaseType(c.section)}</span>`;
+            row.insertCell(3).innerText = formatDate(c.institutionDate);
+            row.insertCell(4).innerText = c.casePurpose || '';
+            row.insertCell(5).innerText = c.appellantName || '';
+            row.insertCell(6).innerText = c.appellantAdvocate || '';
+            row.insertCell(7).innerText = c.respondentName || '';
+            row.insertCell(8).innerText = c.hearingDate ? formatDate(c.hearingDate) : '-';
+            row.insertCell(9).innerText = c.disposalDate ? formatDate(c.disposalDate) : '-';
+            row.insertCell(10).innerHTML = c.disposed ? '<span class="status-badge status-disposed">Disposed</span>' : '<span class="status-badge status-pending">Pending</span>';
+        });
         modal.style.display = 'flex';
-        const headers = ['S.No.','Case No','Section','Case Type','Institution Date','Purpose','Appellant','Respondent','Hearing Date','Disposal Date','Status'];
-        const rows = caseArray.map((c, i) => [i + 1, c.caseNo, c.section || '', getCaseType(c.section), formatDate(c.institutionDate), c.casePurpose || '', c.appellantName || '', c.respondentName || '', c.hearingDate ? formatDate(c.hearingDate) : '-', c.disposalDate ? formatDate(c.disposalDate) : '-', c.disposed ? 'Disposed' : 'Pending']);
-        document.getElementById('exportModalCsvBtn').onclick = () => { const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]); ws['!cols'] = [6,18,14,14,14,24,22,22,13,13,10].map(w => ({wch:w})); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Cases'); XLSX.writeFile(wb, `${safeFileName(title)}.xlsx`); };
+        const headers = ['S.No.','Case No','Section','Case Type','Institution Date','Purpose','Appellant','Appellant Advocate','Respondent','Hearing Date','Disposal Date','Status'];
+        const rows = caseArray.map((c, i) => [i + 1, c.caseNo, c.section || '', getCaseType(c.section), formatDate(c.institutionDate), c.casePurpose || '', c.appellantName || '', c.appellantAdvocate || '', c.respondentName || '', c.hearingDate ? formatDate(c.hearingDate) : '-', c.disposalDate ? formatDate(c.disposalDate) : '-', c.disposed ? 'Disposed' : 'Pending']);
+        document.getElementById('exportModalCsvBtn').onclick = () => { const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]); ws['!cols'] = [6,18,14,14,14,24,22,22,22,13,13,10].map(w => ({wch:w})); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Cases'); XLSX.writeFile(wb, `${safeFileName(title)}.xlsx`); };
         document.getElementById('exportModalPdfBtn').onclick = () => printAsPdf(title, headers, rows, `Total: ${caseArray.length} case(s)`);
     }
 
@@ -834,7 +897,6 @@
         document.getElementById("exportDisposalExcel").onclick = () => { const wsData = [['S.No.','Case Type','Total Disposal',...ageOrder]]; let i=1; caseTypes.forEach(ct => { const data = typeMap.get(ct); wsData.push([i++, ct, data.total, ...ageOrder.map(b=>data.buckets[b].length)]); }); wsData.push(['','GRAND TOTAL', grand.total, ...ageOrder.map(b=>grand.buckets[b])]); const ws = XLSX.utils.aoa_to_sheet(wsData); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Disposal_MPR_Typewise'); XLSX.writeFile(wb, `Disposal_MPR_${start.toISOString().slice(0,10)}_to_${end.toISOString().slice(0,10)}.xlsx`); };
     }
 
-    // Import/Export functions (unchanged functionality)
     // =====================================================================================
     //  EXCEL IMPORT  (every row of the file is accounted for: added, updated, or listed in the report)
     // =====================================================================================
@@ -854,8 +916,6 @@
     function headerIndex(rows) { const h = rows[0].map(c => cleanCell(c).toLowerCase()); return (...keys) => h.findIndex(x => keys.some(k => x.includes(k))); }
     const rowIsBlank = row => row.every(v => cleanCell(v) === '');
 
-    // The same Case No can legitimately appear on several rows (e.g. a case entered twice). Rows are matched to saved
-    // cases by Case No + best fit on Section / dates, so re-importing a file never creates copies and never merges two rows.
     function groupByCaseNo(list) { const m = new Map(); list.forEach(c => { if (!c || !c.caseNo) return; if (!m.has(c.caseNo)) m.set(c.caseNo, []); m.get(c.caseNo).push(c); }); return m; }
     function pairByCaseNo(incoming, existingByNo, scoreFn) {
         const claimed = new Set(), result = new Map(), groups = new Map();
@@ -878,12 +938,13 @@
         const idxCase = find('case no', 'caseno'), idxInst = find('institution', 'inst date');
         if (idxCase === -1 || idxInst === -1) { showToast('Case No / Institution Date column not found in the first row', true); return; }
         const idxSec = find('section'), idxPur = find('purpose'), idxApp = find('appellant'), idxRes = find('respondent'), idxHear = find('hearing');
+        const idxAdv = find('advocate', 'adv.', 'vakil', 'wakil');
         const get = (row, i) => i === -1 ? '' : cleanCell(row[i]);
 
         const incoming = [], issues = []; let dataRows = 0;
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i]; if (rowIsBlank(row)) continue; dataRows++;
-            const r = { row: i + 1, caseNo: get(row, idxCase), section: get(row, idxSec), purpose: get(row, idxPur), appellant: get(row, idxApp), respondent: get(row, idxRes) };
+            const r = { row: i + 1, caseNo: get(row, idxCase), section: get(row, idxSec), purpose: get(row, idxPur), appellant: get(row, idxApp), appellantAdvocate: get(row, idxAdv), respondent: get(row, idxRes) };
             if (!r.caseNo) { issues.push({ ...r, kind: 'Skipped', reason: 'Case No is empty' }); continue; }
             r.inst = parseDateAny(row[idxInst]);
             if (!r.inst) { issues.push({ ...r, kind: 'Skipped', reason: `Institution Date missing or not a valid date (${get(row, idxInst) || 'blank'})` }); continue; }
@@ -896,23 +957,23 @@
         const repeatedNos = [...inFile.values()].filter(n => n > 1).length, repeatedRows = [...inFile.values()].filter(n => n > 1).reduce((a, b) => a + b, 0);
 
         const score = (r, e) => (secKey(e.section) === secKey(r.section) ? 4 : 0) + (e.institutionDate === r.inst ? 2 : 0) + (e.disposed ? 0 : 1) + (cleanCell(e.appellantName) === r.appellant ? 1 : 0) + (cleanCell(e.respondentName) === r.respondent ? 1 : 0);
-        const pairs = pairByCaseNo(incoming, groupByCaseNo(cases), score);   // Case No is the identity; Section / dates only decide which row goes with which when a Case No repeats
+        const pairs = pairByCaseNo(incoming, groupByCaseNo(cases), score);
         let added = 0, updated = 0, unchanged = 0;
         incoming.forEach((r, i) => {
             const ex = pairs.get(i);
             if (ex) {
                 let changed = false;
-                if (ex.disposed) {   // already disposed in the portal: a pending list may be out of date, so only fill empty fields
+                if (ex.disposed) {
                     const fill = (k, v) => { if (v && !ex[k]) { ex[k] = v; changed = true; } };
-                    fill('casePurpose', r.purpose); fill('appellantName', r.appellant); fill('respondentName', r.respondent); fill('section', r.section); fill('institutionDate', r.inst);
+                    fill('casePurpose', r.purpose); fill('appellantName', r.appellant); fill('appellantAdvocate', r.appellantAdvocate); fill('respondentName', r.respondent); fill('section', r.section); fill('institutionDate', r.inst);
                 } else {
                     const set = (k, v) => { if (v && ex[k] !== v) { ex[k] = v; changed = true; } };
-                    set('casePurpose', r.purpose); set('appellantName', r.appellant); set('respondentName', r.respondent); set('hearingDate', r.hearing);
+                    set('casePurpose', r.purpose); set('appellantName', r.appellant); set('appellantAdvocate', r.appellantAdvocate); set('respondentName', r.respondent); set('hearingDate', r.hearing);
                     if (!ex.section) set('section', r.section); if (!ex.institutionDate) set('institutionDate', r.inst);
                 }
                 changed ? updated++ : unchanged++;
             } else {
-                cases.push({ id: nextId++, caseNo: r.caseNo, section: r.section, institutionDate: r.inst, casePurpose: r.purpose, appellantName: r.appellant, respondentName: r.respondent, hearingDate: r.hearing || null, disposed: false, disposalDate: null });
+                cases.push({ id: nextId++, caseNo: r.caseNo, section: r.section, institutionDate: r.inst, casePurpose: r.purpose, appellantName: r.appellant, appellantAdvocate: r.appellantAdvocate || '', respondentName: r.respondent, hearingDate: r.hearing || null, disposed: false, disposalDate: null });
                 added++;
             }
         });
@@ -935,12 +996,13 @@
         const idxCase = find('case no', 'caseno'), idxDisp = find('disposal');
         if (idxCase === -1 || idxDisp === -1) { showToast('Case No / Disposal Date column not found in the first row', true); return; }
         const idxInst = find('institution', 'inst date'), idxSec = find('section'), idxPur = find('purpose'), idxApp = find('appellant'), idxRes = find('respondent');
+        const idxAdv = find('advocate', 'adv.');
         const get = (row, i) => i === -1 ? '' : cleanCell(row[i]);
 
         const incoming = [], issues = []; let dataRows = 0;
         for (let i = 1; i < rows.length; i++) {
             const row = rows[i]; if (rowIsBlank(row)) continue; dataRows++;
-            const r = { row: i + 1, caseNo: get(row, idxCase), section: get(row, idxSec), purpose: get(row, idxPur), appellant: get(row, idxApp), respondent: get(row, idxRes) };
+            const r = { row: i + 1, caseNo: get(row, idxCase), section: get(row, idxSec), purpose: get(row, idxPur), appellant: get(row, idxApp), appellantAdvocate: get(row, idxAdv), respondent: get(row, idxRes) };
             if (!r.caseNo) { issues.push({ ...r, kind: 'Skipped', reason: 'Case No is empty' }); continue; }
             r.disp = parseDateAny(row[idxDisp]);
             if (!r.disp) { issues.push({ ...r, kind: 'Skipped', reason: get(row, idxDisp) ? `Disposal Date not a valid date (${get(row, idxDisp)})` : 'No Disposal Date in file - add a date and re-import to count it' }); continue; }
@@ -949,7 +1011,7 @@
         }
         const inFile = new Map(); incoming.forEach(r => inFile.set(r.caseNo + '|' + secKey(r.section), (inFile.get(r.caseNo + '|' + secKey(r.section)) || 0) + 1));
 
-        const score = (r, e) => (e.disposed && e.disposalDate === r.disp ? 8 : 0) + (secKey(e.section) === secKey(r.section) ? 4 : 0) + (e.disposed ? 0 : 1);   // a saved row with the same disposal date is the same row
+        const score = (r, e) => (e.disposed && e.disposalDate === r.disp ? 8 : 0) + (secKey(e.section) === secKey(r.section) ? 4 : 0) + (e.disposed ? 0 : 1);
         const pairs = pairByCaseNo(incoming, groupByCaseNo(cases), score);
         let marked = 0, added = 0, redated = 0, unchanged = 0;
         incoming.forEach((r, i) => {
@@ -962,12 +1024,13 @@
                 if (!ex.casePurpose && r.purpose) ex.casePurpose = r.purpose;
                 if (!ex.section && r.section) ex.section = r.section;
                 if (!ex.appellantName && r.appellant) ex.appellantName = r.appellant;
+                if (!ex.appellantAdvocate && r.appellantAdvocate) ex.appellantAdvocate = r.appellantAdvocate;
                 if (!ex.respondentName && r.respondent) ex.respondentName = r.respondent;
                 if (!ex.institutionDate && r.inst) ex.institutionDate = r.inst;
                 if (r.purpose) ex.disposalNote = r.purpose;
             } else {
                 if (!r.inst) { issues.push({ ...r, kind: 'Skipped', reason: 'New case not in portal and Institution Date is missing - add the date and re-import' }); return; }
-                cases.push({ id: nextId++, caseNo: r.caseNo, section: r.section, institutionDate: r.inst, casePurpose: r.purpose, appellantName: r.appellant, respondentName: r.respondent, hearingDate: null, disposed: true, disposalDate: r.disp, disposalNote: r.purpose });
+                cases.push({ id: nextId++, caseNo: r.caseNo, section: r.section, institutionDate: r.inst, casePurpose: r.purpose, appellantName: r.appellant, appellantAdvocate: r.appellantAdvocate || '', respondentName: r.respondent, hearingDate: null, disposed: true, disposalDate: r.disp, disposalNote: r.purpose });
                 added++;
             }
             if (instForCheck && instForCheck > isoToday()) issues.push({ ...r, kind: 'Warning', reason: `Institution Date ${isoFmt(instForCheck)} is in the future - please check the year` });
@@ -1019,14 +1082,12 @@
     function showAllDisposals() { const disposed = cases.filter(c => c.disposed); if(disposed.length===0) showToast("No disposed cases", true); else showCaseList(`All Disposed Cases (${disposed.length})`, disposed); }
     function exportBackup(){ let a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(cases,null,2)],{type:"application/json"})); a.download=`rccms_backup_${new Date().toISOString().slice(0,19)}.json`; a.click(); showToast("Backup saved"); }
     function restoreBackup(file){ let reader=new FileReader(); reader.onload=e=>{ try{ let arr=JSON.parse(e.target.result); if(Array.isArray(arr)){ cases=arr; if(cases.length) nextId=Math.max(...cases.map(c=>c.id||0),0)+1; saveToFirebase(); showToast("Restore successful"); updateStats(true); } else throw new Error(); }catch(err){ showToast("Invalid backup", true); } }; reader.readAsText(file); }
-    function loadSampleData(){ if(confirm("Load sample cases?")){ cases = [{id:1,caseNo:"2025/99",section:"212",institutionDate:"2025-06-13",casePurpose:"साक्ष्य",appellantName:"ओम",respondentName:"कमलेश",hearingDate:"2026-06-22",disposed:true,disposalDate:"2026-05-01"},{id:2,caseNo:"2025/98",section:"39(2ए),151",institutionDate:"2025-06-13",casePurpose:"प्रार्थना",appellantName:"राम",respondentName:"श्याम",hearingDate:"2026-06-22",disposed:false},{id:3,caseNo:"2024/10",section:"175",institutionDate:"2024-01-10",casePurpose:"इजराय",appellantName:"सीता",respondentName:"राम",hearingDate:"2026-06-22",disposed:false},{id:4,caseNo:"2023/45",section:"106",institutionDate:"2023-05-20",casePurpose:"दावा",appellantName:"मोहन",respondentName:"सोहन",hearingDate:"2026-06-22",disposed:false},{id:5,caseNo:"2015/01",section:"O(9)-R(9)",institutionDate:"2015-03-10",casePurpose:"प्रार्थना",appellantName:"पुराना",respondentName:"वादी",hearingDate:"2026-06-22",disposed:false}]; nextId=6; saveToFirebase(); showToast("Sample loaded with expanded Prarthana sections"); } }
+    function loadSampleData(){ if(confirm("Load sample cases?")){ cases = [{id:1,caseNo:"2025/99",section:"212",institutionDate:"2025-06-13",casePurpose:"साक्ष्य",appellantName:"ओम",appellantAdvocate:"श्री आर.के. शर्मा",respondentName:"कमलेश",hearingDate:"2026-06-22",disposed:true,disposalDate:"2026-05-01"},{id:2,caseNo:"2025/98",section:"39(2ए),151",institutionDate:"2025-06-13",casePurpose:"प्रार्थना",appellantName:"राम",appellantAdvocate:"श्री सुरेश गुप्ता",respondentName:"श्याम",hearingDate:"2026-06-22",disposed:false},{id:3,caseNo:"2024/10",section:"175",institutionDate:"2024-01-10",casePurpose:"इजराय",appellantName:"सीता",appellantAdvocate:"श्री सुरेश गुप्ता",respondentName:"राम",hearingDate:"2026-06-22",disposed:false},{id:4,caseNo:"2023/45",section:"106",institutionDate:"2023-05-20",casePurpose:"दावा",appellantName:"मोहन",appellantAdvocate:"श्री आर.के. शर्मा",respondentName:"सोहन",hearingDate:"2026-06-22",disposed:false},{id:5,caseNo:"2015/01",section:"O(9)-R(9)",institutionDate:"2015-03-10",casePurpose:"प्रार्थना",appellantName:"पुराना",appellantAdvocate:"श्री वी.के. सिंह",respondentName:"वादी",hearingDate:"2026-06-22",disposed:false}]; nextId=6; saveToFirebase(); showToast("Sample loaded"); } }
     function deleteAllData(){ if(confirm("⚠️ DELETE ALL?")){ casesRef.remove().then(()=>{ cases=[]; nextId=1; updateStats(false); showToast("All data deleted"); }).catch(e=>showToast(e.message,true)); } }
     function updateDebug() { const debugDiv = document.getElementById('debugContent'); const dupN = pendingDuplicateSet().size; debugDiv.innerHTML = `🔁 Pending rows sharing a Case No: ${dupN} number(s)<br>📊 Total: ${cases.length} | Disposed: ${cases.filter(c=>c.disposed).length} | Pending: ${cases.filter(c=>!c.disposed).length}<br>📌 Case Types: प्रार्थना पत्र=${cases.filter(c=>getCaseType(c.section)==="प्रार्थना पत्र").length}, इजराय=${cases.filter(c=>getCaseType(c.section)==="इजराय").length}, दावा=${cases.filter(c=>getCaseType(c.section)==="दावा").length}`; }
 
     // ===== CASE PURPOSE WISE REPORT =====
     const PURPOSE_BLANK = 'उद्देश्य दर्ज नहीं (Blank)';
-    // Spelling variants that are merged into one purpose when "Merge spelling variants" is ticked.
-    // Left side = as typed in the data, right side = merged name. Edit this list to suit your office.
     const PURPOSE_ALIASES = {
         'TALBI': 'तलबी',
         'तलवी': 'तलबी',
@@ -1096,8 +1157,80 @@
         printAsPdf('Case Purpose-wise Report', ['S.No.', 'Case Purpose', 'Pending', 'Disposed', 'Total'], purposeSummaryRows(), `As on ${new Date().toLocaleDateString('en-GB')}`);
     }
 
+    // ===== APPELLANT ADVOCATE WISE REPORT =====
+    const ADVOCATE_BLANK = 'अधिवक्ता दर्ज नहीं (Blank)';
+    const ADVOCATE_ALIASES = {
+        'sh. r.k. sharma':      'राम कुमार शर्मा',
+        'r.k. sharma':          'राम कुमार शर्मा',
+        'ram kumar sharma':     'राम कुमार शर्मा',
+        'श्री राम कुमार शर्मा': 'राम कुमार शर्मा',
+        'adv. s.k. gupta':      'सुरेश कुमार गुप्ता',
+        's.k. gupta':           'सुरेश कुमार गुप्ता'
+    };
+    const ADVOCATE_LOOKUP = {};
+    Object.keys(ADVOCATE_ALIASES).forEach(k => { ADVOCATE_LOOKUP[k.toLowerCase()] = ADVOCATE_ALIASES[k]; });
+    let advocateGroups = [];
+
+    function normAdvocate(raw, merge) {
+        const s = String(raw || '').replace(/\s+/g, ' ').trim();
+        if (!s) return ADVOCATE_BLANK;
+        return (merge && ADVOCATE_LOOKUP[s.toLowerCase()]) ? ADVOCATE_LOOKUP[s.toLowerCase()] : s;
+    }
+
+    function buildAdvocateGroups() {
+        const merge = document.getElementById('advocateMergeChk') ? document.getElementById('advocateMergeChk').checked : true;
+        const map = new Map();
+        cases.forEach(c => {
+            const name = normAdvocate(c.appellantAdvocate, merge);
+            if (!map.has(name)) map.set(name, { name, pending: [], disposed: [], all: [] });
+            const g = map.get(name);
+            g.all.push(c);
+            (c.disposed ? g.disposed : g.pending).push(c);
+        });
+        return Array.from(map.values()).sort((a, b) => (b.all.length - a.all.length) || (b.pending.length - a.pending.length) || a.name.localeCompare(b.name, 'hi'));
+    }
+
+    function renderAdvocateCard() {
+        const body = document.getElementById('advocateBody'); if (!body) return;
+        advocateGroups = buildAdvocateGroups();
+        if (!advocateGroups.length) { body.innerHTML = '<tr><td colspan="6">No data</td></tr>'; return; }
+        const maxTotal = Math.max(1, ...advocateGroups.map(g => g.all.length));
+        let tp = 0, td = 0, tt = 0, html = '';
+        advocateGroups.forEach((g, i) => {
+            tp += g.pending.length; td += g.disposed.length; tt += g.all.length;
+            const cell = (n, st) => n ? `<td class="num"><span class="clickable" data-i="${i}" data-s="${st}">${n}</span></td>` : `<td class="num">0</td>`;
+            html += `<tr><td>${i + 1}</td><td>${escapeHtml(g.name)}</td>${cell(g.pending.length, 'pending')}${cell(g.disposed.length, 'disposed')}${cell(g.all.length, 'all')}<td style="min-width:140px;"><div class="progress-bar-container"><div class="progress-bar" style="width:${(g.all.length / maxTotal) * 100}%;"></div></div></td></tr>`;
+        });
+        html += `<tr class="total-row"><td></td><td>GRAND TOTAL</td><td class="num">${tp}</td><td class="num">${td}</td><td class="num">${tt}</td><td></td></tr>`;
+        body.innerHTML = html;
+    }
+
+    function openAdvocateCases(i, status) {
+        const g = advocateGroups[i]; if (!g) return;
+        const list = g[status];
+        const label = status === 'pending' ? 'Pending' : status === 'disposed' ? 'Disposed' : 'All';
+        if (!list.length) { showToast('No cases', true); return; }
+        showCaseList(`${g.name} — ${label} (${list.length})`, list);
+    }
+
+    function advocateSummaryRows() {
+        const rows = advocateGroups.map((g, i) => [i + 1, g.name, g.pending.length, g.disposed.length, g.all.length]);
+        rows.push(['', 'GRAND TOTAL', advocateGroups.reduce((s, g) => s + g.pending.length, 0), advocateGroups.reduce((s, g) => s + g.disposed.length, 0), advocateGroups.reduce((s, g) => s + g.all.length, 0)]);
+        return rows;
+    }
+    function exportAdvocateSummaryExcel() {
+        if (!advocateGroups.length) { showToast('No data', true); return; }
+        const ws = XLSX.utils.aoa_to_sheet([['S.No.', 'Appellant Advocate', 'Pending', 'Disposed', 'Total Files'], ...advocateSummaryRows()]);
+        ws['!cols'] = [{wch:6},{wch:38},{wch:10},{wch:10},{wch:12}];
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Advocate_Report');
+        XLSX.writeFile(wb, `Appellant_Advocate_Report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    }
+    function exportAdvocateSummaryPdf() {
+        if (!advocateGroups.length) { showToast('No data', true); return; }
+        printAsPdf('Appellant Advocate-wise Files', ['S.No.', 'Appellant Advocate', 'Pending', 'Disposed', 'Total Files'], advocateSummaryRows(), `As on ${new Date().toLocaleDateString('en-GB')}`);
+    }
+
     // PDF: renders a clean printable table and opens the browser's print dialog -> choose "Save as PDF".
-    // (This keeps Hindi text perfectly shaped, which jsPDF-style libraries cannot do without a custom font.)
     function printAsPdf(title, headers, rows, subtitle, opts) {
         opts = opts || {};
         const officeEl = document.getElementById('officeNameInput');
@@ -1136,8 +1269,6 @@ tr { page-break-inside: avoid; }
     }
 
     // ===== NEXT HEARING DATE (अगली पेशी) =====
-    // Hearing dates are stored as 'YYYY-MM-DD'. All date maths below is done on the string / UTC parts
-    // so the IST-vs-UTC shift bug can never move a case to the wrong day.
     const HDAY_EN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const HDAY_HI = ['रविवार','सोमवार','मंगलवार','बुधवार','गुरुवार','शुक्रवार','शनिवार'];
     function isoToday() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
@@ -1147,7 +1278,6 @@ tr { page-break-inside: avoid; }
     function hearingISO(c) { const s = c && c.hearingDate ? String(c.hearingDate).slice(0, 10) : ''; return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : ''; }
     const cmpCaseNo = (a, b) => String(a.caseNo).localeCompare(String(b.caseNo), undefined, { numeric: true });
 
-    // Pending cases only: a disposed case has no "next" hearing.
     function hearingCases(kind, a, b) {
         const today = isoToday();
         let list = cases.filter(c => {
@@ -1168,9 +1298,6 @@ tr { page-break-inside: avoid; }
         showHearingCases(`Next Hearing ${isoFmt(iso)} (${HDAY_EN[isoDow(iso)]}) - ${list.length} cases`, list);
     }
 
-    // ===== GOVERNMENT HOLIDAYS (shown in RED) =====
-    // Taken from the Rajasthan Government calendar (days marked in red), Oct - Dec 2026.
-    // To add more months / years later, just add lines here:  'YYYY-MM-DD': 'Holiday name'
     const GOV_HOLIDAYS = {
         '2026-10-02': 'महात्मा गांधी जयन्ती',
         '2026-10-11': 'नवरात्रा स्थापना एवं महाराजा अग्रसेन जयन्ती',
@@ -1182,7 +1309,7 @@ tr { page-break-inside: avoid; }
         '2026-11-24': 'गुरूनानक जयन्ती',
         '2026-12-25': 'क्रिसमस डे'
     };
-    const WEEKLY_OFF_DOWS = [0, 6]; // Sunday and Saturday are red in the official calendar (set to [0] if Saturday is a working day)
+    const WEEKLY_OFF_DOWS = [0, 6];
     function dayOff(iso) {
         if (!iso) return null;
         if (GOV_HOLIDAYS[iso]) return { kind: 'holiday', name: GOV_HOLIDAYS[iso] };
@@ -1191,7 +1318,7 @@ tr { page-break-inside: avoid; }
     }
     function dayOffLabel(iso) { const o = dayOff(iso); return !o ? '' : o.kind === 'holiday' ? `Govt. Holiday: ${o.name}` : 'Weekly Off'; }
 
-    let hearingRows = []; // rows currently shown in the table (for Excel / PDF)
+    let hearingRows = [];
 
     function renderHearingSection() {
         const filter = document.getElementById('hearingFilterDate'); if (!filter) return;
@@ -1209,7 +1336,6 @@ tr { page-break-inside: avoid; }
         document.getElementById('hkOverdue').innerText = hearingCases('overdue').length;
         document.getElementById('hkNoDate').innerText = hearingCases('nodate').length;
 
-        // Result tile for the chosen date
         const cnt = document.getElementById('hearingResultCount'), dt = document.getElementById('hearingResultDate'), vb = document.getElementById('hearingViewBtn');
         if (!sel) { cnt.innerText = '-'; cnt.classList.add('zero'); dt.innerText = 'Select a date'; dt.classList.remove('is-off'); vb.disabled = true; }
         else {
@@ -1220,7 +1346,6 @@ tr { page-break-inside: avoid; }
             dt.classList.toggle('is-off', !!offSel);
         }
 
-        // Date-wise table
         const counts = {};
         cases.forEach(c => { if (c.disposed) return; const h = hearingISO(c); if (h) counts[h] = (counts[h] || 0) + 1; });
         const showPast = document.getElementById('hearingPastChk').checked;
@@ -1245,7 +1370,6 @@ tr { page-break-inside: avoid; }
 
     function setHearingDate(iso) { document.getElementById('hearingFilterDate').value = iso; syncCalToDate(iso); renderHearingSection(); }
 
-    // ---- Month-wise calendar: number of pending cases fixed on each date ----
     const CAL_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
     const CAL_DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
     const calState = { y: null, m: null };
@@ -1273,14 +1397,12 @@ tr { page-break-inside: avoid; }
         const { b, days, total, dates, pastTotal, counts } = calMonthData();
         const sel = (document.getElementById('hearingFilterDate') || {}).value || '';
 
-        // month / year pickers
         const ys = Object.keys(counts).map(k => +k.slice(0, 4)), ty = +today.slice(0, 4);
         const minY = Math.min(calState.y, ty, ...ys), maxY = Math.max(calState.y, ty + 1, ...ys);
         document.getElementById('calMonthSel').innerHTML = CAL_MONTHS.map((m, i) => `<option value="${i}"${i === calState.m ? ' selected' : ''}>${m}</option>`).join('');
         let yo = ''; for (let y = minY; y <= maxY; y++) yo += `<option value="${y}"${y === calState.y ? ' selected' : ''}>${y}</option>`;
         document.getElementById('calYearSel').innerHTML = yo;
 
-        // summary chips + month button
         const hols = days.filter(x => GOV_HOLIDAYS[x.iso]), offCases = days.reduce((s, x) => s + (x.n && dayOff(x.iso) ? x.n : 0), 0);
         document.getElementById('calSummary').innerHTML =
             `<span class="cal-chip ok"><b>${total}</b> pending case(s) in ${CAL_MONTHS[calState.m]} ${calState.y}</span>` +
@@ -1291,7 +1413,6 @@ tr { page-break-inside: avoid; }
         document.getElementById('calHolidays').innerHTML = hols.length ? `<span class="cal-hol-title">अवकाश / Holidays:</span>` + hols.map(x => `<span class="cal-hol-item"><b>${x.d} ${CAL_MONTHS[calState.m].slice(0, 3)}</b> (${HDAY_EN[isoDow(x.iso)].slice(0, 3)}) · ${escapeHtml(GOV_HOLIDAYS[x.iso])}</span>`).join('') : '';
         const mv = document.getElementById('calMonthView'); mv.disabled = total === 0; mv.innerHTML = `<i class="fas fa-list"></i> View all ${total} case(s)`;
 
-        // grid
         const lead = new Date(Date.UTC(calState.y, calState.m, 1)).getUTCDay();
         let html = CAL_DOW.map((n, i) => `<div class="cal-dow${WEEKLY_OFF_DOWS.includes(i) ? ' off' : ''}">${n}</div>`).join('');
         for (let i = 0; i < lead; i++) html += '<div class="cal-day empty"></div>';
@@ -1344,7 +1465,6 @@ tr { page-break-inside: avoid; }
         printAsPdf('Next Hearing Date-wise Cases', ['Next Hearing Date', 'Day', 'Pending Cases', 'Holiday / Off'], hearingRows, `As on ${isoFmt(isoToday())}`, { redCell: (ri) => !!(hearingRows[ri] && hearingRows[ri][3]) });
     }
 
-    // ---- Update the next hearing date of a pending case ----
     function openNextHearingModal() {
         const dl = document.getElementById('hearingCaseNosList'); dl.innerHTML = '';
         cases.filter(c => !c.disposed).sort(cmpCaseNo).forEach(c => { const o = document.createElement('option'); o.value = c.caseNo; dl.appendChild(o); });
@@ -1376,15 +1496,90 @@ tr { page-break-inside: avoid; }
         setHearingDate(d);
     }
 
-    // Authentication and event listeners (fixed login flow)
-    auth.onAuthStateChanged(user => { if(user){ updateSyncIndicator('connected','Live'); document.getElementById("loginModal").style.display="none"; document.getElementById("mainToolbar").style.display="flex"; document.getElementById("mainContent").style.display="block"; document.getElementById("userStatus").innerHTML = `<i class="fas fa-user-check"></i> ${user.email}`; casesRef.on('value', (snap) => { let data = snap.val(); if(data){ cases = Object.values(data).filter(c => c && c.caseNo); if(cases.length) nextId = Math.max(...cases.map(c=>c.id||0))+1; } else { cases = []; nextId=1; } isLoading = false; updateStats(true); showToast("Data loaded"); }); } else { updateSyncIndicator('connecting','Not logged in'); document.getElementById("loginModal").style.display="flex"; document.getElementById("mainToolbar").style.display="none"; document.getElementById("mainContent").style.display="none"; document.getElementById("userStatus").innerHTML = "<i class='fas fa-user-lock'></i> Not logged in"; } });
-    document.getElementById("loginBtn").onclick = () => { const email = document.getElementById("loginEmail").value; const pwd = document.getElementById("loginPassword").value; if(!email||!pwd){ document.getElementById("loginError").innerText="Enter credentials"; return; } auth.signInWithEmailAndPassword(email,pwd).then(()=>{ document.getElementById("loginError").innerText=""; showToast("Login success"); }).catch(err=>{ document.getElementById("loginError").innerText=err.message; showToast("Login failed",true); }); };
+    // Authentication and event listeners
+    auth.onAuthStateChanged(user => {
+        if(user){
+            updateSyncIndicator('connected','Live');
+            document.getElementById("loginModal").style.display="none";
+            document.getElementById("mainToolbar").style.display="flex";
+            document.getElementById("mainContent").style.display="block";
+            document.getElementById("userStatus").innerHTML = `<i class="fas fa-user-check"></i> ${user.email}`;
+            casesRef.on('value', (snap) => {
+                let data = snap.val();
+                if(data){
+                    cases = Object.values(data).filter(c => c && c.caseNo);
+                    if(cases.length) nextId = Math.max(...cases.map(c=>c.id||0))+1;
+                } else { cases = []; nextId=1; }
+                isLoading = false;
+                updateStats(true);
+                showToast("Data loaded");
+            });
+        } else {
+            updateSyncIndicator('connecting','Not logged in');
+            document.getElementById("loginModal").style.display="flex";
+            document.getElementById("mainToolbar").style.display="none";
+            document.getElementById("mainContent").style.display="none";
+            document.getElementById("userStatus").innerHTML = "<i class='fas fa-user-lock'></i> Not logged in";
+        }
+    });
+
+    document.getElementById("loginBtn").onclick = () => {
+        const email = document.getElementById("loginEmail").value;
+        const pwd = document.getElementById("loginPassword").value;
+        if(!email||!pwd){ document.getElementById("loginError").innerText="Enter credentials"; return; }
+        auth.signInWithEmailAndPassword(email,pwd)
+            .then(()=>{ document.getElementById("loginError").innerText=""; showToast("Login success"); })
+            .catch(err=>{ document.getElementById("loginError").innerText=err.message; showToast("Login failed",true); });
+    };
     document.getElementById("logoutBtn").onclick = () => auth.signOut();
-    document.addEventListener("DOMContentLoaded", () => { if(!document.getElementById("reportStartDate")){ const inpStart = document.createElement("input"); inpStart.type = "hidden"; inpStart.id = "reportStartDate"; const inpEnd = document.createElement("input"); inpEnd.type = "hidden"; inpEnd.id = "reportEndDate"; const inpOffice = document.createElement("input"); inpOffice.type = "hidden"; inpOffice.id = "officeNameInput"; document.body.appendChild(inpStart); document.body.appendChild(inpEnd); document.body.appendChild(inpOffice); } document.getElementById("reportStartDate").value = "2000-01-01"; document.getElementById("reportEndDate").value = new Date().toISOString().slice(0,10); document.getElementById("officeNameInput").value = "राजस्व मंडल, निवाई"; document.getElementById("searchBtn").onclick = () => { const term = document.getElementById("searchCaseNo").value.trim().toLowerCase(); if(!term) return; const res = cases.filter(c=>c.caseNo.toLowerCase().includes(term)); if(res.length===0) showToast("No cases",true); else showCaseList(`Search: ${term}`, res); }; document.getElementById("clearSearchBtn").onclick = () => document.getElementById("searchCaseNo").value=""; document.getElementById("pendingMprBtn").onclick = renderPendingMPR; document.getElementById("disposalMprBtn").onclick = renderDisposalMPR; document.getElementById("showAllDisposalsBtn").onclick = showAllDisposals;
-        document.getElementById("purposeReportBtn").onclick = () => { const s = document.getElementById("purposeSection"); s.scrollIntoView({behavior:'smooth', block:'start'}); s.classList.remove('flash'); void s.offsetWidth; s.classList.add('flash'); };
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if(!document.getElementById("reportStartDate")){
+            const inpStart = document.createElement("input"); inpStart.type = "hidden"; inpStart.id = "reportStartDate";
+            const inpEnd = document.createElement("input"); inpEnd.type = "hidden"; inpEnd.id = "reportEndDate";
+            const inpOffice = document.createElement("input"); inpOffice.type = "hidden"; inpOffice.id = "officeNameInput";
+            document.body.appendChild(inpStart); document.body.appendChild(inpEnd); document.body.appendChild(inpOffice);
+        }
+        document.getElementById("reportStartDate").value = "2000-01-01";
+        document.getElementById("reportEndDate").value = new Date().toISOString().slice(0,10);
+        document.getElementById("officeNameInput").value = "राजस्व मंडल, निवाई";
+        document.getElementById("searchBtn").onclick = () => {
+            const term = document.getElementById("searchCaseNo").value.trim().toLowerCase();
+            if(!term) return;
+            const res = cases.filter(c=>c.caseNo.toLowerCase().includes(term));
+            if(res.length===0) showToast("No cases",true);
+            else showCaseList(`Search: ${term}`, res);
+        };
+        document.getElementById("clearSearchBtn").onclick = () => document.getElementById("searchCaseNo").value="";
+        document.getElementById("pendingMprBtn").onclick = renderPendingMPR;
+        document.getElementById("disposalMprBtn").onclick = renderDisposalMPR;
+        document.getElementById("showAllDisposalsBtn").onclick = showAllDisposals;
+
+        document.getElementById("purposeReportBtn").onclick = () => {
+            const s = document.getElementById("purposeSection");
+            s.scrollIntoView({behavior:'smooth', block:'start'});
+            s.classList.remove('flash'); void s.offsetWidth; s.classList.add('flash');
+        };
         document.getElementById("purposeMergeChk").onchange = renderPurposeCard;
-        // ---- Next Hearing Date wiring ----
-        document.getElementById("hearingReportBtn").onclick = () => { const s = document.getElementById("hearingSection"); s.scrollIntoView({behavior:'smooth', block:'start'}); s.classList.remove('flash'); void s.offsetWidth; s.classList.add('flash'); };
+
+        document.getElementById("advocateReportBtn").onclick = () => {
+            const s = document.getElementById("advocateSection");
+            s.scrollIntoView({behavior:'smooth', block:'start'});
+            s.classList.remove('flash'); void s.offsetWidth; s.classList.add('flash');
+        };
+        document.getElementById("advocateMergeChk").onchange = renderAdvocateCard;
+        document.getElementById("advocateExcelBtn").onclick  = exportAdvocateSummaryExcel;
+        document.getElementById("advocatePdfBtn").onclick    = exportAdvocateSummaryPdf;
+        document.getElementById("advocateBody").addEventListener('click', e => {
+            const el = e.target.closest('.clickable');
+            if (el) openAdvocateCases(+el.dataset.i, el.dataset.s);
+        });
+
+        document.getElementById("hearingReportBtn").onclick = () => {
+            const s = document.getElementById("hearingSection");
+            s.scrollIntoView({behavior:'smooth', block:'start'});
+            s.classList.remove('flash'); void s.offsetWidth; s.classList.add('flash');
+        };
         document.getElementById("hearingFilterDate").onchange = () => { const v = document.getElementById("hearingFilterDate").value; if (v) syncCalToDate(v); renderHearingSection(); };
         document.getElementById("calPrev").onclick = () => calShift(-1);
         document.getElementById("calNext").onclick = () => calShift(1);
@@ -1395,7 +1590,11 @@ tr { page-break-inside: avoid; }
         document.getElementById("calExcelBtn").onclick = calExportExcel;
         document.getElementById("calPdfBtn").onclick = calExportPdf;
         document.getElementById("calGrid").addEventListener('click', e => { const el = e.target.closest('.cal-day[data-date]'); if (el) calOpenDay(el); });
-        document.getElementById("calGrid").addEventListener('keydown', e => { if (e.key !== 'Enter' && e.key !== ' ') return; const el = e.target.closest('.cal-day.has'); if (el) { e.preventDefault(); calOpenDay(el); } });
+        document.getElementById("calGrid").addEventListener('keydown', e => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            const el = e.target.closest('.cal-day.has');
+            if (el) { e.preventDefault(); calOpenDay(el); }
+        });
         document.getElementById("hearingTodayBtn").onclick = () => setHearingDate(isoToday());
         document.getElementById("hearingTomorrowBtn").onclick = () => setHearingDate(isoAdd(isoToday(), 1));
         document.getElementById("hearingPrevDay").onclick = () => setHearingDate(isoAdd(document.getElementById("hearingFilterDate").value || isoToday(), -1));
@@ -1429,7 +1628,82 @@ tr { page-break-inside: avoid; }
         document.getElementById("hearingNewDate").addEventListener('change', showHearingDateNote);
         document.getElementById("purposeExcelBtn").onclick = exportPurposeSummaryExcel;
         document.getElementById("purposePdfBtn").onclick = exportPurposeSummaryPdf;
-        document.getElementById("purposeBody").addEventListener('click', e => { const el = e.target.closest('.clickable'); if (el) openPurposeCases(+el.dataset.i, el.dataset.s); }); document.getElementById("addCaseBtn").onclick = () => document.getElementById("caseModal").style.display="flex"; document.getElementById("closeCaseModalBtn").onclick = () => document.getElementById("caseModal").style.display="none"; document.getElementById("saveCaseBtn").onclick = () => { let cNo=document.getElementById("caseNo").value.trim(), inst=document.getElementById("instDate").value; if(!cNo||!inst){ showToast("Case No & Date required",true); return; } cases.push({id:nextId++, caseNo:cNo, section:document.getElementById("section").value, institutionDate:inst, casePurpose:document.getElementById("casePurpose").value, appellantName:document.getElementById("appellant").value, respondentName:document.getElementById("respondent").value, hearingDate:document.getElementById("hearingDate").value||null, disposed:false, disposalDate:null}); saveToFirebase(); document.getElementById("caseModal").style.display="none"; }; document.getElementById("disposeBtn").onclick = () => { document.getElementById("disposalModal").style.display="flex"; document.getElementById("disposalDate").value=new Date().toISOString().slice(0,10); const datalist = document.getElementById("caseNosList"); datalist.innerHTML=""; cases.filter(c=>!c.disposed).forEach(c=>{ const opt = document.createElement("option"); opt.value = c.caseNo; datalist.appendChild(opt); }); }; document.getElementById("closeDisposalModalBtn").onclick = () => document.getElementById("disposalModal").style.display="none"; document.getElementById("confirmDisposalBtn").onclick = () => { let cNo=document.getElementById("disposalCaseNo").value.trim(), dDate=document.getElementById("disposalDate").value; if(!cNo||!dDate){ showToast("Select case and date",true); return; } let found=cases.find(c=>c.caseNo===cNo && !c.disposed); if(found){ found.disposed=true; found.disposalDate=dDate; saveToFirebase(); showToast("Disposal recorded"); } else showToast("Not found or already disposed",true); document.getElementById("disposalModal").style.display="none"; }; document.getElementById("exportBackupBtn").onclick = exportBackup; document.getElementById("importBackupBtn").onclick = () => { let inp=document.createElement('input'); inp.type='file'; inp.accept='.json'; inp.onchange=e=>{ if(e.target.files.length) restoreBackup(e.target.files[0]); }; inp.click(); }; document.getElementById("importCasesExcelBtn").onclick = () => document.getElementById("casesExcelInput").click(); document.getElementById("casesExcelInput").onchange = e => { if(e.target.files.length) importCasesExcel(e.target.files[0]); e.target.value=''; }; document.getElementById("importDisposalExcelBtn").onclick = () => document.getElementById("disposalExcelInput").click(); document.getElementById("disposalExcelInput").onchange = e => { if(e.target.files.length) importDisposalExcel(e.target.files[0]); e.target.value=''; }; document.getElementById("sampleDataBtn").onclick = loadSampleData; document.getElementById("deleteAllBtn").onclick = deleteAllData; document.getElementById("closeModalBtn").onclick = () => document.getElementById("listModal").style.display="none"; window.onclick = (event) => { if(event.target === document.getElementById("listModal")) document.getElementById("listModal").style.display="none"; }; setTimeout(() => { document.querySelectorAll('.stat-card').forEach(card => { card.addEventListener('click', () => { const type = card.getAttribute('data-stat'); let filtered=[]; if(type==='total') filtered=cases; else if(type==='pending') filtered=cases.filter(c=>!c.disposed); else if(type==='disposed') filtered=cases.filter(c=>c.disposed); else if(type==='yearly') { const cy=new Date().getFullYear(); filtered=cases.filter(c=>new Date(c.institutionDate).getFullYear()===cy); } if(filtered.length===0) showToast("No cases",true); else showCaseList(`${card.querySelector('.label').innerText} Cases (${filtered.length})`, filtered); }); }); }, 500); });
+        document.getElementById("purposeBody").addEventListener('click', e => { const el = e.target.closest('.clickable'); if (el) openPurposeCases(+el.dataset.i, el.dataset.s); });
+
+        document.getElementById("addCaseBtn").onclick = () => document.getElementById("caseModal").style.display="flex";
+        document.getElementById("closeCaseModalBtn").onclick = () => {
+            document.getElementById("caseModal").style.display="none";
+            ["caseNo","section","instDate","hearingDate","casePurpose","appellant","appellantAdvocate","respondent"]
+                .forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+        };
+        document.getElementById("saveCaseBtn").onclick = () => {
+            let cNo=document.getElementById("caseNo").value.trim(), inst=document.getElementById("instDate").value;
+            if(!cNo||!inst){ showToast("Case No & Date required",true); return; }
+            cases.push({
+                id:nextId++,
+                caseNo:cNo,
+                section:document.getElementById("section").value,
+                institutionDate:inst,
+                casePurpose:document.getElementById("casePurpose").value,
+                appellantName:document.getElementById("appellant").value,
+                appellantAdvocate:document.getElementById("appellantAdvocate").value.trim(),
+                respondentName:document.getElementById("respondent").value,
+                hearingDate:document.getElementById("hearingDate").value||null,
+                disposed:false,
+                disposalDate:null
+            });
+            saveToFirebase();
+            document.getElementById("caseModal").style.display="none";
+        };
+
+        document.getElementById("disposeBtn").onclick = () => {
+            document.getElementById("disposalModal").style.display="flex";
+            document.getElementById("disposalDate").value=new Date().toISOString().slice(0,10);
+            const datalist = document.getElementById("caseNosList"); datalist.innerHTML="";
+            cases.filter(c=>!c.disposed).forEach(c=>{ const opt = document.createElement("option"); opt.value = c.caseNo; datalist.appendChild(opt); });
+        };
+        document.getElementById("closeDisposalModalBtn").onclick = () => document.getElementById("disposalModal").style.display="none";
+        document.getElementById("confirmDisposalBtn").onclick = () => {
+            let cNo=document.getElementById("disposalCaseNo").value.trim(), dDate=document.getElementById("disposalDate").value;
+            if(!cNo||!dDate){ showToast("Select case and date",true); return; }
+            let found=cases.find(c=>c.caseNo===cNo && !c.disposed);
+            if(found){ found.disposed=true; found.disposalDate=dDate; saveToFirebase(); showToast("Disposal recorded"); }
+            else showToast("Not found or already disposed",true);
+            document.getElementById("disposalModal").style.display="none";
+        };
+
+        document.getElementById("exportBackupBtn").onclick = exportBackup;
+        document.getElementById("importBackupBtn").onclick = () => {
+            let inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+            inp.onchange=e=>{ if(e.target.files.length) restoreBackup(e.target.files[0]); }; inp.click();
+        };
+        document.getElementById("importCasesExcelBtn").onclick = () => document.getElementById("casesExcelInput").click();
+        document.getElementById("casesExcelInput").onchange = e => { if(e.target.files.length) importCasesExcel(e.target.files[0]); e.target.value=''; };
+        document.getElementById("importDisposalExcelBtn").onclick = () => document.getElementById("disposalExcelInput").click();
+        document.getElementById("disposalExcelInput").onchange = e => { if(e.target.files.length) importDisposalExcel(e.target.files[0]); e.target.value=''; };
+        document.getElementById("sampleDataBtn").onclick = loadSampleData;
+        document.getElementById("deleteAllBtn").onclick = deleteAllData;
+        document.getElementById("closeModalBtn").onclick = () => document.getElementById("listModal").style.display="none";
+        window.onclick = (event) => {
+            if(event.target === document.getElementById("listModal")) document.getElementById("listModal").style.display="none";
+            if(event.target === document.getElementById("importModal")) document.getElementById("importModal").style.display="none";
+        };
+
+        setTimeout(() => {
+            document.querySelectorAll('.stat-card').forEach(card => {
+                card.addEventListener('click', () => {
+                    const type = card.getAttribute('data-stat');
+                    let filtered=[];
+                    if(type==='total') filtered=cases;
+                    else if(type==='pending') filtered=cases.filter(c=>!c.disposed);
+                    else if(type==='disposed') filtered=cases.filter(c=>c.disposed);
+                    else if(type==='yearly') { const cy=new Date().getFullYear(); filtered=cases.filter(c=>new Date(c.institutionDate).getFullYear()===cy); }
+                    if(filtered.length===0) showToast("No cases",true);
+                    else showCaseList(`${card.querySelector('.label').innerText} Cases (${filtered.length})`, filtered);
+                });
+            });
+        }, 500);
+    });
 </script>
 </body>
 </html>
