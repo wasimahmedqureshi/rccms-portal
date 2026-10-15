@@ -898,7 +898,7 @@
     }
 
     // =====================================================================================
-    //  EXCEL IMPORT  (every row of the file is accounted for: added, updated, or listed in the report)
+    //  EXCEL IMPORT
     // =====================================================================================
     function readExcelFile(file, handler) {
         const reader = new FileReader();
@@ -979,9 +979,9 @@
         });
         saveToFirebase(); updateStats(false);
 
-        const skipped = issues.filter(x => x.kind === 'Skipped').length, dupPending = pendingDuplicateSet().size;
+        const skipped = issues.filter(x => x.kind === 'Skipped').length;
         const notes = [];
-        if (repeatedNos) notes.push({ warn: true, text: `${repeatedNos} Case No(s) appear on more than one row in this file (${repeatedRows} rows). All rows are kept as separate cases - use the "Duplicate Case Nos" button to review them (e.g. double entries).` });
+        if (repeatedNos) notes.push({ warn: true, text: `${repeatedNos} Case No(s) appear on more than one row in this file (${repeatedRows} rows). All rows are kept as separate cases - use the "Duplicate Case Nos" button to review them.` });
         showImportReport({
             title: 'Cases Import Summary', sub: `${dataRows} data row(s) read from the Excel file`,
             kpis: [['Rows in file', dataRows, ''], ['New cases added', added, 'new'], ['Existing cases updated', updated, updated ? 'ok' : ''], ['Already up to date', unchanged, ''], ['Skipped', skipped, skipped ? 'bad' : ''], ['Total cases in portal', cases.length, 'ok']],
@@ -1005,7 +1005,7 @@
             const r = { row: i + 1, caseNo: get(row, idxCase), section: get(row, idxSec), purpose: get(row, idxPur), appellant: get(row, idxApp), appellantAdvocate: get(row, idxAdv), respondent: get(row, idxRes) };
             if (!r.caseNo) { issues.push({ ...r, kind: 'Skipped', reason: 'Case No is empty' }); continue; }
             r.disp = parseDateAny(row[idxDisp]);
-            if (!r.disp) { issues.push({ ...r, kind: 'Skipped', reason: get(row, idxDisp) ? `Disposal Date not a valid date (${get(row, idxDisp)})` : 'No Disposal Date in file - add a date and re-import to count it' }); continue; }
+            if (!r.disp) { issues.push({ ...r, kind: 'Skipped', reason: get(row, idxDisp) ? `Disposal Date not a valid date (${get(row, idxDisp)})` : 'No Disposal Date in file' }); continue; }
             r.inst = idxInst === -1 ? null : parseDateAny(row[idxInst]);
             incoming.push(r);
         }
@@ -1029,23 +1029,20 @@
                 if (!ex.institutionDate && r.inst) ex.institutionDate = r.inst;
                 if (r.purpose) ex.disposalNote = r.purpose;
             } else {
-                if (!r.inst) { issues.push({ ...r, kind: 'Skipped', reason: 'New case not in portal and Institution Date is missing - add the date and re-import' }); return; }
+                if (!r.inst) { issues.push({ ...r, kind: 'Skipped', reason: 'New case not in portal and Institution Date is missing' }); return; }
                 cases.push({ id: nextId++, caseNo: r.caseNo, section: r.section, institutionDate: r.inst, casePurpose: r.purpose, appellantName: r.appellant, appellantAdvocate: r.appellantAdvocate || '', respondentName: r.respondent, hearingDate: null, disposed: true, disposalDate: r.disp, disposalNote: r.purpose });
                 added++;
             }
-            if (instForCheck && instForCheck > isoToday()) issues.push({ ...r, kind: 'Warning', reason: `Institution Date ${isoFmt(instForCheck)} is in the future - please check the year` });
-            else if (instForCheck && r.disp < instForCheck) issues.push({ ...r, kind: 'Warning', reason: `Disposal Date ${isoFmt(r.disp)} is before Institution Date ${isoFmt(instForCheck)} - imported as given, please verify` });
+            if (instForCheck && instForCheck > isoToday()) issues.push({ ...r, kind: 'Warning', reason: `Institution Date ${isoFmt(instForCheck)} is in the future` });
+            else if (instForCheck && r.disp < instForCheck) issues.push({ ...r, kind: 'Warning', reason: `Disposal Date ${isoFmt(r.disp)} is before Institution Date ${isoFmt(instForCheck)}` });
         });
         saveToFirebase(); updateStats(false);
 
-        const skipped = issues.filter(x => x.kind === 'Skipped'), noDate = skipped.filter(x => /No Disposal Date|Disposal Date not/.test(x.reason)).length;
-        const notes = [];
-        if (noDate) { const by = {}; skipped.filter(x => /No Disposal Date|Disposal Date not/.test(x.reason)).forEach(x => by[x.purpose || '(blank)'] = (by[x.purpose || '(blank)'] || 0) + 1); notes.push({ warn: true, text: `${noDate} row(s) have no disposal date, so they are NOT counted as disposed: ` + Object.entries(by).map(([k, v]) => `${k} (${v})`).join(', ') + '.' }); }
-        const sameKey = [...inFile.values()].filter(n => n > 1).length; if (sameKey) notes.push({ warn: false, text: `${sameKey} Case No + Section combination(s) appear on more than one row in the file; each row was kept as its own disposed case.` });
+        const skipped = issues.filter(x => x.kind === 'Skipped');
         showImportReport({
             title: 'Disposal Import Summary', sub: `${dataRows} data row(s) read from the Excel file`,
             kpis: [['Rows in file', dataRows, ''], ['Existing cases marked disposed', marked, marked ? 'ok' : ''], ['New disposed cases added', added, 'new'], ['Disposal date corrected', redated, redated ? 'ok' : ''], ['Already up to date', unchanged, ''], ['Skipped', skipped.length, skipped.length ? 'bad' : ''], ['Total Disposed in portal', cases.filter(c => c.disposed).length, 'ok']],
-            notes, issues, filename: 'Disposal_Import_Report'
+            notes: [], issues, filename: 'Disposal_Import_Report'
         });
     }
 
@@ -1072,7 +1069,6 @@
         const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Report'); XLSX.writeFile(wb, `${lastImportFile}_${new Date().toISOString().slice(0, 10)}.xlsx`);
     }
 
-    // Case Nos that appear on more than one PENDING row (probable double entries)
     function pendingDuplicateSet() { const m = new Map(); cases.forEach(c => { if (c && !c.disposed && c.caseNo) m.set(c.caseNo, (m.get(c.caseNo) || 0) + 1); }); return new Set([...m].filter(([, n]) => n > 1).map(([k]) => k)); }
     function showDuplicateCases() {
         const dup = pendingDuplicateSet(); const list = cases.filter(c => !c.disposed && dup.has(c.caseNo)).sort((a, b) => cmpCaseNo(a, b) || secKey(a.section).localeCompare(secKey(b.section)));
@@ -1230,7 +1226,6 @@
         printAsPdf('Appellant Advocate-wise Files', ['S.No.', 'Appellant Advocate', 'Pending', 'Disposed', 'Total Files'], advocateSummaryRows(), `As on ${new Date().toLocaleDateString('en-GB')}`);
     }
 
-    // PDF: renders a clean printable table and opens the browser's print dialog -> choose "Save as PDF".
     function printAsPdf(title, headers, rows, subtitle, opts) {
         opts = opts || {};
         const officeEl = document.getElementById('officeNameInput');
@@ -1268,7 +1263,7 @@ tr { page-break-inside: avoid; }
         showToast('In the print dialog choose "Save as PDF"');
     }
 
-    // ===== NEXT HEARING DATE (अगली पेशी) =====
+    // ===== NEXT HEARING DATE =====
     const HDAY_EN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const HDAY_HI = ['रविवार','सोमवार','मंगलवार','बुधवार','गुरुवार','शुक्रवार','शनिवार'];
     function isoToday() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
